@@ -1047,7 +1047,7 @@ class TemplateService:
     }}
     .page {{
       width: 600px;
-      min-height: 920px;
+      min-height: 880px;
       position: relative;
       overflow: hidden;
       background-color: #e5d9cc;

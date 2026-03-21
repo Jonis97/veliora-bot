@@ -19,6 +19,8 @@ veliora-bot/
 │   │   └── youtube_service.py
 │   └── utils/
 │       ├── active_source.py
+│       ├── intent.py
+│       ├── errors.py
 │       ├── config.py
 │       ├── dedup.py
 │       ├── input_parser.py
@@ -44,7 +46,9 @@ veliora-bot/
 - HTML screenshot rendering via ScreenshotOne.
 - Retry logic (3 attempts) and structured logging.
 - Duplicate update protection via `chat_id:message_id`.
-- **Active source memory** (per Telegram user): the latest YouTube transcript, pasted text, or voice transcript is stored as the current source. Short follow-ups (e.g. translate, simplify, another card, template change) reuse only that source until the user sends new material.
+- **Active source memory** (per Telegram user): the latest YouTube transcript, pasted text, or voice transcript is stored as the current source. Follow-ups reuse only that source until new material arrives (no mixing).
+- **Intent routing** (same layout): short requests are classified into outputs such as card, vocabulary, speaking, test, or summary; the AI adapts field emphasis while keeping the locked `warm_paper_v2` template.
+- **Errors**: missing source, unclear intent (one clarifying question), and generation failures return short, user-friendly messages.
 - Webhook deployment ready for Railway.
 
 ## Environment Variables

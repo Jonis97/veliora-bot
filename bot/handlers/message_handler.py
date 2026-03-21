@@ -6,6 +6,8 @@ from telegram.ext import ContextTypes
 from bot.services.pipeline_service import ContentPipelineService
 from bot.utils.active_source import NeedActiveSourceError
 from bot.utils.dedup import MessageDeduplicator
+from bot.utils.errors import GenerationFailedError
+from bot.utils.intent import UnclearIntentError
 
 
 LOGGER = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ class MessageHandlerService:
                 image_file = InputFile(result.image_bytes, filename="educard.png")
                 await message.reply_photo(
                     photo=image_file,
-                    caption=f"Template: {result.template_used} | Source: {result.source_type}",
+                    caption=f"{result.output_intent} · {result.template_used} · {result.source_type}",
                 )
             elif result.text_fallback:
                 await message.reply_text(result.text_fallback)
@@ -47,12 +49,20 @@ class MessageHandlerService:
                 )
         except NeedActiveSourceError:
             await message.reply_text(
-                "I don’t have any study material yet for this chat.\n\n"
-                "Send a YouTube link, a voice message, or paste text first. "
-                "Then you can ask to translate, simplify, change the template, or make another card."
+                "Send a YouTube link, voice note, or paste text first — then I can build cards, "
+                "vocabulary, speaking tasks, tests, or summaries from it."
+            )
+        except UnclearIntentError as err:
+            await message.reply_text(str(err.user_message))
+        except GenerationFailedError as err:
+            await message.reply_text(err.user_message)
+        except ValueError as err:
+            LOGGER.warning("Invalid user input message_id=%s: %s", message_id, err)
+            await message.reply_text(
+                str(err) or "That message doesn’t support. Send text, voice, or a YouTube link."
             )
         except Exception as error:  # noqa: BLE001
             LOGGER.exception("Failed to process message_id=%s: %s", message_id, error)
             await message.reply_text(
-                "Something went wrong while generating the card. Please try again in a moment."
+                "Something went wrong. Please try again in a moment."
             )

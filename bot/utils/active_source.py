@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 from typing import Any, MutableMapping, Optional
 
+from bot.utils.intent import FOLLOWUP_EXTRA_KEYWORDS
+
 ACTIVE_SOURCE_KEY = "veliora_active_source"
 
 # Short acknowledgments — not treated as follow-up instructions
@@ -111,6 +113,8 @@ def followup_intent(text: str) -> bool:
         "шаблон",
     )
     if any(k in tl for k in keywords):
+        return True
+    if any(k in tl for k in FOLLOWUP_EXTRA_KEYWORDS):
         return True
 
     # Short imperative / question likely about "it" / previous material

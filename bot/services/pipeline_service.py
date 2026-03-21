@@ -7,6 +7,8 @@ from telegram import Bot, Message
 from bot.services.ai_service import AIContentService
 from bot.services.screenshot_service import ScreenshotService
 from bot.services.template_service import DEFAULT_TEMPLATE, TemplateService
+from bot.utils.errors import GenerationFailedError
+from bot.utils.intent import OutputIntent, UnclearIntentError, intent_label, resolve_output_intent
 from bot.services.topic_image_service import TopicImageService
 from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService, extract_video_id
@@ -22,6 +24,9 @@ from bot.utils.input_parser import parse_template_hint
 
 LOGGER = logging.getLogger(__name__)
 
+# Single locked layout until more templates are wired into the product core.
+LOCKED_TEMPLATE = DEFAULT_TEMPLATE
+
 
 @dataclass
 class PipelineResult:
@@ -29,6 +34,7 @@ class PipelineResult:
 
     template_used: str
     source_type: str
+    output_intent: str
     image_bytes: Optional[bytes] = None
     text_fallback: Optional[str] = None
 
@@ -41,6 +47,7 @@ class _ResolvedSource:
     template: Optional[str]
     source_type: str
     persist_new_source: bool
+    intent_seed: str
     persist_body: Optional[str] = None
     video_id: Optional[str] = None
 
@@ -86,26 +93,43 @@ class ContentPipelineService:
         elif not resolved.persist_new_source:
             LOGGER.info("Using follow-up on existing active source (type=%s)", resolved.source_type)
 
-        card_json = await self._ai_service.generate_card_content(
-            resolved.text_for_ai,
-            resolved.template,
-            is_followup=not resolved.persist_new_source,
-        )
+        seed = (resolved.intent_seed or "").strip()
+        if not seed:
+            output_intent = OutputIntent.CARD
+        else:
+            output_intent = resolve_output_intent(
+                seed,
+                is_follow_up=not resolved.persist_new_source,
+            )
+
+        try:
+            card_json = await self._ai_service.generate_card_content(
+                resolved.text_for_ai,
+                LOCKED_TEMPLATE,
+                output_intent=output_intent,
+                is_followup=not resolved.persist_new_source,
+            )
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.exception("AI card generation failed: %s", exc)
+            raise GenerationFailedError() from exc
+
         topic = str(card_json.get("title", "education")).strip() or "education"
         image_url = await self._topic_image_service.fetch_topic_image(topic)
         card_for_render = dict(card_json)
+        card_for_render["template"] = LOCKED_TEMPLATE
         if image_url:
             card_for_render["image_url"] = image_url
-        preferred_template = resolved.template
+        used_template = LOCKED_TEMPLATE
         source_type = resolved.source_type
-        html = self._template_service.render_html(card_for_render, preferred_template)
-        used_template = preferred_template or str(card_json.get("template", DEFAULT_TEMPLATE))
+        intent_caption = intent_label(output_intent)
+        html = self._template_service.render_html(card_for_render, LOCKED_TEMPLATE)
 
         try:
             image_bytes = await self._screenshot_service.html_to_image(html)
             return PipelineResult(
                 template_used=used_template,
                 source_type=source_type,
+                output_intent=intent_caption,
                 image_bytes=image_bytes,
             )
         except Exception as exc:  # noqa: BLE001
@@ -114,15 +138,23 @@ class ContentPipelineService:
                 exc,
                 exc_info=True,
             )
-            text_body = self._format_card_text_reply(card_for_render, used_template, source_type)
+            text_body = self._format_card_text_reply(
+                card_for_render, used_template, source_type, intent_caption
+            )
             return PipelineResult(
                 template_used=used_template,
                 source_type=source_type,
+                output_intent=intent_caption,
                 text_fallback=text_body,
             )
 
     @staticmethod
-    def _format_card_text_reply(card: dict[str, Any], template_used: str, source_type: str) -> str:
+    def _format_card_text_reply(
+        card: dict[str, Any],
+        template_used: str,
+        source_type: str,
+        intent_label_s: str,
+    ) -> str:
         """Plain-text card when image rendering is unavailable (Telegram limit ~4096)."""
         title = str(card.get("title", "Learning Card")).strip()
         subtitle = str(card.get("subtitle", "")).strip()
@@ -131,7 +163,7 @@ class ContentPipelineService:
             raw_bullets = []
         cta = str(card.get("cta", "")).strip()
         lines = [
-            f"Template: {template_used} | Source: {source_type}",
+            f"{intent_label_s} · {template_used} · source: {source_type}",
             "",
             f"📌 {title}",
         ]
@@ -182,6 +214,7 @@ class ContentPipelineService:
                 template=template,
                 source_type="voice",
                 persist_new_source=True,
+                intent_seed="",
                 persist_body=transcript,
             )
 
@@ -201,6 +234,7 @@ class ContentPipelineService:
                     template=template,
                     source_type="youtube",
                     persist_new_source=True,
+                    intent_seed="",
                     persist_body=transcript,
                     video_id=video_id,
                 )
@@ -217,6 +251,7 @@ class ContentPipelineService:
                     template=template,
                     source_type="youtube",
                     persist_new_source=True,
+                    intent_seed="",
                     persist_body=fallback_text,
                     video_id=video_id,
                 )
@@ -235,6 +270,7 @@ class ContentPipelineService:
                 template=template,
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
+                intent_seed="",
             )
 
         if followup_intent(cleaned_text):
@@ -245,6 +281,7 @@ class ContentPipelineService:
                 template=template,
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
+                intent_seed=cleaned_text,
             )
 
         return _ResolvedSource(
@@ -252,6 +289,7 @@ class ContentPipelineService:
             template=template,
             source_type="text",
             persist_new_source=True,
+            intent_seed=cleaned_text,
             persist_body=cleaned_text,
         )
 
