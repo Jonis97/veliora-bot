@@ -30,39 +30,64 @@ class MessageHandlerService:
             LOGGER.info("Skipping duplicate message chat_id=%s message_id=%s", chat_id, message_id)
             return
 
-        await message.reply_text("Processing your content, this can take a few seconds...")
-
         try:
-            result = await self._pipeline.process_message(context.bot, message, context.user_data)
-            if result.image_bytes:
-                image_file = InputFile(result.image_bytes, filename="educard.png")
-                await message.reply_photo(
-                    photo=image_file,
-                    caption=f"{result.output_intent} · {result.template_used} · {result.source_type}",
-                )
-            elif result.text_fallback:
-                await message.reply_text(result.text_fallback)
-            else:
-                LOGGER.error("Pipeline returned neither image nor text for message_id=%s", message_id)
-                await message.reply_text(
-                    "Could not produce a card preview. Please try again in a moment."
-                )
+            prepare = await self._pipeline.prepare(context.bot, message, chat_id)
         except NeedActiveSourceError:
             await message.reply_text(
-                "Send a YouTube link, voice note, or paste text first — then I can build cards, "
-                "vocabulary, speaking tasks, tests, or summaries from it."
+                "Send a YouTube link, voice note, or paste text first — then tell me what you want."
             )
+            return
         except UnclearIntentError as err:
-            await message.reply_text(str(err.user_message))
+            await message.reply_text(err.user_message)
+            return
         except GenerationFailedError as err:
             await message.reply_text(err.user_message)
+            return
         except ValueError as err:
             LOGGER.warning("Invalid user input message_id=%s: %s", message_id, err)
             await message.reply_text(
-                str(err) or "That message doesn’t support. Send text, voice, or a YouTube link."
+                str(err) or "That message doesn’t work. Send text, voice, or a YouTube link."
             )
+            return
         except Exception as error:  # noqa: BLE001
-            LOGGER.exception("Failed to process message_id=%s: %s", message_id, error)
-            await message.reply_text(
-                "Something went wrong. Please try again in a moment."
+            LOGGER.exception("Prepare failed message_id=%s: %s", message_id, error)
+            await message.reply_text("Something went wrong. Please try again.")
+            return
+
+        if prepare.rerender_complete:
+            await self._send_pipeline_result(message, prepare.rerender_complete)
+            return
+
+        if prepare.preface:
+            await message.reply_text(prepare.preface)
+        elif prepare.status_line:
+            await message.reply_text(prepare.status_line)
+
+        try:
+            result = await self._pipeline.execute(prepare)
+        except GenerationFailedError as err:
+            await message.reply_text(err.user_message)
+            return
+        except Exception as error:  # noqa: BLE001
+            LOGGER.exception("Execute failed message_id=%s: %s", message_id, error)
+            await message.reply_text("Couldn’t finish that. Please try again in a moment.")
+            return
+
+        await self._send_pipeline_result(message, result)
+
+    async def _send_pipeline_result(self, message, result) -> None:
+        if result.image_bytes:
+            image_file = InputFile(result.image_bytes, filename="educard.png")
+            await message.reply_photo(
+                photo=image_file,
+                caption=f"{result.output_intent} · {result.template_used} · {result.source_type}",
             )
+        elif result.text_fallback:
+            await message.reply_text(result.text_fallback)
+        else:
+            LOGGER.error("Pipeline returned neither image nor text")
+            await message.reply_text(
+                "Couldn’t produce a preview. Please try again in a moment."
+            )
+        if result.suggestion:
+            await message.reply_text(result.suggestion)
