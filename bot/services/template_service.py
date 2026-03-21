@@ -10,13 +10,53 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(bullets, list):
         bullets = []
     cleaned_bullets = [escape(str(item)) for item in bullets[:5] if str(item).strip()]
+    raw_url = str(raw.get("image_url", "") or raw.get("photo", "") or "").strip()
+    image_url = raw_url if raw_url.startswith(("http://", "https://")) else ""
     return {
         "template": raw.get("template", "warm_paper"),
         "title": escape(str(raw.get("title", "Learning Card"))),
         "subtitle": escape(str(raw.get("subtitle", ""))),
         "bullets": cleaned_bullets,
         "cta": escape(str(raw.get("cta", "Try this today."))),
+        "image_url": image_url,
     }
+
+
+def _build_takeaway_text(card: dict[str, Any]) -> str:
+    """Primary line for insight card when no photo is available."""
+    bullets = card.get("bullets") or []
+    if isinstance(bullets, list) and bullets:
+        return str(bullets[0])
+    sub = str(card.get("subtitle", "")).strip()
+    if sub:
+        return sub
+    cta = str(card.get("cta", "")).strip()
+    if cta:
+        return cta
+    return "Start with the main idea above and add one example you can use in class."
+
+
+def _hero_media_block(card: dict[str, Any], variant: str) -> str:
+    """
+    Photo area: real image if `image_url` is set on the raw card; otherwise a styled insight card.
+    variant: warm | kitchen | influencer
+    """
+    url = (card.get("image_url") or "").strip()
+    if url:
+        safe = escape(url, quote=True)
+        return (
+            f'<div class="hero-media hero-{variant}">'
+            f'<img class="hero-img" src="{safe}" alt="" />'
+            f"</div>"
+        )
+    takeaway = _build_takeaway_text(card)
+    return (
+        f'<aside class="insight-card insight-{variant}" aria-label="Key takeaway">'
+        f'<div class="insight-kicker">Key takeaway</div>'
+        f'<p class="insight-body">{takeaway}</p>'
+        f'<div class="insight-accent" aria-hidden="true"></div>'
+        f"</aside>"
+    )
 
 
 def _badge_level(subtitle_escaped: str) -> str:
@@ -112,9 +152,12 @@ class TemplateService:
         </section>
         """
 
-        return self._wrap_warm_paper_html(topic, level, content_sections)
+        hero_block = _hero_media_block(card, "warm")
+        return self._wrap_warm_paper_html(topic, level, hero_block, content_sections)
 
-    def _wrap_warm_paper_html(self, topic: str, level: str, content_sections: str) -> str:
+    def _wrap_warm_paper_html(
+        self, topic: str, level: str, hero_block: str, content_sections: str
+    ) -> str:
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -180,21 +223,60 @@ class TemplateService:
       word-wrap: break-word;
       overflow-wrap: anywhere;
     }}
-    .photo-ph {{
+    .hero-media {{
       margin: 10px auto 12px;
       width: 92%;
       max-width: 520px;
-      height: 120px;
       border-radius: 14px;
-      border: 2px dashed rgba(139, 69, 19, 0.35);
-      background: linear-gradient(145deg, #fdf8f0 0%, #e8d5b0 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: rgba(61, 44, 43, 0.55);
       overflow: hidden;
+      border: 1px solid rgba(139, 69, 19, 0.3);
+      box-shadow: 0 4px 12px rgba(60, 40, 30, 0.12);
+    }}
+    .hero-img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 160px;
+      object-fit: cover;
+    }}
+    .insight-card {{
+      margin: 10px auto 12px;
+      width: 92%;
+      max-width: 520px;
+      min-height: 96px;
+      padding: 14px 16px 16px;
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+    }}
+    .insight-card.insight-warm {{
+      background: linear-gradient(145deg, #fffef9 0%, #f5f0e8 55%, #fdf8f0 100%);
+      border: 1px solid rgba(139, 69, 19, 0.32);
+      box-shadow: 0 5px 16px rgba(60, 40, 30, 0.1);
+    }}
+    .insight-kicker {{
+      font-family: "Caveat", cursive;
+      font-size: 20px;
+      line-height: 1.1;
+      margin: 0 0 8px;
+      color: #8b4513;
+    }}
+    .insight-body {{
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #3d2c2b;
+      overflow-wrap: anywhere;
       word-wrap: break-word;
+    }}
+    .insight-accent {{
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 4px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #c62828 0%, #8b2323 100%);
     }}
     .cols-2 {{
       display: flex;
@@ -268,7 +350,7 @@ class TemplateService:
     <header class="header-block">
       <h1 class="topic-title">{topic}</h1>
     </header>
-    <div class="photo-ph" role="img" aria-label="Topic image placeholder">Topic image</div>
+    {hero_block}
     {content_sections}
   </div>
 </body>
@@ -315,6 +397,8 @@ class TemplateService:
       <p class="pbody light">{sec_speak}</p>
     </section>
         """
+
+        hero_block = _hero_media_block(card, "kitchen")
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -378,18 +462,56 @@ class TemplateService:
       word-wrap: break-word;
       overflow-wrap: anywhere;
     }}
-    .photo-ph {{
+    .hero-media {{
       margin: 8px auto 10px;
       width: 94%;
-      height: 100px;
       border-radius: 12px;
-      border: 2px dashed rgba(139, 69, 19, 0.3);
-      background: linear-gradient(160deg, #fff 0%, #e8d5b0 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      overflow: hidden;
+      border: 1px solid rgba(139, 69, 19, 0.28);
+      box-shadow: 0 3px 10px rgba(50, 35, 25, 0.1);
+    }}
+    .hero-img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 140px;
+      object-fit: cover;
+    }}
+    .insight-card {{
+      margin: 8px auto 10px;
+      width: 94%;
+      min-height: 88px;
+      padding: 12px 14px 14px;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }}
+    .insight-card.insight-kitchen {{
+      background: linear-gradient(160deg, #fffdf9 0%, #f5f0e8 50%, #e8d5b0 100%);
+      border: 1px solid rgba(180, 140, 100, 0.4);
+      box-shadow: 0 4px 12px rgba(50, 35, 25, 0.1);
+    }}
+    .insight-kicker {{
+      font-family: "Caveat", cursive;
+      font-size: 19px;
+      margin: 0 0 6px;
+      color: #8b4513;
+    }}
+    .insight-body {{
+      margin: 0;
       font-size: 12px;
-      color: rgba(61, 44, 43, 0.5);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }}
+    .insight-accent {{
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #c62828 0%, #5d4037 100%);
     }}
     .stack {{
       display: flex;
@@ -447,7 +569,7 @@ class TemplateService:
     <header class="head-k">
       <h1 class="topic-title">{topic}</h1>
     </header>
-    <div class="photo-ph">Topic image</div>
+    {hero_block}
     <div class="stack">
       {content_sections}
     </div>
@@ -496,6 +618,8 @@ class TemplateService:
       <div class="pills">{pills_html}</div>
     </section>
         """
+
+        hero_block = _hero_media_block(card, "influencer")
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -566,22 +690,60 @@ class TemplateService:
       word-wrap: break-word;
       overflow-wrap: anywhere;
     }}
-    .photo-ph {{
+    .hero-media {{
       margin: 10px auto 12px;
       width: 94%;
-      height: 108px;
       border-radius: 16px;
+      overflow: hidden;
       border: 2px solid rgba(139, 35, 35, 0.25);
-      background: linear-gradient(135deg, #2b2b35 0%, #4a4a62 50%, #fdf8f0 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 6px 18px rgba(40, 30, 20, 0.12);
+      position: relative;
+      z-index: 1;
+    }}
+    .hero-img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 150px;
+      object-fit: cover;
+    }}
+    .insight-card {{
+      margin: 10px auto 12px;
+      width: 94%;
+      min-height: 96px;
+      padding: 14px 16px 16px;
+      border-radius: 16px;
       position: relative;
       z-index: 1;
       overflow: hidden;
+    }}
+    .insight-card.insight-influencer {{
+      background: linear-gradient(135deg, rgba(255, 253, 248, 0.98) 0%, #fdf8f0 45%, #f5f0e8 100%);
+      border: 2px solid rgba(198, 40, 40, 0.22);
+      box-shadow: 0 8px 22px rgba(60, 40, 30, 0.12);
+    }}
+    .insight-kicker {{
+      font-family: "Caveat", cursive;
+      font-size: 22px;
+      margin: 0 0 8px;
+      color: #c62828;
+    }}
+    .insight-body {{
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #3d2c2b;
+      overflow-wrap: anywhere;
       word-wrap: break-word;
+    }}
+    .insight-accent {{
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 4px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #1565c0 0%, #6a1b9a 50%, #c62828 100%);
     }}
     .card-mod {{
       position: relative;
@@ -666,7 +828,7 @@ class TemplateService:
     <header class="head-i">
       <h1 class="topic-title">{topic}</h1>
     </header>
-    <div class="photo-ph">Topic visual</div>
+    {hero_block}
     {content_sections}
   </div>
 </body>
