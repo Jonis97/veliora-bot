@@ -1,9 +1,11 @@
+import asyncio
 import logging
 import re
 from typing import Any, Optional
 
 import httpx
 
+from bot.utils.errors import TranscriptUnavailableError
 from bot.utils.retry import with_retry
 
 
@@ -35,16 +37,41 @@ class YouTubeTranscriptService:
                 payload: dict[str, Any] = response.json()
                 return self._normalize_transcript(payload)
 
-        return await with_retry(
+        text = await with_retry(
             _request,
             attempts=3,
             operation_name=f"Supadata transcript fetch ({video_id})",
         )
+        if text.strip():
+            return text
+
+        try:
+            from youtube_transcript_api import YouTubeTranscriptApi
+
+            transcript_list = await asyncio.to_thread(
+                lambda: YouTubeTranscriptApi.get_transcript(
+                    video_id,
+                    languages=["uk", "ru", "en"],
+                )
+            )
+            fallback = " ".join([t["text"] for t in transcript_list]).strip()
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.warning(
+                "youtube-transcript-api fallback failed for video_id=%s: %s",
+                video_id,
+                exc,
+            )
+            raise TranscriptUnavailableError() from exc
+
+        if not fallback:
+            raise TranscriptUnavailableError()
+
+        return fallback
 
     def _normalize_transcript(self, payload: dict[str, Any]) -> str:
         # Supadata may return either "content" or a list of transcript chunks.
         if isinstance(payload.get("content"), str):
-            return payload["content"]
+            return payload["content"].strip()
 
         lines: list[str] = []
         for item in payload.get("transcript", []) or []:
@@ -55,5 +82,4 @@ class YouTubeTranscriptService:
         transcript = " ".join(lines).strip()
         if not transcript:
             LOGGER.warning("Supadata transcript payload did not contain text.")
-            raise RuntimeError("Could not parse transcript from Supadata response")
         return transcript
