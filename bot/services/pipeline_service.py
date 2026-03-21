@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from telegram import Bot, Message
 
@@ -17,9 +17,12 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class PipelineResult:
-    image_bytes: bytes
+    """Either `image_bytes` (preferred) or `text_fallback` when screenshot API fails."""
+
     template_used: str
     source_type: str
+    image_bytes: Optional[bytes] = None
+    text_fallback: Optional[str] = None
 
 
 class ContentPipelineService:
@@ -41,14 +44,55 @@ class ContentPipelineService:
         text_source, preferred_template, source_type = await self._extract_source(bot, message)
         card_json = await self._ai_service.generate_card_content(text_source, preferred_template)
         html = self._template_service.render_html(card_json, preferred_template)
-        image_bytes = await self._screenshot_service.html_to_image(html)
-
         used_template = preferred_template or str(card_json.get("template", "warm_paper"))
-        return PipelineResult(
-            image_bytes=image_bytes,
-            template_used=used_template,
-            source_type=source_type,
-        )
+
+        try:
+            image_bytes = await self._screenshot_service.html_to_image(html)
+            return PipelineResult(
+                template_used=used_template,
+                source_type=source_type,
+                image_bytes=image_bytes,
+            )
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.warning(
+                "Screenshot rendering failed; sending text fallback. Error: %s",
+                exc,
+                exc_info=True,
+            )
+            text_body = self._format_card_text_reply(card_json, used_template, source_type)
+            return PipelineResult(
+                template_used=used_template,
+                source_type=source_type,
+                text_fallback=text_body,
+            )
+
+    @staticmethod
+    def _format_card_text_reply(card: dict[str, Any], template_used: str, source_type: str) -> str:
+        """Plain-text card when image rendering is unavailable (Telegram limit ~4096)."""
+        title = str(card.get("title", "Learning Card")).strip()
+        subtitle = str(card.get("subtitle", "")).strip()
+        raw_bullets = card.get("bullets") or []
+        if not isinstance(raw_bullets, list):
+            raw_bullets = []
+        cta = str(card.get("cta", "")).strip()
+        lines = [
+            f"Template: {template_used} | Source: {source_type}",
+            "",
+            f"📌 {title}",
+        ]
+        if subtitle:
+            lines.append(subtitle)
+        lines.append("")
+        for item in raw_bullets[:8]:
+            lines.append(f"• {str(item).strip()}")
+        if cta:
+            lines.extend(["", f"💡 {cta}"])
+        lines.append("")
+        lines.append("(Image preview unavailable — text card above.)")
+        text = "\n".join(lines)
+        if len(text) > 4000:
+            return text[:3997] + "..."
+        return text
 
     async def _extract_source(self, bot: Bot, message: Message) -> tuple[str, Optional[str], str]:
         if message.voice:

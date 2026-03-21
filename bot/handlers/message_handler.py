@@ -31,11 +31,19 @@ class MessageHandlerService:
 
         try:
             result = await self._pipeline.process_message(context.bot, message)
-            image_file = InputFile(result.image_bytes, filename="educard.png")
-            await message.reply_photo(
-                photo=image_file,
-                caption=f"Template: {result.template_used} | Source: {result.source_type}",
-            )
+            if result.image_bytes:
+                image_file = InputFile(result.image_bytes, filename="educard.png")
+                await message.reply_photo(
+                    photo=image_file,
+                    caption=f"Template: {result.template_used} | Source: {result.source_type}",
+                )
+            elif result.text_fallback:
+                await message.reply_text(result.text_fallback)
+            else:
+                LOGGER.error("Pipeline returned neither image nor text for message_id=%s", message_id)
+                await message.reply_text(
+                    "Could not produce a card preview. Please try again in a moment."
+                )
         except Exception as error:  # noqa: BLE001
             LOGGER.exception("Failed to process message_id=%s: %s", message_id, error)
             await message.reply_text(
