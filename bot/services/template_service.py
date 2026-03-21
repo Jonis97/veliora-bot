@@ -1,3 +1,4 @@
+import re
 from html import escape
 from typing import Any, List, Optional, Tuple
 
@@ -30,6 +31,15 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     if isinstance(contrast, dict):
         cw = escape(str(contrast.get("wrong", "") or contrast.get("weak", "")).strip()[:220])
         cb = escape(str(contrast.get("better", "") or contrast.get("strong", "")).strip()[:220])
+    voc_in: Any = raw.get("vocabulary")
+    vocabulary_lines: List[str] = []
+    if isinstance(voc_in, list):
+        vocabulary_lines = [escape(str(x).strip())[:200] for x in voc_in[:4] if str(x).strip()]
+    mc_in: Any = raw.get("mcq_brackets") or raw.get("mcq_exercises")
+    mcq_bracket_lines: List[str] = []
+    if isinstance(mc_in, list):
+        mcq_bracket_lines = [escape(str(x).strip())[:320] for x in mc_in[:4] if str(x).strip()]
+
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
@@ -40,6 +50,8 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "punchline": punchline,
         "contrast_wrong": cw,
         "contrast_better": cb,
+        "vocabulary_lines": vocabulary_lines,
+        "mcq_bracket_lines": mcq_bracket_lines,
     }
 
 
@@ -74,8 +86,9 @@ def _hero_media_block(card: dict[str, Any], variant: str) -> str:
             f"</div>"
         )
     takeaway = _build_takeaway_text(card)
+    premium = " insight-premium" if variant == "warm_v2" else ""
     return (
-        f'<aside class="insight-card insight-{variant}" aria-label="Save this">'
+        f'<aside class="insight-card insight-{variant}{premium}" aria-label="Save this">'
         f'<div class="insight-kicker">Save this</div>'
         f'<p class="insight-body">{takeaway}</p>'
         f'<div class="insight-accent" aria-hidden="true"></div>'
@@ -135,6 +148,36 @@ def _split_term_translation(bullets: List[str]) -> List[Tuple[str, str]]:
 
 def _placeholder_line() -> str:
     return '<span class="muted">—</span>'
+
+
+def _highlight_bracket_choice(escaped_line: str) -> str:
+    """Emphasize first (option / option) chunk in MCQ line (line is already escaped)."""
+    if "(" not in escaped_line or ")" not in escaped_line:
+        return escaped_line
+    return re.sub(
+        r"\(([^)]+)\)",
+        r'<span class="mcq-gap">(<span class="mcq-or">\1</span>)</span>',
+        escaped_line,
+        count=1,
+    )
+
+
+def _vocab_rows_from_lines(lines: List[str]) -> List[str]:
+    """Vocabulary: one row per line, English — Ukrainian only."""
+    rows: List[str] = []
+    for line in lines:
+        pairs = _split_term_translation([line])
+        if not pairs:
+            continue
+        term, trans = pairs[0]
+        if trans:
+            rows.append(
+                f'<div class="vr-v2"><span class="tv2">{term}</span>'
+                f'<span class="sv2">—</span><span class="gv2 ua">{trans}</span></div>'
+            )
+        else:
+            rows.append(f'<div class="vr-v2"><span class="tv2 full">{term}</span></div>')
+    return rows
 
 
 class TemplateService:
@@ -901,32 +944,50 @@ class TemplateService:
         )
         bullets = card["bullets"]
         cta = card["cta"]
-        pairs = _split_term_translation(bullets)
-        vocab_rows = []
-        for term, trans in pairs[:6]:
-            if trans:
-                vocab_rows.append(
-                    f'<div class="vr-v2"><span class="tv2">{term}</span>'
-                    f'<span class="sv2">—</span><span class="gv2">{trans}</span></div>'
-                )
-            else:
-                vocab_rows.append(f'<div class="vr-v2"><span class="tv2 full">{term}</span></div>')
+        voc_lines = card.get("vocabulary_lines") or []
+        mcq_lines = card.get("mcq_bracket_lines") or []
+
+        if isinstance(voc_lines, list) and voc_lines:
+            vocab_rows = _vocab_rows_from_lines([str(x) for x in voc_lines if str(x).strip()])
+        else:
+            pairs = _split_term_translation(bullets)
+            vocab_rows = []
+            for term, trans in pairs[:4]:
+                if trans:
+                    vocab_rows.append(
+                        f'<div class="vr-v2"><span class="tv2">{term}</span>'
+                        f'<span class="sv2">—</span><span class="gv2 ua">{trans}</span></div>'
+                    )
+                else:
+                    vocab_rows.append(f'<div class="vr-v2"><span class="tv2 full">{term}</span></div>')
         if not vocab_rows:
-            vocab_rows.append('<div class="vr-v2 muted">Add pairs (term — gloss).</div>')
+            vocab_rows.append(
+                '<div class="vr-v2 muted">word — слово</div>'
+            )
 
         has_contrast = bool(card.get("contrast_wrong") or card.get("contrast_better"))
-        ex_lines = bullets[:4] if bullets else []
+
+        if isinstance(mcq_lines, list) and mcq_lines:
+            ex_lines = [str(x) for x in mcq_lines if str(x).strip()][:4]
+        else:
+            ex_lines = []
+            for b in bullets:
+                if "(" in b and ")" in b and "/" in b:
+                    ex_lines.append(b)
+            if len(ex_lines) < 2:
+                ex_lines = list(bullets)[:4]
+
         mcq_items = []
         for i, line in enumerate(ex_lines, 1):
             hit = " key-hit" if i == 1 and not has_contrast else ""
-            mcq_items.append(f'<div class="mcq-v2{hit}"><span class="nv2">{i}.</span> {line}</div>')
+            styled = _highlight_bracket_choice(line)
+            mcq_items.append(f'<div class="mcq-v2{hit}"><span class="nv2">{i}.</span> {styled}</div>')
         while len(mcq_items) < 3:
             mcq_items.append(
                 f'<div class="mcq-v2 muted"><span class="nv2">{len(mcq_items) + 1}.</span> '
-                f"Choose the best option.</div>"
+                f"Template: one sentence with (option / option).</div>"
             )
 
-        # First vocab row pops when no contrast strip
         if vocab_rows and not has_contrast:
             vr0 = vocab_rows[0].replace('<div class="vr-v2"', '<div class="vr-v2 key-hit"', 1)
             vocab_rows[0] = vr0
@@ -936,12 +997,14 @@ class TemplateService:
       <section class="panel-v2 pv2-a" aria-label="Vocabulary">
         <div class="pin-v2"></div>
         <p class="label-v2">Vocabulary</p>
-        <div class="body-v2">{"".join(vocab_rows)}</div>
+        <p class="hint-v2">English — українська · phrases only</p>
+        <div class="body-v2 body-v2-vocab">{"".join(vocab_rows)}</div>
       </section>
       <section class="panel-v2 pv2-b" aria-label="Choose the correct option">
         <div class="pin-v2"></div>
         <p class="label-v2">Choose the correct option</p>
-        <div class="body-v2">{"".join(mcq_items[:4])}</div>
+        <p class="hint-v2">Bracket choices — different from vocabulary</p>
+        <div class="body-v2 body-v2-mcq">{"".join(mcq_items[:4])}</div>
       </section>
     </div>
     <section class="speak-v2" aria-label="Let's speak">
@@ -976,15 +1039,15 @@ class TemplateService:
   <style>
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
-    body {{ background: #e0d4c4; font-family: "DM Serif Display", Georgia, serif; color: #2f2420; -webkit-font-smoothing: antialiased; }}
+    body {{ background: #ddd2c8; font-family: "DM Serif Display", Georgia, serif; color: #2a1f1c; -webkit-font-smoothing: antialiased; }}
     .page {{
       width: 600px; min-height: 920px; position: relative; overflow: hidden;
-      background: #f7f2ea;
+      background: #faf7f2;
       background-image:
-        linear-gradient(90deg, rgba(160, 140, 120, 0.08) 1px, transparent 1px),
-        linear-gradient(rgba(160, 140, 120, 0.06) 1px, transparent 1px);
-      background-size: 20px 20px, 20px 20px;
-      padding: 22px 20px 26px;
+        linear-gradient(90deg, rgba(150, 130, 110, 0.06) 1px, transparent 1px),
+        linear-gradient(rgba(150, 130, 110, 0.05) 1px, transparent 1px);
+      background-size: 22px 22px, 22px 22px;
+      padding: 26px 24px 30px;
     }}
     .level-badge {{
       position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%;
@@ -997,24 +1060,29 @@ class TemplateService:
       font-family: "Caveat", cursive; font-size: 40px; line-height: 1.02; margin: 0; color: #3d2a22;
       letter-spacing: -0.02em; word-wrap: break-word; overflow-wrap: anywhere;
     }}
-    .topic-sub-v2 {{ margin: 8px auto 0; max-width: 92%; font-size: 12.5px; line-height: 1.45; color: #5c4a42; }}
-    .hero-media {{ margin: 14px auto 14px; width: 92%; max-width: 528px; border-radius: 16px; overflow: hidden;
-      border: 1px solid rgba(100, 70, 50, 0.22); box-shadow: 0 8px 24px rgba(40, 28, 20, 0.1); }}
-    .hero-img {{ display: block; width: 100%; height: auto; max-height: 152px; object-fit: cover; }}
-    .insight-card {{ margin: 14px auto 14px; width: 92%; max-width: 528px; min-height: 100px; padding: 16px 18px 18px 20px;
-      border-radius: 16px; position: relative; overflow: hidden; }}
+    .topic-sub-v2 {{ margin: 10px auto 0; max-width: 90%; font-size: 12px; line-height: 1.5; color: #6d5c54; font-weight: 500; }}
+    .hero-media {{ margin: 16px auto 16px; width: 90%; max-width: 512px; border-radius: 18px; overflow: hidden;
+      border: 1px solid rgba(90, 65, 50, 0.18); box-shadow: 0 12px 36px rgba(35, 24, 18, 0.12); }}
+    .hero-img {{ display: block; width: 100%; height: auto; max-height: 148px; object-fit: cover; }}
+    .insight-card {{ margin: 16px auto 16px; width: 90%; max-width: 512px; min-height: 96px; padding: 20px 22px 22px 24px;
+      border-radius: 20px; position: relative; overflow: hidden; }}
     .insight-card.insight-warm_v2 {{
-      background: linear-gradient(160deg, #fff 0%, #faf5ee 100%);
-      border: 1px solid rgba(120, 90, 70, 0.2);
-      box-shadow: 0 10px 28px rgba(45, 32, 24, 0.08);
+      background: linear-gradient(165deg, #ffffff 0%, #f5f0e8 55%, #faf6ef 100%);
+      border: 1px solid rgba(110, 85, 65, 0.16);
+      box-shadow: 0 12px 40px rgba(40, 28, 20, 0.07);
     }}
-    .insight-kicker {{ font-family: "Caveat", cursive; font-size: 21px; margin: 0 0 8px; color: #8b4513; }}
-    .insight-body {{ margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .insight-card.insight-warm_v2.insight-premium {{
+      background: linear-gradient(155deg, #fffdf9 0%, #f3ebe4 45%, #ebe3d8 100%);
+      border: 1px solid rgba(90, 70, 55, 0.22);
+      box-shadow: 0 16px 48px rgba(35, 26, 18, 0.1), inset 0 1px 0 rgba(255,255,255,0.85);
+    }}
+    .insight-kicker {{ font-family: "Caveat", cursive; font-size: 22px; margin: 0 0 10px; color: #7a4a3a; letter-spacing: 0.02em; }}
+    .insight-body {{ margin: 0; font-size: 15px; font-weight: 600; line-height: 1.32; overflow-wrap: anywhere; word-wrap: break-word; color: #241a16; }}
     .insight-accent {{ position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 2px;
       background: linear-gradient(180deg, #b71c1c, #5d4037); }}
     .wp2-strip {{
-      display: flex; margin: 0 auto 14px; width: 92%; max-width: 528px; border-radius: 14px; overflow: hidden;
-      box-shadow: 0 8px 22px rgba(30, 20, 15, 0.14); border: 2px solid #2a1f1a;
+      display: flex; margin: 0 auto 16px; width: 90%; max-width: 512px; border-radius: 16px; overflow: hidden;
+      box-shadow: 0 10px 28px rgba(30, 20, 15, 0.11); border: 1.5px solid rgba(42, 31, 26, 0.85);
     }}
     .wp2-bad {{ flex: 1; background: linear-gradient(180deg, #ffebee 0%, #ffcdd2 100%); padding: 12px 12px 14px; }}
     .wp2-good {{ flex: 1; background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%); padding: 12px 12px 14px;
@@ -1023,36 +1091,42 @@ class TemplateService:
       color: #b71c1c; display: block; margin-bottom: 6px; }}
     .wp2-good .wp2-tag {{ color: #1b5e20; }}
     .wp2-txt {{ margin: 0; font-size: 12px; line-height: 1.38; font-weight: 600; color: #1a1a1a; overflow-wrap: anywhere; }}
-    .mcq-v2.key-hit, .vr-v2.key-hit {{ border-left: 4px solid #c62828; padding-left: 8px; margin-left: -2px; background: rgba(255, 235, 238, 0.35); border-radius: 0 8px 8px 0; }}
-    .cols-v2 {{ display: flex; gap: 12px; align-items: stretch; margin-bottom: 12px; }}
+    .mcq-v2.key-hit, .vr-v2.key-hit {{ border-left: 4px solid #c62828; padding-left: 10px; margin-left: -2px; background: rgba(255, 245, 240, 0.65); border-radius: 0 10px 10px 0; }}
+    .mcq-gap {{ font-weight: 600; color: #4a3728; }}
+    .mcq-or {{ color: #b71c1c; font-weight: 700; }}
+    .cols-v2 {{ display: flex; gap: 14px; align-items: stretch; margin-bottom: 16px; }}
     .panel-v2 {{
-      flex: 1; min-width: 0; padding: 14px 12px 16px; border-radius: 14px; position: relative;
-      box-shadow: 0 6px 18px rgba(45, 35, 28, 0.09);
+      flex: 1; min-width: 0; padding: 16px 14px 18px; border-radius: 16px; position: relative;
+      box-shadow: 0 4px 20px rgba(45, 35, 28, 0.06);
     }}
-    .pv2-a {{ background: #fffefb; border: 1px solid rgba(190, 165, 135, 0.35); transform: rotate(-0.4deg); }}
-    .pv2-b {{ background: #fffdf8; border: 1px solid rgba(175, 155, 130, 0.32); transform: rotate(0.35deg); }}
+    .pv2-a {{ background: #fffefb; border: 1px solid rgba(200, 175, 150, 0.28); transform: rotate(-0.35deg); }}
+    .pv2-b {{ background: #fffcf7; border: 1px solid rgba(185, 160, 135, 0.26); transform: rotate(0.3deg); }}
     .pin-v2 {{ position: absolute; top: -5px; right: 16px; width: 13px; height: 13px; border-radius: 50%;
       background: radial-gradient(circle at 30% 30%, #ff7961, #b71c1c); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
     .label-v2 {{
-      font-family: "DM Serif Display", Georgia, serif; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
-      text-transform: uppercase; color: #6d4c41; margin: 0 0 10px;
+      font-family: "DM Serif Display", Georgia, serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #5c4a42; margin: 0 0 4px;
     }}
+    .hint-v2 {{ margin: 0 0 12px; font-size: 9px; letter-spacing: 0.06em; color: rgba(90, 72, 62, 0.55); font-weight: 500; }}
     .label-v2.light {{ color: #e8f5e9; }}
-    .body-v2 {{ font-size: 12px; line-height: 1.42; }}
+    .body-v2 {{ font-size: 11.5px; line-height: 1.48; }}
+    .body-v2-vocab .vr-v2 {{ margin-bottom: 10px; }}
+    .body-v2-mcq .mcq-v2 {{ margin-bottom: 12px; }}
     .vr-v2 {{ margin-bottom: 8px; overflow-wrap: anywhere; word-wrap: break-word; }}
     .tv2 {{ font-weight: 700; color: #2f2420; }}
     .tv2.full {{ display: block; }}
     .sv2 {{ margin: 0 5px; opacity: 0.45; }}
     .gv2 {{ color: #4e3d36; }}
+    .gv2.ua {{ font-style: normal; color: #3e2723; letter-spacing: 0.01em; }}
     .mcq-v2 {{ margin-bottom: 8px; overflow-wrap: anywhere; word-wrap: break-word; }}
     .nv2 {{ font-weight: 700; color: #8b4513; margin-right: 5px; }}
     .muted {{ color: rgba(47, 36, 32, 0.42); font-style: italic; }}
     .speak-v2 {{
-      width: 100%; padding: 14px 16px 16px; border-radius: 14px;
-      background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 55%, #1b5e20 100%);
-      color: #f1f8f4; box-shadow: 0 6px 16px rgba(20, 60, 30, 0.22);
+      width: 100%; padding: 16px 18px 18px; border-radius: 16px;
+      background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #1b5e20 100%);
+      color: #f4faf5; box-shadow: 0 8px 22px rgba(20, 60, 30, 0.18);
     }}
-    .speak-body-v2 {{ margin: 6px 0 0; font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .speak-body-v2 {{ margin: 8px 0 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; word-wrap: break-word; opacity: 0.98; }}
   </style>
 </head>
 <body>

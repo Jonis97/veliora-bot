@@ -1,18 +1,16 @@
 """
 Resolve a relevant image URL for an educational card topic.
 
-Priority:
-1. Wikipedia article thumbnail (no API key)
-2. Unsplash search (optional UNSPLASH_ACCESS_KEY)
-3. Pexels search (optional PEXELS_API_KEY)
-4. OpenAI DALL·E 3 (optional TOPIC_IMAGE_ENABLE_DALLE=1 — billable)
+Default (strict): only Wikipedia thumbnails that meet a minimum size — avoids weak/random stock.
+Optional: set TOPIC_IMAGE_ALLOW_STOCK=1 to also try Unsplash/Pexels (requires API keys).
+DALL·E: TOPIC_IMAGE_ENABLE_DALLE=1 (billable).
 
-If nothing succeeds, returns None — templates fall back to the styled insight card.
+If nothing succeeds, returns None — templates use the premium insight block instead.
 """
 
 import logging
 import os
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable, List, Optional, Tuple
 
 import httpx
 
@@ -32,11 +30,14 @@ class TopicImageService:
             clean = "education"
         q = clean[:100]
 
-        steps = (
-            ("wikipedia", self._wikipedia_thumbnail),
-            ("unsplash", self._unsplash_first_photo),
-            ("pexels", self._pexels_first_photo),
-        )
+        steps: List[Tuple[str, Any]] = [("wikipedia", self._wikipedia_thumbnail)]
+        if self._stock_allowed():
+            steps.extend(
+                (
+                    ("unsplash", self._unsplash_first_photo),
+                    ("pexels", self._pexels_first_photo),
+                )
+            )
         for name, step in steps:
             try:
 
@@ -72,6 +73,14 @@ class TopicImageService:
 
     def _dalle_enabled(self) -> bool:
         return os.getenv("TOPIC_IMAGE_ENABLE_DALLE", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+
+    def _stock_allowed(self) -> bool:
+        """Unsplash/Pexels are off by default to avoid generic stock photos."""
+        return os.getenv("TOPIC_IMAGE_ALLOW_STOCK", "0").strip().lower() in (
             "1",
             "true",
             "yes",
@@ -114,8 +123,10 @@ class TopicImageService:
             for _pid, page in pages.items():
                 if page.get("missing"):
                     continue
-                thumb = (page.get("thumbnail") or {}).get("source")
-                if thumb and thumb.startswith("http"):
+                th = page.get("thumbnail") or {}
+                thumb = th.get("source")
+                width = int(th.get("width") or 0)
+                if thumb and thumb.startswith("http") and (width >= 280 or width == 0):
                     return thumb
         return None
 

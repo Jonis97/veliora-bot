@@ -10,33 +10,32 @@ from bot.utils.retry import with_retry
 SYSTEM_PROMPT = """
 You write high-retention study cards that feel like a sharp post, not a textbook page.
 
-Return JSON only (no markdown, no extra keys beyond the schema), with this schema:
+Return JSON only (no markdown), with this schema:
 {
   "template": "warm_paper | kitchen_collage | influencer_card | warm_paper_v2 | kitchen_collage_v2 | influencer_card_v2 (default when unsure: warm_paper_v2)",
-  "title": "Provocative, problem-based headline: sound like a mistake people make, a risk, a trap, or a tension—not a chapter title. No neutral labels (avoid 'Introduction to…', 'Overview of…', 'Learning about…'). Use curiosity, contrast, or stakes.",
-  "subtitle": "One short hook line (max ~18 words): who this is for or what situation—still punchy, not explanatory prose.",
-  "punchline": "Single memorable line for the 'save this' moment (max ~16 words). No lecture tone. No list. Like a tweet people quote.",
-  "contrast": { "wrong": "short typical mistake or weak version (max ~20 words)", "better": "sharp fix or stronger line (max ~20 words)" },
-  "bullets": ["exactly 3 or 4 items only—each one short, scannable, one idea per line"],
-  "cta": "One punchy micro-action (max ~14 words), concrete outcome, no homework-speak"
+  "title": "Provocative, problem-based headline: mistake, risk, trap, or tension—not a chapter title.",
+  "subtitle": "One short hook line (max ~16 words).",
+  "punchline": "Single memorable save-line (max ~14 words).",
+  "contrast": { "wrong": "…", "better": "…" },
+  "vocabulary": ["4 strings ONLY in form: English word or short phrase — Ukrainian translation (Cyrillic). Example: aesthetic — естетика. No full sentences, no definitions in English."],
+  "mcq_brackets": ["3 or 4 strings: each is ONE sentence or clause with a real bracket choice using (option / option). Example: Focus on (your unique voice / copying trends) to build connections. Must use parentheses and slash. Do NOT repeat or copy vocabulary lines—different wording and task."],
+  "bullets": ["3 or 4 short supporting ideas—do not duplicate lines from vocabulary or mcq_brackets"],
+  "cta": "One punchy micro-action (max ~12 words)"
 }
 
 Title rules:
-- NEVER sound like a course unit: ban phrases like 'Understanding', 'Basics of', 'Key concepts', 'Important aspects', 'Exploring', 'An introduction to'.
-- Prefer patterns like: 'Why X backfires', 'The Y mistake in …', 'Stop doing Z when …', 'You sound less fluent when …', 'The trap: …'.
+- BAN neutral course titles: no 'Introduction to', 'Overview', 'Learning about', 'Key concepts'.
 
-Content rules:
-- Less text beats more: fewer words, higher signal.
-- Bullets: max 4 lines, each under ~22 words, one idea each. Use fragments allowed.
-- Where useful, encode contrast inside a bullet as 'Weak: … → Strong: …' or 'Don’t: … / Do: …' in one line.
-- punchline is the emotional 'save' line; contrast.wrong vs contrast.better is the visual anchor—keep both tight.
-- BAN generic motivation and filler that applies to any topic.
+When template is warm_paper_v2 (or default warm_paper_v2):
+- vocabulary[] is ONLY EN–UA pairs as specified—never full sentences.
+- mcq_brackets[] is ONLY bracket-style exercises—never vocabulary duplicates.
+- Keep total text lean: short lines, high signal.
 
-If the source is thin, infer tightly—never pad with generic advice.
+For other templates, still include vocabulary and mcq_brackets if the layout benefits; otherwise use empty arrays [].
 
-If the source only includes a YouTube URL (no transcript), infer topic from URL and still follow all rules.
+If the source only includes a YouTube URL (no transcript), infer topic and still follow rules.
 
-Output valid JSON only. Always include "contrast" with both "wrong" and "better" strings (can be short placeholders only if unavoidable).
+Output valid JSON only. Always include "contrast" with wrong and better. Use [] for vocabulary/mcq_brackets only if impossible.
 """.strip()
 
 
@@ -46,13 +45,19 @@ class AIContentService:
         self._model = model
 
     async def generate_card_content(self, source_text: str, template: Optional[str] = None) -> dict[str, Any]:
+        eff = template or DEFAULT_TEMPLATE
         user_prompt = (
             f"Source material:\n{source_text}\n\n"
-            f"Preferred template: {template or DEFAULT_TEMPLATE}.\n\n"
-            "Produce one card: provocative problem-style title, short hook subtitle, punchy punchline, "
-            "tight wrong/better contrast, 3–4 razor bullets, punchy CTA. "
-            "Optimize for 'I'd save this'—not for classroom neutrality."
+            f"Preferred template: {eff}.\n\n"
+            "Produce one premium card: provocative title, hook subtitle, punchline, contrast pair, "
+            "lean bullets, punchy CTA. "
         )
+        if eff == "warm_paper_v2":
+            user_prompt += (
+                "For warm_paper_v2 you MUST fill vocabulary (4× EN — UA only) and mcq_brackets "
+                "(3–4 bracket exercises, different content from vocabulary). "
+            )
+        user_prompt += "Optimize for save-worthiness and clarity, not textbook length."
 
         async def _generate() -> dict[str, Any]:
             response = await self._openai_client.chat.completions.create(
@@ -65,7 +70,7 @@ class AIContentService:
             )
             content = response.choices[0].message.content or "{}"
             data = json.loads(content)
-            data.setdefault("template", template or DEFAULT_TEMPLATE)
+            data.setdefault("template", eff)
             co = data.get("contrast")
             if not isinstance(co, dict):
                 data["contrast"] = {"wrong": "", "better": ""}
@@ -74,6 +79,10 @@ class AIContentService:
                     "wrong": str(co.get("wrong", "") or ""),
                     "better": str(co.get("better", "") or ""),
                 }
+            for key in ("vocabulary", "mcq_brackets"):
+                v = data.get(key)
+                if not isinstance(v, list):
+                    data[key] = []
             return data
 
         return await with_retry(_generate, attempts=3, operation_name="GPT card generation")
