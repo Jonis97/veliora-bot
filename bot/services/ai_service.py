@@ -44,7 +44,13 @@ class AIContentService:
         self._openai_client = openai_client
         self._model = model
 
-    async def generate_card_content(self, source_text: str, template: Optional[str] = None) -> dict[str, Any]:
+    async def generate_card_content(
+        self,
+        source_text: str,
+        template: Optional[str] = None,
+        *,
+        is_followup: bool = False,
+    ) -> dict[str, Any]:
         eff = template or DEFAULT_TEMPLATE
         user_prompt = (
             f"Source material:\n{source_text}\n\n"
@@ -52,6 +58,11 @@ class AIContentService:
             "Produce one premium card: provocative title, hook subtitle, punchline, contrast pair, "
             "lean bullets, punchy CTA. "
         )
+        if is_followup:
+            user_prompt += (
+                "This is a follow-up: the block labeled 'Source material' is the ONLY content you may use. "
+                "Follow the user instruction exactly; do not add facts from other topics or earlier chats. "
+            )
         if eff == "warm_paper_v2":
             user_prompt += (
                 "For warm_paper_v2 you MUST fill vocabulary (4× EN — UA only) and mcq_brackets "

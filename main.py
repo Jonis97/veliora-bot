@@ -28,6 +28,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
     await update.message.reply_text(
         "Send text, voice, or a YouTube link.\n"
+        "Your latest material becomes the active source — follow-ups (translate, simplify, another card, "
+        "change template) use it until you send something new.\n\n"
         "Default layout: warm_paper_v2. Optional tag: [template:warm_paper], [template:kitchen_collage], "
         "[template:influencer_card], [template:warm_paper_v2], "
         "[template:kitchen_collage_v2], [template:influencer_card_v2]."

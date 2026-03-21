@@ -4,6 +4,7 @@ from telegram import InputFile, Update
 from telegram.ext import ContextTypes
 
 from bot.services.pipeline_service import ContentPipelineService
+from bot.utils.active_source import NeedActiveSourceError
 from bot.utils.dedup import MessageDeduplicator
 
 
@@ -30,7 +31,7 @@ class MessageHandlerService:
         await message.reply_text("Processing your content, this can take a few seconds...")
 
         try:
-            result = await self._pipeline.process_message(context.bot, message)
+            result = await self._pipeline.process_message(context.bot, message, context.user_data)
             if result.image_bytes:
                 image_file = InputFile(result.image_bytes, filename="educard.png")
                 await message.reply_photo(
@@ -44,6 +45,12 @@ class MessageHandlerService:
                 await message.reply_text(
                     "Could not produce a card preview. Please try again in a moment."
                 )
+        except NeedActiveSourceError:
+            await message.reply_text(
+                "I don’t have any study material yet for this chat.\n\n"
+                "Send a YouTube link, a voice message, or paste text first. "
+                "Then you can ask to translate, simplify, change the template, or make another card."
+            )
         except Exception as error:  # noqa: BLE001
             LOGGER.exception("Failed to process message_id=%s: %s", message_id, error)
             await message.reply_text(

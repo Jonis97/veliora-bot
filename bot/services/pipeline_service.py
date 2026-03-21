@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, MutableMapping, Optional
 
 from telegram import Bot, Message
 
@@ -10,6 +10,13 @@ from bot.services.template_service import DEFAULT_TEMPLATE, TemplateService
 from bot.services.topic_image_service import TopicImageService
 from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService, extract_video_id
+from bot.utils.active_source import (
+    NeedActiveSourceError,
+    build_followup_prompt,
+    followup_intent,
+    load_active_source,
+    save_active_source,
+)
 from bot.utils.input_parser import parse_template_hint
 
 
@@ -24,6 +31,18 @@ class PipelineResult:
     source_type: str
     image_bytes: Optional[bytes] = None
     text_fallback: Optional[str] = None
+
+
+@dataclass
+class _ResolvedSource:
+    """What to send to the model and whether to replace stored active source."""
+
+    text_for_ai: str
+    template: Optional[str]
+    source_type: str
+    persist_new_source: bool
+    persist_body: Optional[str] = None
+    video_id: Optional[str] = None
 
 
 class ContentPipelineService:
@@ -43,14 +62,42 @@ class ContentPipelineService:
         self._screenshot_service = screenshot_service
         self._topic_image_service = topic_image_service
 
-    async def process_message(self, bot: Bot, message: Message) -> PipelineResult:
-        text_source, preferred_template, source_type = await self._extract_source(bot, message)
-        card_json = await self._ai_service.generate_card_content(text_source, preferred_template)
+    async def process_message(
+        self,
+        bot: Bot,
+        message: Message,
+        user_data: Optional[MutableMapping[str, Any]] = None,
+    ) -> PipelineResult:
+        ud: MutableMapping[str, Any] = user_data if user_data is not None else {}
+        resolved = await self._resolve_source(bot, message, ud)
+        # Persist new material before AI so retries / "try again" follow-ups use the right source.
+        if resolved.persist_new_source and resolved.persist_body:
+            save_active_source(
+                ud,
+                source_type=resolved.source_type,
+                text=resolved.persist_body,
+                video_id=resolved.video_id,
+            )
+            LOGGER.info(
+                "Active source updated: type=%s len=%s",
+                resolved.source_type,
+                len(resolved.persist_body),
+            )
+        elif not resolved.persist_new_source:
+            LOGGER.info("Using follow-up on existing active source (type=%s)", resolved.source_type)
+
+        card_json = await self._ai_service.generate_card_content(
+            resolved.text_for_ai,
+            resolved.template,
+            is_followup=not resolved.persist_new_source,
+        )
         topic = str(card_json.get("title", "education")).strip() or "education"
         image_url = await self._topic_image_service.fetch_topic_image(topic)
         card_for_render = dict(card_json)
         if image_url:
             card_for_render["image_url"] = image_url
+        preferred_template = resolved.template
+        source_type = resolved.source_type
         html = self._template_service.render_html(card_for_render, preferred_template)
         used_template = preferred_template or str(card_json.get("template", DEFAULT_TEMPLATE))
 
@@ -115,23 +162,48 @@ class ContentPipelineService:
             return text[:3997] + "..."
         return text
 
-    async def _extract_source(self, bot: Bot, message: Message) -> tuple[str, Optional[str], str]:
+    async def _resolve_source(
+        self,
+        bot: Bot,
+        message: Message,
+        user_data: MutableMapping[str, Any],
+    ) -> _ResolvedSource:
+        """Resolve text for the model and whether this message replaces the active source."""
         if message.voice:
             transcript = await self._transcription_service.transcribe_voice(bot, message.voice.file_id)
             if not transcript:
                 raise RuntimeError("Voice transcription returned empty text")
-            return transcript, None, "voice"
+            template: Optional[str] = None
+            cap = (message.caption or "").strip()
+            if cap:
+                _, template = parse_template_hint(cap)
+            return _ResolvedSource(
+                text_for_ai=transcript,
+                template=template,
+                source_type="voice",
+                persist_new_source=True,
+                persist_body=transcript,
+            )
 
-        text = (message.text or message.caption or "").strip()
-        if not text:
+        raw = (message.text or message.caption or "").strip()
+        if not raw:
             raise ValueError("Unsupported message type. Send text, a voice message, or a YouTube link.")
 
-        cleaned_text, template = parse_template_hint(text)
+        cleaned_text, template = parse_template_hint(raw)
+        active = load_active_source(user_data)
+
         video_id = extract_video_id(cleaned_text)
         if video_id:
             try:
                 transcript = await self._youtube_service.fetch_transcript(video_id)
-                return transcript, template, "youtube"
+                return _ResolvedSource(
+                    text_for_ai=transcript,
+                    template=template,
+                    source_type="youtube",
+                    persist_new_source=True,
+                    persist_body=transcript,
+                    video_id=video_id,
+                )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.warning(
                     "YouTube transcript fetch failed for video_id=%s: %s. "
@@ -140,8 +212,48 @@ class ContentPipelineService:
                     exc,
                 )
                 fallback_text = self._youtube_url_only_context(video_id, cleaned_text)
-                return fallback_text, template, "youtube"
-        return cleaned_text, template, "text"
+                return _ResolvedSource(
+                    text_for_ai=fallback_text,
+                    template=template,
+                    source_type="youtube",
+                    persist_new_source=True,
+                    persist_body=fallback_text,
+                    video_id=video_id,
+                )
+
+        if not cleaned_text.strip():
+            if template is None:
+                raise ValueError("Empty message after removing template tag. Send material or a valid request.")
+            if active is None:
+                raise NeedActiveSourceError()
+            instruction = (
+                "The user only sent a template preference. Regenerate the learning card for the same "
+                "source material using the preferred template."
+            )
+            return _ResolvedSource(
+                text_for_ai=build_followup_prompt(instruction, active),
+                template=template,
+                source_type=str(active.get("type", "text")),
+                persist_new_source=False,
+            )
+
+        if followup_intent(cleaned_text):
+            if active is None:
+                raise NeedActiveSourceError()
+            return _ResolvedSource(
+                text_for_ai=build_followup_prompt(cleaned_text, active),
+                template=template,
+                source_type=str(active.get("type", "text")),
+                persist_new_source=False,
+            )
+
+        return _ResolvedSource(
+            text_for_ai=cleaned_text,
+            template=template,
+            source_type="text",
+            persist_new_source=True,
+            persist_body=cleaned_text,
+        )
 
     @staticmethod
     def _youtube_url_only_context(video_id: str, user_link_text: str) -> str:
