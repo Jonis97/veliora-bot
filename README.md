@@ -79,4 +79,4 @@ In text messages, include an optional template tag:
 - `[template:kitchen_collage]` · `[template:kitchen_collage_v2]`
 - `[template:influencer_card]` · `[template:influencer_card_v2]`
 
-If no tag is provided, default template is `warm_paper`.
+If no tag is provided, default template is `warm_paper_v2` (v1 templates remain available via tag or AI `template` field).

@@ -6,7 +6,7 @@ from telegram import Bot, Message
 
 from bot.services.ai_service import AIContentService
 from bot.services.screenshot_service import ScreenshotService
-from bot.services.template_service import TemplateService
+from bot.services.template_service import DEFAULT_TEMPLATE, TemplateService
 from bot.services.topic_image_service import TopicImageService
 from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService, extract_video_id
@@ -52,7 +52,7 @@ class ContentPipelineService:
         if image_url:
             card_for_render["image_url"] = image_url
         html = self._template_service.render_html(card_for_render, preferred_template)
-        used_template = preferred_template or str(card_json.get("template", "warm_paper"))
+        used_template = preferred_template or str(card_json.get("template", DEFAULT_TEMPLATE))
 
         try:
             image_bytes = await self._screenshot_service.html_to_image(html)

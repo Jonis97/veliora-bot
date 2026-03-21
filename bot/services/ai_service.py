@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 from openai import AsyncOpenAI
 
+from bot.services.template_service import DEFAULT_TEMPLATE
 from bot.utils.retry import with_retry
 
 
@@ -12,7 +13,7 @@ specific, practical, and a bit surprising—not generic motivation.
 
 Return JSON only (no markdown and no extra prose), with this schema:
 {
-  "template": "warm_paper | kitchen_collage | influencer_card | warm_paper_v2 | kitchen_collage_v2 | influencer_card_v2",
+  "template": "warm_paper | kitchen_collage | influencer_card | warm_paper_v2 | kitchen_collage_v2 | influencer_card_v2 (default when unsure: warm_paper_v2)",
   "title": "short catchy headline (concrete, not vague)",
   "subtitle": "one substantive line (optionally two short clauses separated by em dash or semicolon)
     anchoring situation, level, and payoff—long enough to feel full, not a slogan",
@@ -59,7 +60,7 @@ class AIContentService:
     async def generate_card_content(self, source_text: str, template: Optional[str] = None) -> dict[str, Any]:
         user_prompt = (
             f"Source material:\n{source_text}\n\n"
-            f"Preferred template: {template or 'warm_paper'}.\n\n"
+            f"Preferred template: {template or DEFAULT_TEMPLATE}.\n\n"
             "Generate one educational card that reads visually full: five substantive bullets with "
             "examples or short explanations where useful, a meaty subtitle, and a concrete CTA. "
             "If the source is thin, responsibly expand with teacher-quality illustrations (mini-examples, "
@@ -77,7 +78,7 @@ class AIContentService:
             )
             content = response.choices[0].message.content or "{}"
             data = json.loads(content)
-            data.setdefault("template", template or "warm_paper")
+            data.setdefault("template", template or DEFAULT_TEMPLATE)
             return data
 
         return await with_retry(_generate, attempts=3, operation_name="GPT card generation")

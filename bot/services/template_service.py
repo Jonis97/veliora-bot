@@ -11,6 +11,9 @@ ALLOWED_TEMPLATES = {
     "influencer_card_v2",
 }
 
+# Default when no template tag and AI omits template: test v2 first; v1 still selectable explicitly.
+DEFAULT_TEMPLATE = "warm_paper_v2"
+
 
 def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     bullets = raw.get("bullets", [])
@@ -20,7 +23,7 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     raw_url = str(raw.get("image_url", "") or raw.get("photo", "") or "").strip()
     image_url = raw_url if raw_url.startswith(("http://", "https://")) else ""
     return {
-        "template": raw.get("template", "warm_paper"),
+        "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
         "subtitle": escape(str(raw.get("subtitle", ""))),
         "bullets": cleaned_bullets,
@@ -102,7 +105,7 @@ class TemplateService:
         normalized = _normalize_card(card)
         template_name = forced_template or normalized["template"]
         if template_name not in ALLOWED_TEMPLATES:
-            template_name = "warm_paper"
+            template_name = DEFAULT_TEMPLATE
         normalized["template"] = template_name
         if template_name == "kitchen_collage_v2":
             return self._kitchen_collage_v2_template(normalized)
