@@ -126,8 +126,12 @@ class TopicImageService:
                 th = page.get("thumbnail") or {}
                 thumb = th.get("source")
                 width = int(th.get("width") or 0)
-                if thumb and thumb.startswith("http") and (width >= 280 or width == 0):
-                    return thumb
+                if not thumb or not thumb.startswith("http"):
+                    continue
+                # Skip tiny thumbnails (poor on cards); unknown width still allowed (API quirk)
+                if 0 < width < 320:
+                    continue
+                return thumb
         return None
 
     async def _unsplash_first_photo(self, query: str) -> Optional[str]:

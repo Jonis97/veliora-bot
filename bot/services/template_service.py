@@ -1039,54 +1039,118 @@ class TemplateService:
   <style>
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
-    body {{ background: #ddd2c8; font-family: "DM Serif Display", Georgia, serif; color: #2a1f1c; -webkit-font-smoothing: antialiased; }}
+    body {{
+      background: linear-gradient(165deg, #d8cdc2 0%, #c9beb3 50%, #d2c7bc 100%);
+      font-family: "DM Serif Display", Georgia, serif;
+      color: #2a1f1c;
+      -webkit-font-smoothing: antialiased;
+    }}
     .page {{
-      width: 600px; min-height: 920px; position: relative; overflow: hidden;
-      background: #faf7f2;
+      width: 600px;
+      min-height: 920px;
+      position: relative;
+      overflow: hidden;
+      background-color: #e5d9cc;
       background-image:
-        linear-gradient(90deg, rgba(150, 130, 110, 0.06) 1px, transparent 1px),
-        linear-gradient(rgba(150, 130, 110, 0.05) 1px, transparent 1px);
-      background-size: 22px 22px, 22px 22px;
-      padding: 26px 24px 30px;
+        linear-gradient(90deg, rgba(140, 120, 100, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(140, 120, 100, 0.034) 1px, transparent 1px),
+        radial-gradient(ellipse 85% 65% at 12% 25%, rgba(255, 255, 255, 0.5) 0%, transparent 48%),
+        radial-gradient(ellipse 70% 55% at 88% 75%, rgba(235, 218, 200, 0.45) 0%, transparent 50%),
+        radial-gradient(ellipse 110% 55% at 50% -5%, rgba(255, 252, 248, 0.92) 0%, transparent 52%),
+        linear-gradient(178deg, #fdfaf5 0%, #f4ebe1 35%, #ebe1d6 70%, #e5d9cc 100%);
+      background-size:
+        24px 24px,
+        24px 24px,
+        100% 100%,
+        100% 100%,
+        100% 100%,
+        100% 100%;
+      background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+      box-shadow: inset 0 0 100px rgba(255, 250, 245, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      padding: 32px 28px 36px;
     }}
     .level-badge {{
-      position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%;
-      background: #7a1f1f; color: #fffaf3; font-size: 10px; line-height: 1.05; display: flex;
+      position: absolute; top: 18px; left: 18px; width: 50px; height: 50px; border-radius: 50%;
+      background: linear-gradient(145deg, #8b2323 0%, #6a1a1a 100%);
+      color: #fffaf3; font-size: 10px; line-height: 1.05; display: flex;
       align-items: center; justify-content: center; text-align: center; padding: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.14); z-index: 5; overflow-wrap: anywhere;
+      box-shadow: 0 6px 16px rgba(60, 20, 20, 0.25), 0 2px 4px rgba(0,0,0,0.12);
+      z-index: 5; overflow-wrap: anywhere;
     }}
-    .hdr-v2 {{ padding: 6px 56px 14px 60px; text-align: center; }}
+    .hdr-v2 {{ padding: 8px 58px 18px 62px; text-align: center; }}
     .topic-title-v2 {{
       font-family: "Caveat", cursive; font-size: 40px; line-height: 1.02; margin: 0; color: #3d2a22;
       letter-spacing: -0.02em; word-wrap: break-word; overflow-wrap: anywhere;
     }}
-    .topic-sub-v2 {{ margin: 10px auto 0; max-width: 90%; font-size: 12px; line-height: 1.5; color: #6d5c54; font-weight: 500; }}
-    .hero-media {{ margin: 16px auto 16px; width: 90%; max-width: 512px; border-radius: 18px; overflow: hidden;
-      border: 1px solid rgba(90, 65, 50, 0.18); box-shadow: 0 12px 36px rgba(35, 24, 18, 0.12); }}
-    .hero-img {{ display: block; width: 100%; height: auto; max-height: 148px; object-fit: cover; }}
-    .insight-card {{ margin: 16px auto 16px; width: 90%; max-width: 512px; min-height: 96px; padding: 20px 22px 22px 24px;
-      border-radius: 20px; position: relative; overflow: hidden; }}
+    .topic-sub-v2 {{ margin: 12px auto 0; max-width: 88%; font-size: 12px; line-height: 1.55; color: #6d5c54; font-weight: 500; }}
+    .hero-media {{
+      margin: 18px auto 18px;
+      width: 88%;
+      max-width: 504px;
+      height: 156px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(70, 50, 38, 0.1);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.55) inset,
+        0 18px 48px rgba(35, 24, 18, 0.12),
+        0 6px 16px rgba(35, 24, 18, 0.07);
+    }}
+    .hero-img {{
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 156px;
+      object-fit: cover;
+      object-position: center;
+    }}
+    .insight-card {{
+      margin: 18px auto 18px;
+      width: 88%;
+      max-width: 504px;
+      min-height: 100px;
+      padding: 22px 24px 24px 26px;
+      border-radius: 22px;
+      position: relative;
+      overflow: hidden;
+      transform: rotate(-0.4deg);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 14px 40px rgba(40, 28, 20, 0.09),
+        0 5px 14px rgba(40, 28, 20, 0.05);
+    }}
     .insight-card.insight-warm_v2 {{
-      background: linear-gradient(165deg, #ffffff 0%, #f5f0e8 55%, #faf6ef 100%);
-      border: 1px solid rgba(110, 85, 65, 0.16);
-      box-shadow: 0 12px 40px rgba(40, 28, 20, 0.07);
+      background: linear-gradient(168deg, #fffffe 0%, #f7f0e8 50%, #f0e8de 100%);
+      border: 1px solid rgba(100, 78, 58, 0.14);
     }}
     .insight-card.insight-warm_v2.insight-premium {{
-      background: linear-gradient(155deg, #fffdf9 0%, #f3ebe4 45%, #ebe3d8 100%);
-      border: 1px solid rgba(90, 70, 55, 0.22);
-      box-shadow: 0 16px 48px rgba(35, 26, 18, 0.1), inset 0 1px 0 rgba(255,255,255,0.85);
+      background: linear-gradient(158deg, #fffefb 0%, #f5ebe3 42%, #ebe2d8 100%);
+      border: 1px solid rgba(85, 65, 50, 0.18);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.75) inset,
+        0 20px 52px rgba(35, 26, 18, 0.1),
+        0 6px 18px rgba(35, 26, 18, 0.06);
     }}
     .insight-kicker {{ font-family: "Caveat", cursive; font-size: 22px; margin: 0 0 10px; color: #7a4a3a; letter-spacing: 0.02em; }}
     .insight-body {{ margin: 0; font-size: 15px; font-weight: 600; line-height: 1.32; overflow-wrap: anywhere; word-wrap: break-word; color: #241a16; }}
     .insight-accent {{ position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 2px;
       background: linear-gradient(180deg, #b71c1c, #5d4037); }}
     .wp2-strip {{
-      display: flex; margin: 0 auto 16px; width: 90%; max-width: 512px; border-radius: 16px; overflow: hidden;
-      box-shadow: 0 10px 28px rgba(30, 20, 15, 0.11); border: 1.5px solid rgba(42, 31, 26, 0.85);
+      display: flex;
+      margin: 0 auto 18px;
+      width: 88%;
+      max-width: 504px;
+      border-radius: 18px;
+      overflow: hidden;
+      transform: rotate(0.35deg);
+      box-shadow:
+        0 12px 32px rgba(30, 20, 15, 0.1),
+        0 4px 10px rgba(30, 20, 15, 0.05);
+      border: 1px solid rgba(42, 31, 26, 0.12);
     }}
-    .wp2-bad {{ flex: 1; background: linear-gradient(180deg, #ffebee 0%, #ffcdd2 100%); padding: 12px 12px 14px; }}
-    .wp2-good {{ flex: 1; background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%); padding: 12px 12px 14px;
-      border-left: 2px dashed rgba(0,0,0,0.12); }}
+    .wp2-bad {{ flex: 1; background: linear-gradient(175deg, #fff5f5 0%, #ffcdd2 100%); padding: 14px 14px 16px; }}
+    .wp2-good {{ flex: 1; background: linear-gradient(175deg, #f5fff7 0%, #c8e6c9 100%); padding: 14px 14px 16px;
+      border-left: 2px dashed rgba(0,0,0,0.1); }}
     .wp2-tag {{ font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
       color: #b71c1c; display: block; margin-bottom: 6px; }}
     .wp2-good .wp2-tag {{ color: #1b5e20; }}
@@ -1094,20 +1158,38 @@ class TemplateService:
     .mcq-v2.key-hit, .vr-v2.key-hit {{ border-left: 4px solid #c62828; padding-left: 10px; margin-left: -2px; background: rgba(255, 245, 240, 0.65); border-radius: 0 10px 10px 0; }}
     .mcq-gap {{ font-weight: 600; color: #4a3728; }}
     .mcq-or {{ color: #b71c1c; font-weight: 700; }}
-    .cols-v2 {{ display: flex; gap: 14px; align-items: stretch; margin-bottom: 16px; }}
+    .cols-v2 {{ display: flex; gap: 18px; align-items: stretch; margin-bottom: 20px; }}
     .panel-v2 {{
-      flex: 1; min-width: 0; padding: 16px 14px 18px; border-radius: 16px; position: relative;
-      box-shadow: 0 4px 20px rgba(45, 35, 28, 0.06);
+      flex: 1;
+      min-width: 0;
+      padding: 18px 16px 20px;
+      border-radius: 18px;
+      position: relative;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 14px 36px rgba(45, 35, 28, 0.09),
+        0 5px 12px rgba(45, 35, 28, 0.04);
     }}
-    .pv2-a {{ background: #fffefb; border: 1px solid rgba(200, 175, 150, 0.28); transform: rotate(-0.35deg); }}
-    .pv2-b {{ background: #fffcf7; border: 1px solid rgba(185, 160, 135, 0.26); transform: rotate(0.3deg); }}
-    .pin-v2 {{ position: absolute; top: -5px; right: 16px; width: 13px; height: 13px; border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #ff7961, #b71c1c); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+    .pv2-a {{
+      background: linear-gradient(168deg, #fffcf9 0%, #faf5ee 100%);
+      border: 1px solid rgba(200, 175, 150, 0.2);
+      transform: rotate(-1.05deg);
+    }}
+    .pv2-b {{
+      background: linear-gradient(168deg, #fffef9 0%, #f8f2ea 100%);
+      border: 1px solid rgba(190, 165, 140, 0.2);
+      transform: rotate(0.95deg);
+    }}
+    .pin-v2 {{
+      position: absolute; top: -6px; right: 18px; width: 14px; height: 14px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff8a80, #c62828);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.22);
+    }}
     .label-v2 {{
       font-family: "DM Serif Display", Georgia, serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em;
       text-transform: uppercase; color: #5c4a42; margin: 0 0 4px;
     }}
-    .hint-v2 {{ margin: 0 0 12px; font-size: 9px; letter-spacing: 0.06em; color: rgba(90, 72, 62, 0.55); font-weight: 500; }}
+    .hint-v2 {{ margin: 0 0 14px; font-size: 9px; letter-spacing: 0.07em; color: rgba(90, 72, 62, 0.48); font-weight: 500; }}
     .label-v2.light {{ color: #e8f5e9; }}
     .body-v2 {{ font-size: 11.5px; line-height: 1.48; }}
     .body-v2-vocab .vr-v2 {{ margin-bottom: 10px; }}
@@ -1122,11 +1204,18 @@ class TemplateService:
     .nv2 {{ font-weight: 700; color: #8b4513; margin-right: 5px; }}
     .muted {{ color: rgba(47, 36, 32, 0.42); font-style: italic; }}
     .speak-v2 {{
-      width: 100%; padding: 16px 18px 18px; border-radius: 16px;
-      background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #1b5e20 100%);
-      color: #f4faf5; box-shadow: 0 8px 22px rgba(20, 60, 30, 0.18);
+      width: 100%;
+      padding: 18px 20px 20px;
+      border-radius: 18px;
+      transform: rotate(-0.35deg);
+      background: linear-gradient(138deg, #1b5e20 0%, #2e7d32 48%, #1b5e20 100%);
+      color: #f6fcf7;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.12) inset,
+        0 12px 32px rgba(15, 50, 25, 0.22),
+        0 4px 12px rgba(15, 50, 25, 0.12);
     }}
-    .speak-body-v2 {{ margin: 8px 0 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; word-wrap: break-word; opacity: 0.98; }}
+    .speak-body-v2 {{ margin: 10px 0 0; font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; word-wrap: break-word; opacity: 0.97; }}
   </style>
 </head>
 <body>
@@ -1192,59 +1281,122 @@ class TemplateService:
   <style>
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
-    body {{ background: #c9b99a; font-family: "DM Serif Display", Georgia, serif; color: #2c221e; -webkit-font-smoothing: antialiased; }}
-    .kc2-strip {{
-      display: flex; margin: 0 auto 12px; width: 94%; border-radius: 12px; overflow: hidden;
-      box-shadow: 0 8px 20px rgba(30, 20, 15, 0.12); border: 2px solid #3e2723;
+    body {{
+      background: linear-gradient(168deg, #d4c8ba 0%, #bfb3a4 48%, #c9beb0 100%);
+      font-family: "DM Serif Display", Georgia, serif; color: #2c221e; -webkit-font-smoothing: antialiased;
     }}
-    .kc2-bad {{ flex: 1; background: #ffcdd2; padding: 10px 12px; }}
-    .kc2-good {{ flex: 1; background: #c8e6c9; padding: 10px 12px; border-left: 2px dashed rgba(0,0,0,0.1); }}
+    .kc2-strip {{
+      display: flex; margin: 0 auto 16px; width: 90%; max-width: 520px; border-radius: 16px; overflow: hidden;
+      transform: rotate(-0.45deg);
+      box-shadow: 0 12px 28px rgba(30, 20, 15, 0.1), 0 4px 10px rgba(30, 20, 15, 0.06);
+      border: 1px solid rgba(62, 39, 35, 0.2);
+    }}
+    .kc2-bad {{ flex: 1; background: linear-gradient(175deg, #fff5f5 0%, #ffcdd2 100%); padding: 12px 14px; }}
+    .kc2-good {{ flex: 1; background: linear-gradient(175deg, #f3fff5 0%, #c8e6c9 100%); padding: 12px 14px; border-left: 2px dashed rgba(0,0,0,0.08); }}
     .kc2-tag {{ font-size: 8.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #b71c1c; display: block; margin-bottom: 4px; }}
     .kc2-good .kc2-tag {{ color: #1b5e20; }}
     .kc2-txt {{ margin: 0; font-size: 11.5px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }}
-    .kpanel-v2.kfocus {{ border: 2px solid #c62828; box-shadow: 0 6px 18px rgba(198, 40, 40, 0.15); }}
+    .kpanel-v2.kfocus {{
+      border: 2px solid #c62828;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 10px 28px rgba(198, 40, 40, 0.18),
+        0 4px 12px rgba(198, 40, 40, 0.1);
+    }}
     .page {{
       width: 600px; min-height: 920px; position: relative;
-      background: #fdfaf5;
-      background-image: linear-gradient(0deg, rgba(235, 225, 210, 0.5) 1px, transparent 1px);
-      background-size: 100% 26px;
-      padding: 20px 18px 24px;
       overflow: hidden;
+      background-color: #efe6dc;
+      background-image:
+        linear-gradient(90deg, rgba(130, 110, 90, 0.038) 1px, transparent 1px),
+        linear-gradient(rgba(130, 110, 90, 0.032) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(235, 225, 210, 0.42) 1px, transparent 1px),
+        radial-gradient(ellipse 90% 60% at 20% 15%, rgba(255, 255, 255, 0.55) 0%, transparent 45%),
+        radial-gradient(ellipse 70% 55% at 85% 80%, rgba(230, 210, 190, 0.4) 0%, transparent 48%),
+        linear-gradient(175deg, #fdfaf5 0%, #f2e8dc 45%, #e8dfd2 100%);
+      background-size: 22px 22px, 22px 22px, 100% 26px, 100% 100%, 100% 100%, 100% 100%;
+      background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+      box-shadow: inset 0 0 80px rgba(255, 248, 240, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      padding: 28px 22px 30px;
     }}
     .level-badge {{
-      position: absolute; top: 14px; left: 14px; width: 48px; height: 48px; border-radius: 50%;
-      background: #7a1f1f; color: #fffaf3; font-size: 10px; display: flex; align-items: center;
-      justify-content: center; text-align: center; padding: 4px; box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+      position: absolute; top: 16px; left: 16px; width: 50px; height: 50px; border-radius: 50%;
+      background: linear-gradient(145deg, #8b2323 0%, #6a1a1a 100%);
+      color: #fffaf3; font-size: 10px; display: flex; align-items: center;
+      justify-content: center; text-align: center; padding: 4px;
+      box-shadow: 0 6px 16px rgba(60, 20, 20, 0.22), 0 2px 4px rgba(0,0,0,0.1);
       z-index: 5; overflow-wrap: anywhere; line-height: 1.05;
     }}
-    .khdr-v2 {{ padding: 4px 54px 12px 58px; text-align: center; }}
+    .khdr-v2 {{ padding: 6px 56px 16px 60px; text-align: center; }}
     .ktop-v2 {{ font-family: "Caveat", cursive; font-size: 38px; line-height: 1.05; margin: 0; color: #3d2a22;
       word-wrap: break-word; overflow-wrap: anywhere; }}
-    .ksub-v2 {{ margin: 8px auto 0; max-width: 94%; font-size: 12.5px; line-height: 1.45; color: #5a4a42; }}
-    .hero-media {{ margin: 12px auto 14px; width: 94%; border-radius: 14px; overflow: hidden;
-      border: 1px solid rgba(130, 100, 75, 0.25); box-shadow: 0 6px 20px rgba(40, 30, 22, 0.1); }}
-    .hero-img {{ display: block; width: 100%; height: auto; max-height: 136px; object-fit: cover; }}
-    .insight-card {{ margin: 12px auto 14px; width: 94%; min-height: 90px; padding: 14px 16px 16px 18px;
-      border-radius: 14px; position: relative; overflow: hidden; }}
+    .ksub-v2 {{ margin: 10px auto 0; max-width: 90%; font-size: 12.5px; line-height: 1.5; color: #5a4a42; }}
+    .hero-media {{
+      margin: 16px auto 16px;
+      width: 90%;
+      max-width: 520px;
+      height: 148px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(110, 85, 65, 0.14);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 16px 40px rgba(40, 30, 22, 0.11),
+        0 5px 14px rgba(40, 30, 22, 0.06);
+    }}
+    .hero-img {{
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 148px;
+      object-fit: cover;
+      object-position: center;
+    }}
+    .insight-card {{
+      margin: 16px auto 16px;
+      width: 90%;
+      max-width: 520px;
+      min-height: 94px;
+      padding: 18px 18px 18px 20px;
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      transform: rotate(-0.5deg);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 12px 32px rgba(45, 32, 24, 0.09),
+        0 4px 12px rgba(45, 32, 24, 0.05);
+    }}
     .insight-card.insight-kitchen_v2 {{
-      background: linear-gradient(165deg, #fff 0%, #f5efe6 100%);
-      border: 1px solid rgba(150, 120, 90, 0.28);
-      box-shadow: 0 8px 22px rgba(45, 32, 24, 0.08);
+      background: linear-gradient(168deg, #fffffe 0%, #f5efe6 55%, #ebe3d8 100%);
+      border: 1px solid rgba(150, 120, 90, 0.22);
     }}
     .insight-kicker {{ font-family: "Caveat", cursive; font-size: 20px; margin: 0 0 6px; color: #8b4513; }}
     .insight-body {{ margin: 0; font-size: 12.5px; line-height: 1.48; overflow-wrap: anywhere; word-wrap: break-word; }}
     .insight-accent {{ position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px;
       background: linear-gradient(180deg, #bf360c, #4e342e); }}
-    .kstack-v2 {{ display: flex; flex-direction: column; gap: 10px; }}
+    .kstack-v2 {{ display: flex; flex-direction: column; gap: 14px; }}
     .kpanel-v2 {{
-      position: relative; padding: 12px 14px 14px 44px; border-radius: 12px;
-      background: #fffdf9; border: 1px solid rgba(190, 165, 135, 0.35);
-      box-shadow: 0 4px 14px rgba(45, 35, 28, 0.06);
+      position: relative;
+      padding: 14px 16px 16px 46px;
+      border-radius: 16px;
+      background: linear-gradient(168deg, #fffefb 0%, #faf5ee 100%);
+      border: 1px solid rgba(190, 165, 135, 0.28);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.75) inset,
+        0 12px 28px rgba(45, 35, 28, 0.08),
+        0 4px 10px rgba(45, 35, 28, 0.04);
     }}
+    .kpanel-v2:nth-of-type(odd) {{ transform: rotate(-0.85deg); }}
+    .kpanel-v2:nth-of-type(even) {{ transform: rotate(0.75deg); }}
     .kspeak-v2 {{
-      background: linear-gradient(125deg, #4e342e 0%, #3e2723 100%);
-      border: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 6px 18px rgba(30, 20, 15, 0.2);
+      background: linear-gradient(128deg, #5d4037 0%, #3e2723 100%);
+      border: 1px solid rgba(0,0,0,0.08);
+      transform: rotate(-0.4deg) !important;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 14px 32px rgba(20, 14, 10, 0.22),
+        0 5px 12px rgba(20, 14, 10, 0.12);
     }}
     .knum-v2 {{
       position: absolute; left: 12px; top: 12px; width: 24px; height: 24px; border-radius: 50%;
@@ -1337,71 +1489,130 @@ class TemplateService:
   <style>
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
-    body {{ background: #121218; font-family: "DM Serif Display", Georgia, serif; color: #2a2420; -webkit-font-smoothing: antialiased; }}
-    .inf2-strip {{
-      display: flex; margin: 0 auto 12px; width: 94%; border-radius: 16px; overflow: hidden;
-      box-shadow: 0 10px 28px rgba(20, 14, 10, 0.18); border: 2px solid #1a1a1a; z-index: 1; position: relative;
+    body {{
+      background: linear-gradient(165deg, #3d3832 0%, #1e1e26 55%, #12121a 100%);
+      font-family: "DM Serif Display", Georgia, serif; color: #2a2420; -webkit-font-smoothing: antialiased;
     }}
-    .inf2-bad {{ flex: 1; background: linear-gradient(180deg, #ffcdd2, #ef9a9a); padding: 12px 14px; }}
-    .inf2-good {{ flex: 1; background: linear-gradient(180deg, #c8e6c9, #a5d6a7); padding: 12px 14px; border-left: 2px dashed rgba(0,0,0,0.12); }}
+    .inf2-strip {{
+      display: flex; margin: 0 auto 16px; width: 90%; max-width: 520px; border-radius: 18px; overflow: hidden;
+      transform: rotate(0.4deg);
+      box-shadow: 0 14px 36px rgba(20, 14, 10, 0.2), 0 4px 12px rgba(20, 14, 10, 0.1);
+      border: 1px solid rgba(26, 26, 26, 0.35); z-index: 1; position: relative;
+    }}
+    .inf2-bad {{ flex: 1; background: linear-gradient(175deg, #fff5f5 0%, #ffcdd2 100%); padding: 14px 16px; }}
+    .inf2-good {{ flex: 1; background: linear-gradient(175deg, #f1fff4 0%, #c8e6c9 100%); padding: 14px 16px; border-left: 2px dashed rgba(0,0,0,0.1); }}
     .inf2-tag {{ font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #b71c1c; display: block; margin-bottom: 5px; }}
     .inf2-good .inf2-tag {{ color: #1b5e20; }}
     .inf2-txt {{ margin: 0; font-size: 12px; line-height: 1.38; font-weight: 700; color: #0d0d0d; overflow-wrap: anywhere; }}
-    .imod-star {{ border: 2px solid #c62828 !important; box-shadow: 0 8px 22px rgba(198, 40, 40, 0.18) !important; }}
+    .imod-star {{
+      border: 2px solid #c62828 !important;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.45) inset,
+        0 12px 30px rgba(198, 40, 40, 0.2) !important,
+        0 4px 12px rgba(198, 40, 40, 0.12) !important;
+    }}
     .page {{
       width: 600px; min-height: 920px; position: relative;
-      background: linear-gradient(168deg, #fefbf6 0%, #f3ebe3 38%, #e8ddd4 100%);
-      padding: 20px 16px 24px;
+      background-color: #ebe3d9;
+      background-image:
+        linear-gradient(90deg, rgba(120, 100, 85, 0.035) 1px, transparent 1px),
+        linear-gradient(rgba(120, 100, 85, 0.03) 1px, transparent 1px),
+        linear-gradient(168deg, #fefbf6 0%, #f3ebe3 38%, #e8ddd4 100%);
+      background-size: 24px 24px, 24px 24px, 100% 100%;
+      padding: 28px 20px 30px;
       overflow: hidden;
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.28),
+        inset 0 0 90px rgba(255, 250, 245, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
     }}
     .page::before {{
       content: ""; position: absolute; inset: 0; pointer-events: none;
-      background: radial-gradient(ellipse 80% 50% at 100% 0%, rgba(255, 140, 100, 0.14) 0%, transparent 50%),
-                  radial-gradient(ellipse 70% 45% at 0% 100%, rgba(80, 120, 200, 0.1) 0%, transparent 45%);
+      background:
+        radial-gradient(ellipse 80% 50% at 100% 0%, rgba(255, 140, 100, 0.12) 0%, transparent 52%),
+        radial-gradient(ellipse 70% 45% at 0% 100%, rgba(80, 120, 200, 0.09) 0%, transparent 48%);
     }}
     .level-badge {{
-      position: absolute; top: 14px; left: 14px; width: 48px; height: 48px; border-radius: 50%;
-      background: #1a1a1a; color: #faf6f0; font-size: 10px; display: flex; align-items: center;
-      justify-content: center; text-align: center; padding: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      position: absolute; top: 16px; left: 16px; width: 50px; height: 50px; border-radius: 50%;
+      background: linear-gradient(145deg, #2a2a30 0%, #121218 100%);
+      color: #faf6f0; font-size: 10px; display: flex; align-items: center;
+      justify-content: center; text-align: center; padding: 4px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2);
       z-index: 5; overflow-wrap: anywhere; line-height: 1.05;
     }}
-    .ihdr-v2 {{ padding: 6px 52px 14px 56px; text-align: center; position: relative; z-index: 1; }}
+    .ihdr-v2 {{ padding: 8px 54px 18px 58px; text-align: center; position: relative; z-index: 1; }}
     .ititle-v2 {{
       font-family: "Caveat", cursive; font-size: 42px; line-height: 1.02; margin: 0; color: #1f1612;
       letter-spacing: -0.02em; word-wrap: break-word; overflow-wrap: anywhere;
     }}
-    .isub-v2 {{ margin: 8px auto 0; max-width: 94%; font-size: 12.5px; line-height: 1.45; color: #4a3f38; }}
+    .isub-v2 {{ margin: 10px auto 0; max-width: 90%; font-size: 12.5px; line-height: 1.5; color: #4a3f38; }}
     .hero-media {{
-      margin: 12px auto 14px; width: 94%; border-radius: 18px; overflow: hidden;
-      border: 1px solid rgba(40, 30, 25, 0.15); box-shadow: 0 10px 32px rgba(25, 18, 14, 0.15);
+      margin: 16px auto 16px;
+      width: 90%;
+      max-width: 520px;
+      height: 156px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(40, 30, 25, 0.12);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.55) inset,
+        0 18px 48px rgba(25, 18, 14, 0.14),
+        0 6px 16px rgba(25, 18, 14, 0.08);
       position: relative; z-index: 1;
     }}
-    .hero-img {{ display: block; width: 100%; height: auto; max-height: 148px; object-fit: cover; }}
+    .hero-img {{
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 156px;
+      object-fit: cover;
+      object-position: center;
+    }}
     .insight-card {{
-      margin: 12px auto 14px; width: 94%; min-height: 96px; padding: 16px 18px 18px 22px;
-      border-radius: 18px; position: relative; z-index: 1; overflow: hidden;
+      margin: 16px auto 16px;
+      width: 90%;
+      max-width: 520px;
+      min-height: 100px;
+      padding: 18px 20px 20px 24px;
+      border-radius: 20px;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      transform: rotate(-0.55deg);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 14px 40px rgba(40, 30, 24, 0.1),
+        0 5px 14px rgba(40, 30, 24, 0.06);
     }}
     .insight-card.insight-influencer_v2 {{
-      background: linear-gradient(145deg, rgba(255,255,255,0.97) 0%, #faf6f1 100%);
-      border: 1px solid rgba(180, 140, 110, 0.28);
-      box-shadow: 0 12px 32px rgba(40, 30, 24, 0.1);
+      background: linear-gradient(148deg, rgba(255,255,255,0.98) 0%, #faf6f1 50%, #f2ebe4 100%);
+      border: 1px solid rgba(180, 140, 110, 0.22);
     }}
     .insight-kicker {{ font-family: "Caveat", cursive; font-size: 22px; margin: 0 0 8px; color: #c62828; }}
     .insight-body {{ margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; word-wrap: break-word; }}
     .insight-accent {{ position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 2px;
       background: linear-gradient(180deg, #0d47a1, #6a1b9a, #c62828); }}
     .igrid-v2 {{
-      display: flex; flex-direction: column; gap: 10px; position: relative; z-index: 1;
+      display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1;
     }}
-    .irow-v2 {{ display: flex; gap: 10px; align-items: stretch; }}
+    .irow-v2 {{ display: flex; gap: 14px; align-items: stretch; }}
     .imod-half {{ flex: 1; min-width: 0; }}
     .imod-v2 {{
-      padding: 12px 14px 14px; border-radius: 14px;
-      background: rgba(255, 253, 250, 0.95);
-      border: 1px solid rgba(200, 175, 150, 0.35);
-      box-shadow: 0 6px 18px rgba(35, 26, 20, 0.07);
+      padding: 14px 16px 16px;
+      border-radius: 16px;
+      background: linear-gradient(168deg, #fffefb 0%, #faf6f0 100%);
+      border: 1px solid rgba(200, 175, 150, 0.28);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.75) inset,
+        0 12px 28px rgba(35, 26, 20, 0.08),
+        0 4px 10px rgba(35, 26, 20, 0.04);
     }}
-    .imod-write {{ border-left: 4px solid #4527a0; }}
+    .imod-v2:nth-of-type(odd) {{ transform: rotate(-0.9deg); }}
+    .imod-v2:nth-of-type(even) {{ transform: rotate(0.7deg); }}
+    .imod-write {{
+      border-left: 4px solid #4527a0;
+      transform: rotate(-0.35deg) !important;
+    }}
     .imod-bubble {{ border-left: 4px solid #1565c0; }}
     .ilab-v2 {{
       margin: 0 0 6px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
