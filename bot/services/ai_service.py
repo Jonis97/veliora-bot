@@ -8,47 +8,35 @@ from bot.utils.retry import with_retry
 
 
 SYSTEM_PROMPT = """
-You are an expert teacher and learning designer who writes cards people save because they feel
-specific, practical, and a bit surprising—not generic motivation.
+You write high-retention study cards that feel like a sharp post, not a textbook page.
 
-Return JSON only (no markdown and no extra prose), with this schema:
+Return JSON only (no markdown, no extra keys beyond the schema), with this schema:
 {
   "template": "warm_paper | kitchen_collage | influencer_card | warm_paper_v2 | kitchen_collage_v2 | influencer_card_v2 (default when unsure: warm_paper_v2)",
-  "title": "short catchy headline (concrete, not vague)",
-  "subtitle": "one substantive line (optionally two short clauses separated by em dash or semicolon)
-    anchoring situation, level, and payoff—long enough to feel full, not a slogan",
-  "bullets": ["exactly 5 items unless the topic is impossibly narrow"],
-  "cta": "one micro-action the learner can do in under 2 minutes with a clear outcome"
+  "title": "Provocative, problem-based headline: sound like a mistake people make, a risk, a trap, or a tension—not a chapter title. No neutral labels (avoid 'Introduction to…', 'Overview of…', 'Learning about…'). Use curiosity, contrast, or stakes.",
+  "subtitle": "One short hook line (max ~18 words): who this is for or what situation—still punchy, not explanatory prose.",
+  "punchline": "Single memorable line for the 'save this' moment (max ~16 words). No lecture tone. No list. Like a tweet people quote.",
+  "contrast": { "wrong": "short typical mistake or weak version (max ~20 words)", "better": "sharp fix or stronger line (max ~20 words)" },
+  "bullets": ["exactly 3 or 4 items only—each one short, scannable, one idea per line"],
+  "cta": "One punchy micro-action (max ~14 words), concrete outcome, no homework-speak"
 }
 
-Voice and quality rules:
-- BAN platitudes and generic advice: no "practice more", "stay consistent", "believe in yourself",
-  "communication is important", "immerse yourself", or filler that could apply to any topic.
-- Every bullet must include at least one of: a named pattern/rule, a contrast (before/after or
-  do/don't), a concrete example phrase (short), a common mistake + fix, a memorable rule or
-  mnemonic, or a precise distinction (when to use A vs B).
-- Include at least ONE "save-worthy" insight: slightly unexpected, non-obvious, or counter-intuitive
-  for a learner at this level—but still accurate and safe.
-- Prefer specificity over breadth: numbers, short quotes, mini-scripts, or checklist-style items.
-- Subtitle should signal WHO/WHEN/WHY this matters (e.g. meeting, exam, chat, writing), not a motto.
-- CTA must be one concrete action: "Say X instead of Y in your next message", "Write one sentence
-  using [pattern]", "Find one example of [X] in today's input"—never vague "review" or "keep going".
+Title rules:
+- NEVER sound like a course unit: ban phrases like 'Understanding', 'Basics of', 'Key concepts', 'Important aspects', 'Exploring', 'An introduction to'.
+- Prefer patterns like: 'Why X backfires', 'The Y mistake in …', 'Stop doing Z when …', 'You sound less fluent when …', 'The trap: …'.
 
-Density and visual fullness (the card must feel “full” on screen, not sparse):
-- Always output exactly 5 bullets unless the domain truly cannot support five distinct points.
-- If the source material is short, thin, or vague, EXPAND pedagogically: add brief explanations,
-  contrasting examples in parentheses, or “e.g. …” snippets—never generic filler, never repetition
-  of the title.
-- Each bullet should be a **rich line**: aim for roughly 18–45 words when helpful—combine a rule
-  or claim with a micro-example, contrast, or one-line “why it matters” so lines wrap naturally
-  in the layout.
-- Subtitle and CTA should also carry substance (not single short phrases); avoid leaving large
-  conceptual gaps between title and bullets.
+Content rules:
+- Less text beats more: fewer words, higher signal.
+- Bullets: max 4 lines, each under ~22 words, one idea each. Use fragments allowed.
+- Where useful, encode contrast inside a bullet as 'Weak: … → Strong: …' or 'Don’t: … / Do: …' in one line.
+- punchline is the emotional 'save' line; contrast.wrong vs contrast.better is the visual anchor—keep both tight.
+- BAN generic motivation and filler that applies to any topic.
 
-If the source only includes a YouTube URL (no transcript), infer the likely topic from the URL
-and video ID and still produce a useful educational card following the same specificity rules.
+If the source is thin, infer tightly—never pad with generic advice.
 
-Output valid JSON only.
+If the source only includes a YouTube URL (no transcript), infer topic from URL and still follow all rules.
+
+Output valid JSON only. Always include "contrast" with both "wrong" and "better" strings (can be short placeholders only if unavoidable).
 """.strip()
 
 
@@ -61,10 +49,9 @@ class AIContentService:
         user_prompt = (
             f"Source material:\n{source_text}\n\n"
             f"Preferred template: {template or DEFAULT_TEMPLATE}.\n\n"
-            "Generate one educational card that reads visually full: five substantive bullets with "
-            "examples or short explanations where useful, a meaty subtitle, and a concrete CTA. "
-            "If the source is thin, responsibly expand with teacher-quality illustrations (mini-examples, "
-            "contrasts, quick explanations)—not vague motivation. Keep one surprising-but-true angle."
+            "Produce one card: provocative problem-style title, short hook subtitle, punchy punchline, "
+            "tight wrong/better contrast, 3–4 razor bullets, punchy CTA. "
+            "Optimize for 'I'd save this'—not for classroom neutrality."
         )
 
         async def _generate() -> dict[str, Any]:
@@ -79,6 +66,14 @@ class AIContentService:
             content = response.choices[0].message.content or "{}"
             data = json.loads(content)
             data.setdefault("template", template or DEFAULT_TEMPLATE)
+            co = data.get("contrast")
+            if not isinstance(co, dict):
+                data["contrast"] = {"wrong": "", "better": ""}
+            else:
+                data["contrast"] = {
+                    "wrong": str(co.get("wrong", "") or ""),
+                    "better": str(co.get("better", "") or ""),
+                }
             return data
 
         return await with_retry(_generate, attempts=3, operation_name="GPT card generation")

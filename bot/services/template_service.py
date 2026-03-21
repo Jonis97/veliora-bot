@@ -19,9 +19,17 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     bullets = raw.get("bullets", [])
     if not isinstance(bullets, list):
         bullets = []
-    cleaned_bullets = [escape(str(item)) for item in bullets[:5] if str(item).strip()]
+    # Short, sharp points (AI targets 3–4; cap at 4 for layout)
+    cleaned_bullets = [escape(str(item)) for item in bullets[:4] if str(item).strip()]
     raw_url = str(raw.get("image_url", "") or raw.get("photo", "") or "").strip()
     image_url = raw_url if raw_url.startswith(("http://", "https://")) else ""
+    pl_raw = str(raw.get("punchline", "") or raw.get("takeaway", "") or "").strip()
+    punchline = escape(pl_raw[:220]) if pl_raw else ""
+    contrast = raw.get("contrast")
+    cw = cb = ""
+    if isinstance(contrast, dict):
+        cw = escape(str(contrast.get("wrong", "") or contrast.get("weak", "")).strip()[:220])
+        cb = escape(str(contrast.get("better", "") or contrast.get("strong", "")).strip()[:220])
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
@@ -29,24 +37,27 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "bullets": cleaned_bullets,
         "cta": escape(str(raw.get("cta", "Try this today."))),
         "image_url": image_url,
+        "punchline": punchline,
+        "contrast_wrong": cw,
+        "contrast_better": cb,
     }
 
 
 def _build_takeaway_text(card: dict[str, Any]) -> str:
-    """Primary line for insight card when no photo is available."""
+    """Punchy one-liner for insight card when no photo (prefer AI punchline)."""
+    pl = str(card.get("punchline", "")).strip()
+    if pl:
+        return pl
     bullets = card.get("bullets") or []
     if isinstance(bullets, list) and bullets:
         return str(bullets[0])
     sub = str(card.get("subtitle", "")).strip()
     if sub:
-        return sub
+        return sub[:160] + ("…" if len(sub) > 160 else "")
     cta = str(card.get("cta", "")).strip()
     if cta:
-        return cta
-    return (
-        "Pick one term from the card and use it in a new sentence within the next hour—"
-        "same context you’ll face in real life (message, email, or aloud)."
-    )
+        return cta[:160] + ("…" if len(cta) > 160 else "")
+    return "One fix beats a page of rules."
 
 
 def _hero_media_block(card: dict[str, Any], variant: str) -> str:
@@ -64,11 +75,37 @@ def _hero_media_block(card: dict[str, Any], variant: str) -> str:
         )
     takeaway = _build_takeaway_text(card)
     return (
-        f'<aside class="insight-card insight-{variant}" aria-label="Key takeaway">'
-        f'<div class="insight-kicker">Key takeaway</div>'
+        f'<aside class="insight-card insight-{variant}" aria-label="Save this">'
+        f'<div class="insight-kicker">Save this</div>'
         f'<p class="insight-body">{takeaway}</p>'
         f'<div class="insight-accent" aria-hidden="true"></div>'
         f"</aside>"
+    )
+
+
+def _contrast_strip_html(card: dict[str, Any], prefix: str) -> str:
+    """High-contrast wrong vs better block — main visual anchor when present."""
+    w = card.get("contrast_wrong", "")
+    b = card.get("contrast_better", "")
+    if not w and not b:
+        return ""
+    bad_blk = ""
+    good_blk = ""
+    if w:
+        bad_blk = (
+            f'<div class="{prefix}-bad">'
+            f'<span class="{prefix}-tag">Wrong</span>'
+            f'<p class="{prefix}-txt">{w}</p></div>'
+        )
+    if b:
+        good_blk = (
+            f'<div class="{prefix}-good">'
+            f'<span class="{prefix}-tag">Better</span>'
+            f'<p class="{prefix}-txt">{b}</p></div>'
+        )
+    return (
+        f'<div class="{prefix}-strip" role="group" aria-label="Wrong versus better">'
+        f"{bad_blk}{good_blk}</div>"
     )
 
 
@@ -877,15 +914,22 @@ class TemplateService:
         if not vocab_rows:
             vocab_rows.append('<div class="vr-v2 muted">Add pairs (term — gloss).</div>')
 
+        has_contrast = bool(card.get("contrast_wrong") or card.get("contrast_better"))
         ex_lines = bullets[:4] if bullets else []
         mcq_items = []
         for i, line in enumerate(ex_lines, 1):
-            mcq_items.append(f'<div class="mcq-v2"><span class="nv2">{i}.</span> {line}</div>')
+            hit = " key-hit" if i == 1 and not has_contrast else ""
+            mcq_items.append(f'<div class="mcq-v2{hit}"><span class="nv2">{i}.</span> {line}</div>')
         while len(mcq_items) < 3:
             mcq_items.append(
                 f'<div class="mcq-v2 muted"><span class="nv2">{len(mcq_items) + 1}.</span> '
                 f"Choose the best option.</div>"
             )
+
+        # First vocab row pops when no contrast strip
+        if vocab_rows and not has_contrast:
+            vr0 = vocab_rows[0].replace('<div class="vr-v2"', '<div class="vr-v2 key-hit"', 1)
+            vocab_rows[0] = vr0
 
         content_sections = f"""
     <div class="cols-v2">
@@ -907,10 +951,19 @@ class TemplateService:
         """
 
         hero_block = _hero_media_block(card, "warm_v2")
-        return self._wrap_warm_paper_v2_html(topic, level, subtitle_html, hero_block, content_sections)
+        contrast_strip = _contrast_strip_html(card, "wp2")
+        return self._wrap_warm_paper_v2_html(
+            topic, level, subtitle_html, hero_block, contrast_strip, content_sections
+        )
 
     def _wrap_warm_paper_v2_html(
-        self, topic: str, level: str, subtitle_html: str, hero_block: str, content_sections: str
+        self,
+        topic: str,
+        level: str,
+        subtitle_html: str,
+        hero_block: str,
+        contrast_strip: str,
+        content_sections: str,
     ) -> str:
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -956,9 +1009,21 @@ class TemplateService:
       box-shadow: 0 10px 28px rgba(45, 32, 24, 0.08);
     }}
     .insight-kicker {{ font-family: "Caveat", cursive; font-size: 21px; margin: 0 0 8px; color: #8b4513; }}
-    .insight-body {{ margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .insight-body {{ margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; word-wrap: break-word; }}
     .insight-accent {{ position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 2px;
       background: linear-gradient(180deg, #b71c1c, #5d4037); }}
+    .wp2-strip {{
+      display: flex; margin: 0 auto 14px; width: 92%; max-width: 528px; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 8px 22px rgba(30, 20, 15, 0.14); border: 2px solid #2a1f1a;
+    }}
+    .wp2-bad {{ flex: 1; background: linear-gradient(180deg, #ffebee 0%, #ffcdd2 100%); padding: 12px 12px 14px; }}
+    .wp2-good {{ flex: 1; background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%); padding: 12px 12px 14px;
+      border-left: 2px dashed rgba(0,0,0,0.12); }}
+    .wp2-tag {{ font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+      color: #b71c1c; display: block; margin-bottom: 6px; }}
+    .wp2-good .wp2-tag {{ color: #1b5e20; }}
+    .wp2-txt {{ margin: 0; font-size: 12px; line-height: 1.38; font-weight: 600; color: #1a1a1a; overflow-wrap: anywhere; }}
+    .mcq-v2.key-hit, .vr-v2.key-hit {{ border-left: 4px solid #c62828; padding-left: 8px; margin-left: -2px; background: rgba(255, 235, 238, 0.35); border-radius: 0 8px 8px 0; }}
     .cols-v2 {{ display: flex; gap: 12px; align-items: stretch; margin-bottom: 12px; }}
     .panel-v2 {{
       flex: 1; min-width: 0; padding: 14px 12px 16px; border-radius: 14px; position: relative;
@@ -998,6 +1063,7 @@ class TemplateService:
       {subtitle_html}
     </header>
     {hero_block}
+    {contrast_strip}
     {content_sections}
   </div>
 </body>
@@ -1019,6 +1085,7 @@ class TemplateService:
         sec_gap = b[3] if b[3] else _placeholder_line()
         sec_speak = cta if cta else (b[4] if b[4] else "Short speaking cue.")
 
+        has_contrast = bool(card.get("contrast_wrong") or card.get("contrast_better"))
         sections = (
             ("01", "Vocabulary list", sec_vocab),
             ("02", "Correct the mistake", sec_fix),
@@ -1026,9 +1093,10 @@ class TemplateService:
             ("04", "Fill in the gaps", sec_gap),
         )
         blocks = []
-        for num, label, body in sections:
+        for idx, (num, label, body) in enumerate(sections):
+            kf = " kfocus" if idx == 0 and not has_contrast else ""
             blocks.append(
-                f'<section class="kpanel-v2"><span class="knum-v2">{num}</span>'
+                f'<section class="kpanel-v2{kf}"><span class="knum-v2">{num}</span>'
                 f'<p class="klab-v2">{label}</p><p class="kbody-v2">{body}</p></section>'
             )
         blocks.append(
@@ -1038,6 +1106,7 @@ class TemplateService:
         content_sections = '<div class="kstack-v2">' + "".join(blocks) + "</div>"
 
         hero_block = _hero_media_block(card, "kitchen_v2")
+        contrast_strip = _contrast_strip_html(card, "kc2")
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1050,6 +1119,16 @@ class TemplateService:
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
     body {{ background: #c9b99a; font-family: "DM Serif Display", Georgia, serif; color: #2c221e; -webkit-font-smoothing: antialiased; }}
+    .kc2-strip {{
+      display: flex; margin: 0 auto 12px; width: 94%; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 8px 20px rgba(30, 20, 15, 0.12); border: 2px solid #3e2723;
+    }}
+    .kc2-bad {{ flex: 1; background: #ffcdd2; padding: 10px 12px; }}
+    .kc2-good {{ flex: 1; background: #c8e6c9; padding: 10px 12px; border-left: 2px dashed rgba(0,0,0,0.1); }}
+    .kc2-tag {{ font-size: 8.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #b71c1c; display: block; margin-bottom: 4px; }}
+    .kc2-good .kc2-tag {{ color: #1b5e20; }}
+    .kc2-txt {{ margin: 0; font-size: 11.5px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }}
+    .kpanel-v2.kfocus {{ border: 2px solid #c62828; box-shadow: 0 6px 18px rgba(198, 40, 40, 0.15); }}
     .page {{
       width: 600px; min-height: 920px; position: relative;
       background: #fdfaf5;
@@ -1117,6 +1196,7 @@ class TemplateService:
       {subtitle_html}
     </header>
     {hero_block}
+    {contrast_strip}
     {content_sections}
   </div>
 </body>
@@ -1139,9 +1219,12 @@ class TemplateService:
         write_pills = [p for p in bullets[:3] if p] or ["Brainstorm", "Draft", "Polish"]
         pills_html = "".join(f'<span class="pill-v2">{p}</span>' for p in write_pills[:4])
 
+        has_contrast = bool(card.get("contrast_wrong") or card.get("contrast_better"))
+        disc_cls = "imod-v2 imod-span imod-star" if not has_contrast else "imod-v2 imod-span"
+
         content_sections = f"""
     <div class="igrid-v2">
-      <section class="imod-v2 imod-span">
+      <section class="{disc_cls}">
         <p class="ilab-v2">Discussion</p>
         <p class="itxt-v2">{dq}</p>
       </section>
@@ -1168,6 +1251,7 @@ class TemplateService:
         """
 
         hero_block = _hero_media_block(card, "influencer_v2")
+        contrast_strip = _contrast_strip_html(card, "inf2")
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1180,6 +1264,16 @@ class TemplateService:
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
     body {{ background: #121218; font-family: "DM Serif Display", Georgia, serif; color: #2a2420; -webkit-font-smoothing: antialiased; }}
+    .inf2-strip {{
+      display: flex; margin: 0 auto 12px; width: 94%; border-radius: 16px; overflow: hidden;
+      box-shadow: 0 10px 28px rgba(20, 14, 10, 0.18); border: 2px solid #1a1a1a; z-index: 1; position: relative;
+    }}
+    .inf2-bad {{ flex: 1; background: linear-gradient(180deg, #ffcdd2, #ef9a9a); padding: 12px 14px; }}
+    .inf2-good {{ flex: 1; background: linear-gradient(180deg, #c8e6c9, #a5d6a7); padding: 12px 14px; border-left: 2px dashed rgba(0,0,0,0.12); }}
+    .inf2-tag {{ font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #b71c1c; display: block; margin-bottom: 5px; }}
+    .inf2-good .inf2-tag {{ color: #1b5e20; }}
+    .inf2-txt {{ margin: 0; font-size: 12px; line-height: 1.38; font-weight: 700; color: #0d0d0d; overflow-wrap: anywhere; }}
+    .imod-star {{ border: 2px solid #c62828 !important; box-shadow: 0 8px 22px rgba(198, 40, 40, 0.18) !important; }}
     .page {{
       width: 600px; min-height: 920px; position: relative;
       background: linear-gradient(168deg, #fefbf6 0%, #f3ebe3 38%, #e8ddd4 100%);
@@ -1219,7 +1313,7 @@ class TemplateService:
       box-shadow: 0 12px 32px rgba(40, 30, 24, 0.1);
     }}
     .insight-kicker {{ font-family: "Caveat", cursive; font-size: 22px; margin: 0 0 8px; color: #c62828; }}
-    .insight-body {{ margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .insight-body {{ margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; word-wrap: break-word; }}
     .insight-accent {{ position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 2px;
       background: linear-gradient(180deg, #0d47a1, #6a1b9a, #c62828); }}
     .igrid-v2 {{
@@ -1265,6 +1359,7 @@ class TemplateService:
       {subtitle_html}
     </header>
     {hero_block}
+    {contrast_strip}
     {content_sections}
   </div>
 </body>

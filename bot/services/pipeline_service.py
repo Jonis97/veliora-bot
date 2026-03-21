@@ -90,6 +90,19 @@ class ContentPipelineService:
         ]
         if subtitle:
             lines.append(subtitle)
+        punch = str(card.get("punchline", "") or "").strip()
+        if punch:
+            lines.extend(["", f"⭐ {punch}"])
+        contrast = card.get("contrast")
+        if isinstance(contrast, dict):
+            w = str(contrast.get("wrong", "") or "").strip()
+            b = str(contrast.get("better", "") or "").strip()
+            if w or b:
+                lines.append("")
+                if w:
+                    lines.append(f"✗ {w}")
+                if b:
+                    lines.append(f"✓ {b}")
         lines.append("")
         for item in raw_bullets[:8]:
             lines.append(f"• {str(item).strip()}")
