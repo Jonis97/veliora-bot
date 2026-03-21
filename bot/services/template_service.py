@@ -1,5 +1,5 @@
 from html import escape
-from typing import Any, Optional
+from typing import Any, List, Optional, Tuple
 
 
 ALLOWED_TEMPLATES = {"warm_paper", "kitchen_collage", "influencer_card"}
@@ -19,6 +19,34 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _badge_level(subtitle_escaped: str) -> str:
+    """Short label for the circular badge; defaults to A2/B1."""
+    s = subtitle_escaped.strip()
+    if not s:
+        return "A2/B1"
+    if len(s) <= 12:
+        return s
+    return "A2/B1"
+
+
+def _split_term_translation(bullets: List[str]) -> List[Tuple[str, str]]:
+    """Split bullets into (term, gloss) when separators are present."""
+    pairs: List[Tuple[str, str]] = []
+    for b in bullets:
+        for sep in (" — ", " – ", " - ", ":", "—"):
+            if sep in b:
+                a, c = b.split(sep, 1)
+                pairs.append((a.strip(), c.strip()))
+                break
+        else:
+            pairs.append((b.strip(), ""))
+    return pairs
+
+
+def _placeholder_line() -> str:
+    return '<span class="muted">—</span>'
+
+
 class TemplateService:
     def render_html(self, card: dict[str, Any], forced_template: Optional[str] = None) -> str:
         normalized = _normalize_card(card)
@@ -32,95 +60,614 @@ class TemplateService:
             return self._influencer_card_template(normalized)
         return self._warm_paper_template(normalized)
 
-    def _base_html(self, card: dict[str, Any], *, background: str, card_bg: str, text_color: str, cta_bg: str, cta_color: str) -> str:
-        bullets_html = "".join(f"<li>{item}</li>" for item in card["bullets"])
-        # Root `.page` matches ScreenshotOne `selector=.page` (viewport 600×920).
-        return f"""
-<!DOCTYPE html>
+    # --- Template 1: warm_paper (idioms / vocabulary / phrases) ---
+
+    def _warm_paper_template(self, card: dict[str, Any]) -> str:
+        topic = card["title"]
+        level = _badge_level(card["subtitle"])
+        bullets = card["bullets"]
+        cta = card["cta"]
+        pairs = _split_term_translation(bullets)
+        vocab_rows = []
+        for term, trans in pairs[:6]:
+            if trans:
+                vocab_rows.append(
+                    f'<div class="vocab-row"><span class="term">{term}</span>'
+                    f'<span class="sep">—</span><span class="trans">{trans}</span></div>'
+                )
+            else:
+                vocab_rows.append(f'<div class="vocab-row"><span class="term full">{term}</span></div>')
+        if not vocab_rows:
+            vocab_rows.append(
+                '<div class="vocab-row muted">Add vocabulary pairs (e.g. idiom — meaning).</div>'
+            )
+
+        # Exercises: use bullets as options or placeholders
+        ex_lines = bullets[:4] if bullets else []
+        mcq_items = []
+        for i, line in enumerate(ex_lines, 1):
+            mcq_items.append(f'<div class="mcq"><span class="mcq-n">{i}.</span> {line}</div>')
+        while len(mcq_items) < 3:
+            mcq_items.append(
+                f'<div class="mcq muted"><span class="mcq-n">{len(mcq_items) + 1}.</span> '
+                f"Choose the best option.</div>"
+            )
+
+        content_sections = f"""
+        <div class="cols-2">
+          <section class="sticky note-tilt note-warm" aria-label="Vocabulary">
+            <div class="pin" aria-hidden="true"></div>
+            <h3 class="sec-title">Vocabulary</h3>
+            <div class="vocab-list">{"".join(vocab_rows)}</div>
+          </section>
+          <section class="sticky note-tilt note-cream" aria-label="Choose the correct option">
+            <div class="pin" aria-hidden="true"></div>
+            <h3 class="sec-title">Choose the Correct Option</h3>
+            <div class="mcq-list">{"".join(mcq_items[:4])}</div>
+          </section>
+        </div>
+        <section class="speak-bar" aria-label="Let's speak">
+          <h3 class="speak-title">Let’s Speak</h3>
+          <p class="speak-text">{cta if cta else "Practice aloud in a short sentence."}</p>
+        </section>
+        """
+
+        return self._wrap_warm_paper_html(topic, level, content_sections)
+
+    def _wrap_warm_paper_html(self, topic: str, level: str, content_sections: str) -> str:
+        return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
   <style>
     * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
     body {{
-      margin: 0;
-      font-family: Inter, Arial, sans-serif;
-      background: {background};
-      color: {text_color};
+      background: #e8d5b0;
+      font-family: "DM Serif Display", Georgia, serif;
+      color: #3d2c2b;
+      -webkit-font-smoothing: antialiased;
     }}
     .page {{
       width: 600px;
       min-height: 920px;
+      position: relative;
+      overflow: hidden;
+      background-color: #f5f0e8;
+      background-image:
+        linear-gradient(90deg, rgba(200, 180, 150, 0.12) 1px, transparent 1px),
+        linear-gradient(rgba(200, 180, 150, 0.1) 1px, transparent 1px),
+        radial-gradient(ellipse at 30% 20%, rgba(253, 248, 240, 0.95) 0%, #f5f0e8 55%);
+      background-size: 24px 24px, 24px 24px, auto;
+      padding: 18px 16px 22px;
+    }}
+    .level-badge {{
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #8b2323;
+      color: #fdf8f0;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 11px;
+      line-height: 1.1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      text-align: center;
+      padding: 4px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+      z-index: 5;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
     }}
-    .card {{
-      width: 100%;
-      max-width: 552px;
-      border-radius: 20px;
-      padding: 28px 24px;
-      background: {card_bg};
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-      border: 1px solid rgba(0, 0, 0, 0.08);
+    .header-block {{
+      padding: 8px 64px 10px 72px;
+      text-align: center;
     }}
-    h1 {{ margin: 0 0 8px; font-size: 28px; line-height: 1.1; }}
-    h2 {{ margin: 0 0 16px; font-size: 15px; font-weight: 500; opacity: 0.92; }}
-    ul {{ margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.35; }}
-    li {{ margin-bottom: 8px; }}
-    .cta {{
-      margin-top: 18px;
-      font-size: 14px;
-      font-weight: 700;
-      padding: 10px 14px;
+    .topic-title {{
+      font-family: "Caveat", cursive;
+      font-size: 38px;
+      line-height: 1.05;
+      margin: 0;
+      color: #4a3028;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .photo-ph {{
+      margin: 10px auto 12px;
+      width: 92%;
+      max-width: 520px;
+      height: 120px;
+      border-radius: 14px;
+      border: 2px dashed rgba(139, 69, 19, 0.35);
+      background: linear-gradient(145deg, #fdf8f0 0%, #e8d5b0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: rgba(61, 44, 43, 0.55);
+      overflow: hidden;
+      word-wrap: break-word;
+    }}
+    .cols-2 {{
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 10px;
+    }}
+    .sticky {{
+      flex: 1;
+      min-width: 0;
+      padding: 12px 10px 14px;
       border-radius: 10px;
-      display: inline-block;
-      background: {cta_bg};
-      color: {cta_color};
+      position: relative;
+      box-shadow: 4px 6px 14px rgba(60, 40, 30, 0.12);
+    }}
+    .note-tilt {{ transform: rotate(-0.6deg); }}
+    .note-warm {{ background: #fdf8f0; border: 1px solid rgba(200, 170, 130, 0.45); }}
+    .note-cream {{ background: #fffdf8; border: 1px solid rgba(180, 160, 130, 0.4); transform: rotate(0.5deg); }}
+    .pin {{
+      position: absolute;
+      top: -6px;
+      right: 14px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff6b4a, #c62828);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }}
+    .sec-title {{
+      font-family: "Caveat", cursive;
+      font-size: 20px;
+      margin: 0 0 8px;
+      color: #5c3d32;
+    }}
+    .vocab-list {{ font-size: 12px; line-height: 1.35; }}
+    .vocab-row {{ margin-bottom: 6px; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .term {{ font-weight: 600; color: #3d2c2b; }}
+    .term.full {{ display: block; }}
+    .sep {{ margin: 0 4px; opacity: 0.5; }}
+    .trans {{ color: #5c4038; }}
+    .mcq-list {{ font-size: 11.5px; line-height: 1.35; }}
+    .mcq {{ margin-bottom: 6px; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .mcq-n {{ font-weight: 700; color: #8b4513; margin-right: 4px; }}
+    .muted {{ color: rgba(61, 44, 43, 0.45); font-style: italic; }}
+    .speak-bar {{
+      width: 100%;
+      margin-top: 4px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2e7d4a 0%, #1b5e32 100%);
+      color: #f4fff8;
+      box-shadow: 0 4px 12px rgba(30, 80, 50, 0.2);
+    }}
+    .speak-title {{
+      font-family: "Caveat", cursive;
+      font-size: 22px;
+      margin: 0 0 6px;
+    }}
+    .speak-text {{
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
     }}
   </style>
 </head>
 <body>
   <div class="page">
-    <main class="card">
-      <h1>{card["title"]}</h1>
-      <h2>{card["subtitle"]}</h2>
-      <ul>{bullets_html}</ul>
-      <div class="cta">{card["cta"]}</div>
-    </main>
+    <div class="level-badge">{level}</div>
+    <header class="header-block">
+      <h1 class="topic-title">{topic}</h1>
+    </header>
+    <div class="photo-ph" role="img" aria-label="Topic image placeholder">Topic image</div>
+    {content_sections}
   </div>
 </body>
-</html>
-""".strip()
+</html>"""
 
-    def _warm_paper_template(self, card: dict[str, Any]) -> str:
-        return self._base_html(
-            card,
-            background="linear-gradient(150deg, #f5ecd7 0%, #efe2c1 100%)",
-            card_bg="rgba(255, 255, 255, 0.82)",
-            text_color="#3b2f2f",
-            cta_bg="#8d6e63",
-            cta_color="#ffffff",
-        )
+    # --- Template 2: kitchen_collage (collocations / grammar / mixed) ---
 
     def _kitchen_collage_template(self, card: dict[str, Any]) -> str:
-        return self._base_html(
-            card,
-            background="linear-gradient(125deg, #fff3e0 0%, #ffe0b2 45%, #ffcc80 100%)",
-            card_bg="rgba(255, 255, 255, 0.86)",
-            text_color="#4e342e",
-            cta_bg="#fb8c00",
-            cta_color="#ffffff",
-        )
+        topic = card["title"]
+        level = _badge_level(card["subtitle"])
+        bullets = card["bullets"]
+        cta = card["cta"]
+        b = bullets + [""] * 5
+        sec_vocab = b[0] if b[0] else _placeholder_line()
+        sec_fix = b[1] if b[1] else _placeholder_line()
+        sec_choose = b[2] if b[2] else _placeholder_line()
+        sec_gap = b[3] if b[3] else _placeholder_line()
+        sec_speak = cta if cta else (b[4] if b[4] else "Short speaking cue.")
+
+        content_sections = f"""
+    <section class="panel panel-tan">
+      <div class="pin-sm"></div>
+      <h3 class="ptitle">Vocabulary List</h3>
+      <p class="pbody">{sec_vocab}</p>
+    </section>
+    <section class="panel panel-ivory">
+      <div class="pin-sm"></div>
+      <h3 class="ptitle">Correct the Mistake</h3>
+      <p class="pbody">{sec_fix}</p>
+    </section>
+    <section class="panel panel-tan tilt-r">
+      <div class="pin-sm"></div>
+      <h3 class="ptitle">Choose the Option</h3>
+      <p class="pbody">{sec_choose}</p>
+    </section>
+    <section class="panel panel-ivory tilt-l">
+      <div class="pin-sm"></div>
+      <h3 class="ptitle">Fill in the Gaps</h3>
+      <p class="pbody">{sec_gap}</p>
+    </section>
+    <section class="panel panel-speak">
+      <div class="pin-sm pin-light"></div>
+      <h3 class="ptitle light">Speaking</h3>
+      <p class="pbody light">{sec_speak}</p>
+    </section>
+        """
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{
+      background: #d4c4a8;
+      font-family: "DM Serif Display", Georgia, serif;
+      color: #3d2c2b;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .page {{
+      width: 600px;
+      min-height: 920px;
+      position: relative;
+      background: #fdf8f0;
+      background-image:
+        linear-gradient(0deg, rgba(245, 240, 232, 0.9) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(220, 200, 170, 0.15) 1px, transparent 1px);
+      background-size: 100% 28px, 18px 100%;
+      padding: 16px 14px 20px;
+      overflow: hidden;
+    }}
+    .level-badge {{
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #8b2323;
+      color: #fdf8f0;
+      font-size: 10px;
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      z-index: 5;
+      overflow-wrap: anywhere;
+    }}
+    .head-k {{
+      padding: 6px 58px 8px 64px;
+      text-align: center;
+    }}
+    .topic-title {{
+      font-family: "Caveat", cursive;
+      font-size: 36px;
+      line-height: 1.05;
+      margin: 0;
+      color: #4a3028;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .photo-ph {{
+      margin: 8px auto 10px;
+      width: 94%;
+      height: 100px;
+      border-radius: 12px;
+      border: 2px dashed rgba(139, 69, 19, 0.3);
+      background: linear-gradient(160deg, #fff 0%, #e8d5b0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: rgba(61, 44, 43, 0.5);
+    }}
+    .stack {{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }}
+    .panel {{
+      position: relative;
+      padding: 10px 12px 12px;
+      border-radius: 10px;
+      box-shadow: 3px 5px 12px rgba(50, 35, 25, 0.1);
+    }}
+    .panel-tan {{ background: #f5f0e8; border: 1px solid rgba(180, 150, 120, 0.4); }}
+    .panel-ivory {{ background: #fffdf9; border: 1px solid rgba(200, 175, 140, 0.35); }}
+    .panel-speak {{
+      background: linear-gradient(120deg, #5d4037 0%, #3e2723 100%);
+      border: 1px solid rgba(0,0,0,0.08);
+    }}
+    .tilt-r {{ transform: rotate(0.4deg); }}
+    .tilt-l {{ transform: rotate(-0.35deg); }}
+    .pin-sm {{
+      position: absolute;
+      top: -5px;
+      right: 12px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff7961, #c62828);
+      box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+    }}
+    .pin-light {{
+      background: radial-gradient(circle at 30% 30%, #ffd180, #e65100);
+    }}
+    .ptitle {{
+      font-family: "Caveat", cursive;
+      font-size: 19px;
+      margin: 0 0 6px;
+      color: #5c3d32;
+    }}
+    .ptitle.light {{ color: #ffe0b2; }}
+    .pbody {{
+      margin: 0;
+      font-size: 11.5px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }}
+    .pbody.light {{ color: #fff8f0; }}
+    .muted {{ opacity: 0.5; font-style: italic; }}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="level-badge">{level}</div>
+    <header class="head-k">
+      <h1 class="topic-title">{topic}</h1>
+    </header>
+    <div class="photo-ph">Topic image</div>
+    <div class="stack">
+      {content_sections}
+    </div>
+  </div>
+</body>
+</html>"""
+
+    # --- Template 3: influencer_card (social / trends / modern) ---
 
     def _influencer_card_template(self, card: dict[str, Any]) -> str:
-        return self._base_html(
-            card,
-            background="linear-gradient(145deg, #8e24aa 0%, #5e35b1 45%, #1e88e5 100%)",
-            card_bg="rgba(9, 14, 38, 0.78)",
-            text_color="#f8f9ff",
-            cta_bg="#00e5ff",
-            cta_color="#102027",
-        )
+        topic = card["title"]
+        level = _badge_level(card["subtitle"])
+        bullets = card["bullets"]
+        cta = card["cta"]
+        b = bullets + [""] * 5
+        dq = b[0] if b[0] else "What is your take on this topic?"
+        vocab = b[1] if b[1] else "Key term — short definition."
+        tf = b[2] if b[2] else "True or false: [statement]."
+        gram = b[3] if b[3] else "Pattern: subject + verb + …"
+        write_pills = [p for p in bullets[:3] if p] or ["Brainstorm", "Draft", "Polish"]
+
+        pills_html = "".join(f'<span class="pill">{p}</span>' for p in write_pills[:4])
+
+        content_sections = f"""
+    <section class="card-mod discussion">
+      <h3 class="mtitle">Discussion Questions</h3>
+      <p class="mbody">{dq}</p>
+    </section>
+    <section class="card-mod vocab">
+      <h3 class="mtitle">Vocabulary</h3>
+      <p class="mbody small">{vocab}</p>
+    </section>
+    <div class="row-2">
+      <section class="card-mod tf">
+        <h3 class="mtitle">True / False</h3>
+        <p class="mbody">{tf}</p>
+      </section>
+      <section class="card-mod bubble-wrap">
+        <h3 class="mtitle">Grammar</h3>
+        <div class="bubble">{gram}</div>
+      </section>
+    </div>
+    <section class="card-mod writing">
+      <h3 class="mtitle">Writing Prompt</h3>
+      <p class="mbody prompt">{cta if cta else "Write 3–5 sentences."}</p>
+      <div class="pills">{pills_html}</div>
+    </section>
+        """
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{
+      background: #1a1a24;
+      font-family: "DM Serif Display", Georgia, serif;
+      color: #2b2b35;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .page {{
+      width: 600px;
+      min-height: 920px;
+      position: relative;
+      background: linear-gradient(165deg, #fdf8f0 0%, #f5f0e8 40%, #e8d5b0 100%);
+      padding: 16px 14px 20px;
+      overflow: hidden;
+    }}
+    .page::before {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 100% 0%, rgba(255, 120, 90, 0.12) 0%, transparent 45%),
+                  radial-gradient(circle at 0% 100%, rgba(80, 120, 200, 0.1) 0%, transparent 40%);
+      pointer-events: none;
+    }}
+    .level-badge {{
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #8b2323;
+      color: #fdf8f0;
+      font-size: 10px;
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 5;
+      overflow-wrap: anywhere;
+    }}
+    .head-i {{
+      padding: 4px 56px 6px 60px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }}
+    .topic-title {{
+      font-family: "Caveat", cursive;
+      font-size: 40px;
+      line-height: 1.05;
+      margin: 0;
+      color: #3d2c2b;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .photo-ph {{
+      margin: 10px auto 12px;
+      width: 94%;
+      height: 108px;
+      border-radius: 16px;
+      border: 2px solid rgba(139, 35, 35, 0.25);
+      background: linear-gradient(135deg, #2b2b35 0%, #4a4a62 50%, #fdf8f0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.85);
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      word-wrap: break-word;
+    }}
+    .card-mod {{
+      position: relative;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.92);
+      border: 1px solid rgba(200, 170, 140, 0.35);
+      box-shadow: 0 6px 16px rgba(40, 30, 20, 0.08);
+      z-index: 1;
+    }}
+    .discussion {{
+      border-left: 4px solid #c62828;
+    }}
+    .vocab {{
+      border-left: 4px solid #8d6e63;
+    }}
+    .row-2 {{
+      display: flex;
+      gap: 8px;
+    }}
+    .row-2 .card-mod {{
+      flex: 1;
+      min-width: 0;
+    }}
+    .tf {{
+      border-left: 4px solid #2e7d32;
+    }}
+    .bubble-wrap {{
+      border-left: 4px solid #1565c0;
+    }}
+    .bubble {{
+      font-size: 11px;
+      line-height: 1.35;
+      padding: 8px 10px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #e3f2fd 0%, #fff 100%);
+      border: 1px solid rgba(21, 101, 192, 0.25);
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }}
+    .writing {{
+      border-left: 4px solid #6a1b9a;
+      padding-bottom: 12px;
+    }}
+    .mtitle {{
+      font-family: "Caveat", cursive;
+      font-size: 20px;
+      margin: 0 0 6px;
+      color: #4e342e;
+    }}
+    .mbody {{
+      margin: 0;
+      font-size: 11.5px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }}
+    .mbody.small {{ font-size: 11px; }}
+    .mbody.prompt {{ font-weight: 600; color: #3d2c2b; }}
+    .pills {{
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }}
+    .pill {{
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: #fff;
+      border: 1px solid rgba(200, 160, 120, 0.5);
+      color: #5d4037;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    }}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="level-badge">{level}</div>
+    <header class="head-i">
+      <h1 class="topic-title">{topic}</h1>
+    </header>
+    <div class="photo-ph">Topic visual</div>
+    {content_sections}
+  </div>
+</body>
+</html>"""
