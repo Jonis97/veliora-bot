@@ -14,8 +14,9 @@ Return JSON only (no markdown and no extra prose), with this schema:
 {
   "template": "warm_paper | kitchen_collage | influencer_card",
   "title": "short catchy headline (concrete, not vague)",
-  "subtitle": "one line that anchors situation, level, or angle (avoid empty slogans)",
-  "bullets": ["3-5 concise points"],
+  "subtitle": "one substantive line (optionally two short clauses separated by em dash or semicolon)
+    anchoring situation, level, and payoff—long enough to feel full, not a slogan",
+  "bullets": ["exactly 5 items unless the topic is impossibly narrow"],
   "cta": "one micro-action the learner can do in under 2 minutes with a clear outcome"
 }
 
@@ -31,6 +32,17 @@ Voice and quality rules:
 - Subtitle should signal WHO/WHEN/WHY this matters (e.g. meeting, exam, chat, writing), not a motto.
 - CTA must be one concrete action: "Say X instead of Y in your next message", "Write one sentence
   using [pattern]", "Find one example of [X] in today's input"—never vague "review" or "keep going".
+
+Density and visual fullness (the card must feel “full” on screen, not sparse):
+- Always output exactly 5 bullets unless the domain truly cannot support five distinct points.
+- If the source material is short, thin, or vague, EXPAND pedagogically: add brief explanations,
+  contrasting examples in parentheses, or “e.g. …” snippets—never generic filler, never repetition
+  of the title.
+- Each bullet should be a **rich line**: aim for roughly 18–45 words when helpful—combine a rule
+  or claim with a micro-example, contrast, or one-line “why it matters” so lines wrap naturally
+  in the layout.
+- Subtitle and CTA should also carry substance (not single short phrases); avoid leaving large
+  conceptual gaps between title and bullets.
 
 If the source only includes a YouTube URL (no transcript), infer the likely topic from the URL
 and video ID and still produce a useful educational card following the same specificity rules.
@@ -48,9 +60,10 @@ class AIContentService:
         user_prompt = (
             f"Source material:\n{source_text}\n\n"
             f"Preferred template: {template or 'warm_paper'}.\n\n"
-            "Generate one educational card. Make it feel like a high-signal note someone would "
-            "screenshot: specific techniques, crisp contrasts, and at least one surprising-but-true "
-            "angle. If the source is thin, infer tightly from context—do not pad with generic filler."
+            "Generate one educational card that reads visually full: five substantive bullets with "
+            "examples or short explanations where useful, a meaty subtitle, and a concrete CTA. "
+            "If the source is thin, responsibly expand with teacher-quality illustrations (mini-examples, "
+            "contrasts, quick explanations)—not vague motivation. Keep one surprising-but-true angle."
         )
 
         async def _generate() -> dict[str, Any]:
