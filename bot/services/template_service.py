@@ -34,44 +34,48 @@ class TemplateService:
 
     def _base_html(self, card: dict[str, Any], *, background: str, card_bg: str, text_color: str, cta_bg: str, cta_color: str) -> str:
         bullets_html = "".join(f"<li>{item}</li>" for item in card["bullets"])
+        # Root `.page` matches ScreenshotOne `selector=.page` (viewport 600×920).
         return f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
   <style>
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
-      width: 1080px;
-      height: 1350px;
       font-family: Inter, Arial, sans-serif;
       background: {background};
       color: {text_color};
+    }}
+    .page {{
+      width: 600px;
+      min-height: 920px;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 24px;
     }}
     .card {{
-      width: 90%;
-      min-height: 80%;
-      border-radius: 36px;
-      padding: 56px;
+      width: 100%;
+      max-width: 552px;
+      border-radius: 20px;
+      padding: 28px 24px;
       background: {card_bg};
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
       border: 1px solid rgba(0, 0, 0, 0.08);
     }}
-    h1 {{ margin: 0 0 12px; font-size: 60px; line-height: 1.05; }}
-    h2 {{ margin: 0 0 34px; font-size: 30px; font-weight: 500; opacity: 0.92; }}
-    ul {{ margin: 0; padding-left: 32px; font-size: 32px; line-height: 1.4; }}
-    li {{ margin-bottom: 18px; }}
+    h1 {{ margin: 0 0 8px; font-size: 28px; line-height: 1.1; }}
+    h2 {{ margin: 0 0 16px; font-size: 15px; font-weight: 500; opacity: 0.92; }}
+    ul {{ margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.35; }}
+    li {{ margin-bottom: 8px; }}
     .cta {{
-      margin-top: 42px;
-      font-size: 30px;
+      margin-top: 18px;
+      font-size: 14px;
       font-weight: 700;
-      padding: 18px 24px;
-      border-radius: 16px;
+      padding: 10px 14px;
+      border-radius: 10px;
       display: inline-block;
       background: {cta_bg};
       color: {cta_color};
@@ -79,12 +83,14 @@ class TemplateService:
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>{card["title"]}</h1>
-    <h2>{card["subtitle"]}</h2>
-    <ul>{bullets_html}</ul>
-    <div class="cta">{card["cta"]}</div>
-  </main>
+  <div class="page">
+    <main class="card">
+      <h1>{card["title"]}</h1>
+      <h2>{card["subtitle"]}</h2>
+      <ul>{bullets_html}</ul>
+      <div class="cta">{card["cta"]}</div>
+    </main>
+  </div>
 </body>
 </html>
 """.strip()

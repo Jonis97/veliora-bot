@@ -1,29 +1,36 @@
-from urllib.parse import quote
-
 import httpx
 
 from bot.utils.retry import with_retry
 
 
 class ScreenshotService:
+    """
+    ScreenshotOne API: https://api.screenshotone.com/take
+    Use `access_key` from env `SCREENSHOTONE_API_KEY` via `load_settings()` in main.
+    """
+
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key
         self._endpoint = "https://api.screenshotone.com/take"
 
     async def html_to_image(self, html: str) -> bytes:
-        data_url = "data:text/html;charset=utf-8," + quote(html)
+        """
+        Render HTML to PNG using only the query parameters required by ScreenshotOne.
+        The `html` value is passed as a request param; httpx URL-encodes it correctly.
+        Templates must include a root `.page` element for `selector=.page`.
+        """
 
         async def _render() -> bytes:
-            async with httpx.AsyncClient(timeout=35.0) as client:
+            async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.get(
                     self._endpoint,
                     params={
                         "access_key": self._api_key,
-                        "url": data_url,
-                        "viewport_width": 1080,
-                        "viewport_height": 1350,
-                        "device_scale_factor": 1,
+                        "html": html,
                         "format": "png",
+                        "viewport_width": 600,
+                        "viewport_height": 920,
+                        "selector": ".page",
                     },
                 )
                 response.raise_for_status()
