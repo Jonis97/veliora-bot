@@ -16,22 +16,24 @@ Template is always: "{DEFAULT_TEMPLATE}" (warm paper v2 layout).
 Core content rules:
 - From the source, extract exactly the THREE most surprising or useful ideas. Put them in bullets[] — one idea per bullet, tight wording, sourced only in what the material supports.
 - Title: provocative and curiosity-driven; never generic labels (no Introduction, Overview, Learning about, Key concepts).
+- subtitle: one hook line tied specifically to THIS source — not generic. Max ~16 words.
 - contrast (WRONG / BETTER): must be specific to the source — not generic self-help or advice that could apply to any topic.
 - vocabulary: ALWAYS the format "English word or phrase — Ukrainian translation (Cyrillic)". Maximum 5 pairs. Never the same language on both sides of the em dash. If the source text is Ukrainian or Russian, still derive English vocabulary items that match the topic and teaching goal (teach the English side with Ukrainian gloss).
-- mcq_brackets ("Choose the Correct Option"): real bracket exercises (option / option) built from concepts in the source only — not generic sentences.
+- mcq_brackets: 3–4 bracket exercises from source concepts only. Each sentence must offer exactly two mutually exclusive choices — one clearly correct, one clearly wrong. Pattern: 'X leads to (a) growth / (b) stagnation.' NEVER place both options in the same clause joined by 'and'.
+- cta: one specific open question for speaking practice, tied to source content. Must start with What, How, or Why. Max ~12 words.
 - Every field must come ONLY from the source. Never invent generic knowledge or filler that is not grounded in the material.
 
 JSON schema:
 {{
   "template": "{DEFAULT_TEMPLATE}",
   "title": "Provocative, curiosity-driven; not generic.",
-  "subtitle": "One hook line (max ~16 words).",
+  "subtitle": "One hook line tied specifically to THIS source — not generic. Max ~16 words.",
   "punchline": "Single memorable line from the source (max ~14 words).",
   "contrast": {{ "wrong": "specific weak move or belief from this source", "better": "specific stronger move grounded in this source" }},
   "vocabulary": ["Up to 5 lines: English — Ukrainian (Cyrillic) only."],
-  "mcq_brackets": ["Bracket exercises from source content; 3–4 lines; use (a / b) pattern."],
+  "mcq_brackets": ["3–4 bracket exercises from source concepts only; two mutually exclusive choices per line; pattern e.g. X leads to (a) growth / (b) stagnation; never both options in one clause with 'and'."],
   "bullets": ["Exactly 3 items: the three most surprising or useful ideas from the source"],
-  "cta": "One short Let's speak style action (max ~12 words), tied to the source."
+  "cta": "Open question for speaking: What/How/Why + source-tied, max ~12 words."
 }}
 
 Output valid JSON only.
