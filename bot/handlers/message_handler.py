@@ -6,7 +6,7 @@ from telegram.ext import ContextTypes
 from bot.services.pipeline_service import ContentPipelineService
 from bot.utils.active_source import NeedActiveSourceError
 from bot.utils.dedup import MessageDeduplicator
-from bot.utils.errors import GenerationFailedError
+from bot.utils.errors import GenerationFailedError, TranscriptUnavailableError
 
 
 LOGGER = logging.getLogger(__name__)
@@ -36,6 +36,9 @@ class MessageHandlerService:
                 "Спочатку надішли матеріал: посилання YouTube, текст або голосове повідомлення. "
                 "Потім можна написати, наприклад: «зроби картку»."
             )
+            return
+        except TranscriptUnavailableError as err:
+            await message.reply_text(err.user_message)
             return
         except GenerationFailedError as err:
             await message.reply_text(err.user_message)

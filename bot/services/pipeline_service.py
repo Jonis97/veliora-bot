@@ -21,7 +21,7 @@ from bot.services.topic_image_service import TopicImageService
 from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService, extract_video_id
 from bot.utils.active_source import NeedActiveSourceError, build_followup_prompt, followup_intent
-from bot.utils.errors import GenerationFailedError
+from bot.utils.errors import GenerationFailedError, TranscriptUnavailableError
 from bot.utils.input_parser import parse_template_hint
 from bot.utils.intent import OutputIntent
 
@@ -259,8 +259,10 @@ class ContentPipelineService:
 
         if message.voice:
             transcript = await self._transcription_service.transcribe_voice(bot, message.voice.file_id)
-            if not transcript:
-                raise RuntimeError("Voice transcription returned empty text")
+            if not (transcript or "").strip():
+                raise TranscriptUnavailableError(
+                    "Не вдалось розпізнати голос. Надішли текст або посилання — зроблю картку."
+                )
             return _ResolvedSource(
                 text_for_ai=transcript,
                 source_type="voice",
@@ -278,29 +280,24 @@ class ContentPipelineService:
         if video_id:
             try:
                 transcript = await self._youtube_service.fetch_transcript(video_id)
-                return _ResolvedSource(
-                    text_for_ai=transcript,
-                    source_type="youtube",
-                    persist_new_source=True,
-                    intent_seed="",
-                    persist_body=transcript,
-                    video_id=video_id,
-                )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.warning(
-                    "YouTube transcript fetch failed for video_id=%s: %s. Falling back to URL-only context.",
+                    "YouTube transcript fetch failed for video_id=%s: %s",
                     video_id,
                     exc,
                 )
-                fallback_text = self._youtube_url_only_context(video_id, cleaned_text)
-                return _ResolvedSource(
-                    text_for_ai=fallback_text,
-                    source_type="youtube",
-                    persist_new_source=True,
-                    intent_seed="",
-                    persist_body=fallback_text,
-                    video_id=video_id,
-                )
+                raise TranscriptUnavailableError() from exc
+            if not (transcript or "").strip():
+                LOGGER.warning("YouTube transcript empty for video_id=%s", video_id)
+                raise TranscriptUnavailableError()
+            return _ResolvedSource(
+                text_for_ai=transcript,
+                source_type="youtube",
+                persist_new_source=True,
+                intent_seed="",
+                persist_body=transcript,
+                video_id=video_id,
+            )
 
         if not cleaned_text.strip() and _template:
             if active is None:
@@ -332,18 +329,6 @@ class ContentPipelineService:
             persist_new_source=True,
             intent_seed=cleaned_text,
             persist_body=cleaned_text,
-        )
-
-    @staticmethod
-    def _youtube_url_only_context(video_id: str, user_link_text: str) -> str:
-        canonical_url = f"https://www.youtube.com/watch?v={video_id}"
-        return (
-            "[Транскрипт недоступний — текст не отримано.]\n\n"
-            f"Посилання: {canonical_url}\n"
-            f"ID відео: {video_id}\n"
-            f"Повідомлення користувача: {user_link_text}\n\n"
-            "Визнач тему лише з URL та контексту повідомлення. "
-            "Згенеруй картку суворо в межах цієї теми, без вигаданих деталей."
         )
 
     async def process_message(
