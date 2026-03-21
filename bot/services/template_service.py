@@ -33,7 +33,10 @@ def _build_takeaway_text(card: dict[str, Any]) -> str:
     cta = str(card.get("cta", "")).strip()
     if cta:
         return cta
-    return "Start with the main idea above and add one example you can use in class."
+    return (
+        "Pick one term from the card and use it in a new sentence within the next hour—"
+        "same context you’ll face in real life (message, email, or aloud)."
+    )
 
 
 def _hero_media_block(card: dict[str, Any], variant: str) -> str:
