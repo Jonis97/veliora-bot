@@ -6,7 +6,7 @@ class GenerationFailedError(Exception):
 
     def __init__(
         self,
-        message: str = "Couldn’t generate your study content. Please try again in a moment.",
+        message: str = "Не вдалося згенерувати картку. Спробуй ще раз за хвилину.",
     ) -> None:
         self.user_message = message
         super().__init__(message)

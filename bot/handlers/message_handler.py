@@ -7,7 +7,6 @@ from bot.services.pipeline_service import ContentPipelineService
 from bot.utils.active_source import NeedActiveSourceError
 from bot.utils.dedup import MessageDeduplicator
 from bot.utils.errors import GenerationFailedError
-from bot.utils.intent import UnclearIntentError
 
 
 LOGGER = logging.getLogger(__name__)
@@ -34,11 +33,9 @@ class MessageHandlerService:
             prepare = await self._pipeline.prepare(context.bot, message, chat_id)
         except NeedActiveSourceError:
             await message.reply_text(
-                "Send a YouTube link, voice note, or paste text first — then tell me what you want."
+                "Спочатку надішли матеріал: посилання YouTube, текст або голосове повідомлення. "
+                "Потім можна написати, наприклад: «зроби картку»."
             )
-            return
-        except UnclearIntentError as err:
-            await message.reply_text(err.user_message)
             return
         except GenerationFailedError as err:
             await message.reply_text(err.user_message)
@@ -46,16 +43,12 @@ class MessageHandlerService:
         except ValueError as err:
             LOGGER.warning("Invalid user input message_id=%s: %s", message_id, err)
             await message.reply_text(
-                str(err) or "That message doesn’t work. Send text, voice, or a YouTube link."
+                str(err) or "Надішли текст, голос або посилання YouTube."
             )
             return
         except Exception as error:  # noqa: BLE001
             LOGGER.exception("Prepare failed message_id=%s: %s", message_id, error)
-            await message.reply_text("Something went wrong. Please try again.")
-            return
-
-        if prepare.rerender_complete:
-            await self._send_pipeline_result(message, prepare.rerender_complete)
+            await message.reply_text("Щось пішло не так. Спробуй ще раз.")
             return
 
         if prepare.preface:
@@ -70,7 +63,7 @@ class MessageHandlerService:
             return
         except Exception as error:  # noqa: BLE001
             LOGGER.exception("Execute failed message_id=%s: %s", message_id, error)
-            await message.reply_text("Couldn’t finish that. Please try again in a moment.")
+            await message.reply_text("Не вдалося завершити картку. Спробуй ще раз за хвилину.")
             return
 
         await self._send_pipeline_result(message, result)
@@ -80,14 +73,12 @@ class MessageHandlerService:
             image_file = InputFile(result.image_bytes, filename="educard.png")
             await message.reply_photo(
                 photo=image_file,
-                caption=f"{result.output_intent} · {result.template_used} · {result.source_type}",
+                caption=f"Картка · {result.template_used} · {result.source_type}",
             )
         elif result.text_fallback:
             await message.reply_text(result.text_fallback)
         else:
             LOGGER.error("Pipeline returned neither image nor text")
             await message.reply_text(
-                "Couldn’t produce a preview. Please try again in a moment."
+                "Не вдалося показати прев’ю. Спробуй ще раз."
             )
-        if result.suggestion:
-            await message.reply_text(result.suggestion)

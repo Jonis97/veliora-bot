@@ -47,8 +47,8 @@ veliora-bot/
 - Retry logic (3 attempts) and structured logging.
 - Duplicate update protection via `chat_id:message_id`.
 - **Active source memory** (per Telegram user): the latest YouTube transcript, pasted text, or voice transcript is stored as the current source. Follow-ups reuse only that source until new material arrives (no mixing).
-- **Intent routing** (same layout): short requests are classified into outputs such as card, vocabulary, speaking, test, or summary; the AI adapts field emphasis while keeping the locked `warm_paper_v2` template.
-- **Errors**: missing source, unclear intent (one clarifying question), and generation failures return short, user-friendly messages.
+- **MVP flow**: one source (YouTube / text / voice) → stored per chat → one **warm_paper_v2** card per generation; no multi-template routing in this step.
+- **Errors**: short user-facing messages (Ukrainian).
 - Webhook deployment ready for Railway.
 
 ## Environment Variables

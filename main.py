@@ -27,9 +27,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if not update.message:
         return
     await update.message.reply_text(
-        "Send text, a voice note, or a YouTube link — that becomes your active source until you send new material.\n\n"
-        "Then ask in your own words, e.g.: make a card, vocabulary, speaking practice, a short test, or summarize key ideas.\n\n"
-        "One layout for now (warm_paper_v2). Optional tag [template:…] is ignored until more templates ship."
+        "Надішли одне джерело: текст, голосове повідомлення або посилання YouTube — "
+        "це буде поточний матеріал, доки не надішлеш новий.\n\n"
+        "Потім напиши, наприклад: «зроби картку» — я зроблю одну сильну навчальну картку "
+        "(шаблон warm_paper_v2)."
     )
 
 

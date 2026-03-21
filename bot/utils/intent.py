@@ -27,7 +27,7 @@ class UnclearIntentError(Exception):
     def __init__(
         self,
         message: str = (
-            "What would you like? Reply with one: card, vocabulary, speaking, test, or summary."
+            "Уточни, будь ласка: що саме зробити з цим матеріалом? Наприклад: «зроби картку»."
         ),
     ) -> None:
         self.user_message = message

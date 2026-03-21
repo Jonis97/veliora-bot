@@ -8,72 +8,33 @@ from bot.utils.intent import OutputIntent
 from bot.utils.retry import with_retry
 
 
-CORE_ROLES = """
-You combine three roles at once:
-- Teacher: clear, accurate, learner-friendly; no fluff.
-- Editor: tight wording; remove generic filler, hedging, and repeated ideas.
-- Designer: keep each JSON field compact so one fixed card layout stays balanced and premium (Canva-like density).
-""".strip()
-
 SYSTEM_PROMPT = f"""
-{CORE_ROLES}
+You are an expert teacher and editor. Output ONE save-worthy educational card in JSON only (no markdown).
 
-Return JSON only (no markdown), with this schema:
+Template is always: "{DEFAULT_TEMPLATE}" (warm paper v2 layout).
+
+JSON schema:
 {{
   "template": "{DEFAULT_TEMPLATE}",
-  "title": "Provocative, problem-based headline: mistake, risk, trap, or tension—not a chapter title.",
-  "subtitle": "One short hook line (max ~16 words).",
-  "punchline": "Single memorable save-line (max ~14 words).",
-  "contrast": {{ "wrong": "…", "better": "…" }},
-  "vocabulary": ["4 strings ONLY in form: English word or short phrase — Ukrainian translation (Cyrillic). Example: aesthetic — естетика. No full sentences, no definitions in English."],
-  "mcq_brackets": ["3 or 4 strings: each is ONE sentence or clause with a real bracket choice using (option / option). Example: Focus on (your unique voice / copying trends) to build connections. Must use parentheses and slash. Do NOT repeat or copy vocabulary lines—different wording and task."],
-  "bullets": ["3 or 4 short supporting ideas—do not duplicate lines from vocabulary or mcq_brackets"],
-  "cta": "One punchy micro-action (max ~12 words)"
+  "title": "Sharp, specific headline tied to the source — never generic course titles. No: Introduction, Overview, Learning about, Key concepts.",
+  "subtitle": "One hook line (max ~16 words).",
+  "punchline": "The single most memorable insight from the source (max ~14 words) — this is the 'top insight'.",
+  "contrast": {{ "wrong": "typical mistake or weak habit FROM THE SOURCE", "better": "clear better move FROM THE SOURCE" }},
+  "vocabulary": ["Exactly 4 lines: English word or short phrase — Ukrainian (Cyrillic). Only terms grounded in the source."],
+  "mcq_brackets": ["3 or 4 lines: real bracket exercises (option / option). New sentences; do not copy vocabulary lines."],
+  "bullets": ["3 or 4 short supporting points from the source only — no filler, no obvious generic advice"],
+  "cta": "One short Let's speak style action (max ~12 words), practical for this topic."
 }}
 
-Title rules:
-- BAN neutral course titles: no 'Introduction to', 'Overview', 'Learning about', 'Key concepts'.
+Hard rules:
+- Grounding: every field must reflect the provided source. If the source is thin, stay humble — do NOT invent facts or generic life advice.
+- Ban filler, banality, and content that could apply to any topic.
+- vocabulary: strict EN — UA format only.
+- mcq_brackets: must use parentheses and slash; exercises must differ from vocabulary wording.
+- contrast.wrong and contrast.better must both be non-empty when the source allows; otherwise use the weakest honest pair you can anchor in the source.
 
-Always use template "{DEFAULT_TEMPLATE}" in the JSON (single product layout).
-
-When template is warm_paper_v2, follow these layout rules:
-- vocabulary[] is ONLY EN–UA pairs as specified—never full sentences.
-- mcq_brackets[] is ONLY bracket-style exercises—never vocabulary duplicates.
-- Keep total text lean: short lines, high signal.
-
-If the source only includes a YouTube URL (no transcript), infer topic and still follow rules.
-
-Output valid JSON only. Always include "contrast" with wrong and better. Use [] for vocabulary/mcq_brackets only if impossible.
+Output valid JSON only.
 """.strip()
-
-
-INTENT_INSTRUCTIONS: dict[OutputIntent, str] = {
-    OutputIntent.CARD: (
-        "Output intent: default study card. Balance vocabulary, bracket MCQs, bullets, and CTA. "
-        "Extract only what matters from the source."
-    ),
-    OutputIntent.SPEAKING: (
-        "Output intent: SPEAKING. Prioritize usable spoken practice: bullets should be short prompts, "
-        "lines, or discussion questions the learner can say aloud. CTA must be a concrete speaking micro-task. "
-        "Still fill vocabulary and mcq_brackets from the source where useful, but bias bullets + punchline toward oral practice. "
-        "Subtitle should signal 'speaking / oral practice'."
-    ),
-    OutputIntent.VOCABULARY: (
-        "Output intent: VOCABULARY. Maximize high-value EN–UA pairs from the source; skip low-signal words. "
-        "mcq_brackets should drill those words in new sentences (not copy-paste from vocabulary lines). "
-        "Bullets = short usage notes or collocations only. Title/subtitle should signal vocabulary focus."
-    ),
-    OutputIntent.TEST: (
-        "Output intent: TEST / QUIZ. Make mcq_brackets the star: challenging but fair checks of understanding from the source. "
-        "Vocabulary lines should support terms under test. Bullets = brief rationale or reminders, not long explanations. "
-        "Contrast pair should highlight a common mistake from the material."
-    ),
-    OutputIntent.SUMMARY: (
-        "Output intent: SUMMARY. Distill key ideas only: bullets are the tightest possible takeaways (no fluff). "
-        "Punchline = one-line thesis of the source. Title/subtitle reflect synthesis, not a generic label. "
-        "Vocabulary = only terms that appear central in the source; mcq_brackets check comprehension of those ideas."
-    ),
-}
 
 
 class AIContentService:
@@ -90,25 +51,17 @@ class AIContentService:
         is_followup: bool = False,
     ) -> dict[str, Any]:
         eff = template or DEFAULT_TEMPLATE
-        intent_line = INTENT_INSTRUCTIONS.get(output_intent, INTENT_INSTRUCTIONS[OutputIntent.CARD])
         user_prompt = (
             f"Source material:\n{source_text}\n\n"
-            f"Preferred template (locked): {eff}.\n"
-            f"{intent_line}\n\n"
-            "Produce one premium card: provocative title, hook subtitle, punchline, contrast pair, "
-            "lean bullets, punchy CTA. "
+            f"Produce exactly one premium card for template {eff}. "
+            "Prioritize usefulness and clarity — strong teacher + strong editor. "
+            "The card must feel worth saving and sharing.\n"
         )
         if is_followup:
             user_prompt += (
-                "This is a follow-up: the block labeled 'Source material' is the ONLY content you may use. "
-                "Follow the user instruction and output_intent exactly; do not add facts from other topics or earlier chats. "
+                "Follow-up: use ONLY the source block in the message. "
+                "Honor the user's short instruction if present; still obey schema and grounding rules.\n"
             )
-        if eff == "warm_paper_v2":
-            user_prompt += (
-                "For warm_paper_v2 you MUST fill vocabulary (4× EN — UA only) and mcq_brackets "
-                "(3–4 bracket exercises, different content from vocabulary). "
-            )
-        user_prompt += "Optimize for save-worthiness and clarity, not textbook length."
 
         async def _generate() -> dict[str, Any]:
             response = await self._openai_client.chat.completions.create(

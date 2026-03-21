@@ -1,12 +1,13 @@
 """
-Core product flow: per-chat memory, source grounding, intent routing, re-render without re-fetch.
+MVP: one premium warm_paper_v2 card per request from the latest source only.
 
-All chat state lives in an in-memory dict keyed by chat_id (MVP). template_service / screenshot_service are only called, not modified here.
+- Source is stored per chat_id (in-memory).
+- New source replaces the old one; no mixing.
+- Template is always warm_paper_v2 (no rerender / no multi-template routing here).
 """
 
 from __future__ import annotations
 
-import copy
 import logging
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -15,33 +16,23 @@ from telegram import Bot, Message
 
 from bot.services.ai_service import AIContentService
 from bot.services.screenshot_service import ScreenshotService
-from bot.services.template_service import ALLOWED_TEMPLATES, DEFAULT_TEMPLATE, TemplateService
+from bot.services.template_service import DEFAULT_TEMPLATE, TemplateService
 from bot.services.topic_image_service import TopicImageService
 from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService, extract_video_id
-from bot.utils.active_source import (
-    NeedActiveSourceError,
-    build_followup_prompt,
-    followup_intent,
-)
+from bot.utils.active_source import NeedActiveSourceError, build_followup_prompt, followup_intent
 from bot.utils.errors import GenerationFailedError
 from bot.utils.input_parser import parse_template_hint
-from bot.utils.intent import OutputIntent, UnclearIntentError, intent_label, resolve_output_intent
+from bot.utils.intent import OutputIntent
 
 LOGGER = logging.getLogger(__name__)
 
-# --- In-memory per-chat context (MVP). Not persisted across restarts. ---
 _CHAT_CONTEXT: dict[int, dict[str, Any]] = {}
 
 
 def _ctx(chat_id: int) -> dict[str, Any]:
     if chat_id not in _CHAT_CONTEXT:
-        _CHAT_CONTEXT[chat_id] = {
-            "active_source": None,
-            "generated_card": None,
-            "last_template": DEFAULT_TEMPLATE,
-            "last_intent": None,
-        }
+        _CHAT_CONTEXT[chat_id] = {"active_source": None}
     return _CHAT_CONTEXT[chat_id]
 
 
@@ -69,101 +60,45 @@ def _save_active_source(
     _ctx(chat_id)["active_source"] = payload
 
 
-def _save_generated_card(chat_id: int, card: dict[str, Any]) -> None:
-    """Deep copy of last rendered card JSON for template re-renders."""
-    _ctx(chat_id)["generated_card"] = copy.deepcopy(card)
-    _ctx(chat_id)["last_template"] = str(card.get("template") or DEFAULT_TEMPLATE)
-
-
-def _effective_template(user_hint: Optional[str]) -> str:
-    if user_hint and user_hint in ALLOWED_TEMPLATES:
-        return user_hint
-    return DEFAULT_TEMPLATE
-
-
-def _source_type_label(st: str) -> str:
-    return {"youtube": "YouTube", "voice": "voice", "text": "text"}.get(st, st)
+def _source_type_label_uk(st: str) -> str:
+    return {"youtube": "YouTube", "voice": "голос", "text": "текст"}.get(st, st)
 
 
 def _ground_for_ai(inner: str) -> str:
-    """Keep model on the source topic; user ops (translate, speaking) apply to this material only."""
     return (
-        "GROUNDING (critical):\n"
-        "- Base EVERYTHING only on the source material below.\n"
-        "- The user request is an operation ON that material (translate words, speaking, quiz, etc.). "
-        "Do NOT replace the topic with a generic lesson about that operation "
-        "(e.g. if the source is a French alphabet video and the user says “translate words”, "
-        "work with words from that source — not a new essay about translation).\n\n"
+        "ПРАВИЛА ПРИВ’ЯЗКИ ДО ДЖЕРЕЛА (обов’язково):\n"
+        "- Увесь зміст картки — ЛИШЕ з матеріалу нижче. Не додавай фактів, яких немає в джерелі.\n"
+        "- Не вигадуй загальні поради «для будь-якого випадку» — лише те, що випливає з цього тексту/транскрипту.\n"
+        "- Якщо джерела замало для пункту — краще пропусти або сформулюй обережно в межах того, що є.\n\n"
         f"{inner}"
     )
 
 
-def _combined_request_note(seed: str) -> str:
-    n = seed.lower()
-    if (" and " in n or " & " in n or " also " in n) and len(n) > 12:
-        return (
-            "\n\n[User asked for multiple things in one message: produce ONE coherent combined output "
-            "from the same source, unless impossible — then prioritize the clearest part.]"
-        )
-    return ""
-
-
-def _post_route_intent(seed: str, intent: OutputIntent) -> OutputIntent:
-    """Map messy phrases without editing intent.py."""
-    tl = seed.lower()
-    if "translate" in tl or "translation" in tl or "переклад" in tl:
-        return OutputIntent.VOCABULARY
-    if "simplify" in tl or "simpler" in tl or "easier to understand" in tl:
-        return OutputIntent.SUMMARY
-    return intent
-
-
-def _resolve_intent_safe(seed: str, *, is_follow_up: bool) -> OutputIntent:
-    try:
-        intent = resolve_output_intent(seed, is_follow_up=is_follow_up)
-    except UnclearIntentError:
-        # Safe default when the message has substance; re-raise only for genuinely empty/vague follow-ups.
-        s = seed.strip()
-        if len(s) < 6 or s.lower() in {"do it", "go", "??", "help", "hmm"}:
-            raise
-        return _post_route_intent(seed, OutputIntent.CARD)
-    return _post_route_intent(seed, intent)
-
-
 @dataclass
 class PipelineResult:
-    """Screenshot or text fallback; optional style tip after first generation."""
-
     template_used: str
     source_type: str
     output_intent: str
     image_bytes: Optional[bytes] = None
     text_fallback: Optional[str] = None
-    suggestion: Optional[str] = None
 
 
 @dataclass
 class _ResolvedSource:
     text_for_ai: str
-    template: Optional[str]
     source_type: str
     persist_new_source: bool
     intent_seed: str
     persist_body: Optional[str] = None
     video_id: Optional[str] = None
-    rerender_only: bool = False
 
 
 @dataclass
 class PrepareResult:
-    """First phase: resolve source, optional instant re-render, UX lines for the handler."""
-
     chat_id: int
     resolved: _ResolvedSource
-    output_intent: OutputIntent
     preface: Optional[str]
     status_line: Optional[str]
-    rerender_complete: Optional[PipelineResult] = None
 
 
 class ContentPipelineService:
@@ -184,43 +119,7 @@ class ContentPipelineService:
         self._topic_image_service = topic_image_service
 
     async def prepare(self, bot: Bot, message: Message, chat_id: int) -> PrepareResult:
-        """
-        Resolve source / optional template-only re-render (no transcript/API re-fetch).
-        Returns preface + status for the handler, or a finished PipelineResult if re-render only.
-        """
         resolved = await self._resolve_source(bot, message, chat_id)
-
-        if resolved.rerender_only:
-            ctx = _ctx(chat_id)
-            base = ctx.get("generated_card")
-            if not isinstance(base, dict):
-                raise ValueError("No saved card to re-style. Generate a card first, then add a template tag.")
-            tmpl = _effective_template(resolved.template)
-            card = copy.deepcopy(base)
-            card["template"] = tmpl
-            html = self._template_service.render_html(card, tmpl)
-            try:
-                image_bytes = await self._screenshot_service.html_to_image(html)
-            except Exception as exc:  # noqa: BLE001
-                LOGGER.warning("Re-render screenshot failed: %s", exc, exc_info=True)
-                raise GenerationFailedError("Couldn’t render that layout. Try another template or ask again.") from exc
-            ctx["last_template"] = tmpl
-            _save_generated_card(chat_id, card)
-            done = PipelineResult(
-                template_used=tmpl,
-                source_type=resolved.source_type,
-                output_intent="Re-style",
-                image_bytes=image_bytes,
-                suggestion=self._style_tip(tmpl),
-            )
-            return PrepareResult(
-                chat_id=chat_id,
-                resolved=resolved,
-                output_intent=OutputIntent.CARD,
-                preface=None,
-                status_line=None,
-                rerender_complete=done,
-            )
 
         if resolved.persist_new_source and resolved.persist_body:
             _save_active_source(
@@ -230,64 +129,45 @@ class ContentPipelineService:
                 video_id=resolved.video_id,
             )
             LOGGER.info("Active source updated chat_id=%s type=%s", chat_id, resolved.source_type)
-        elif not resolved.persist_new_source:
-            LOGGER.info("Follow-up on active source chat_id=%s", chat_id)
-
-        seed = (resolved.intent_seed or "").strip()
-        if not seed:
-            output_intent = OutputIntent.CARD
-        else:
-            output_intent = _resolve_intent_safe(
-                seed,
-                is_follow_up=not resolved.persist_new_source,
-            )
-
-        preface: Optional[str] = None
-        status_line: Optional[str] = None
-        if resolved.persist_new_source:
             preface = (
-                "Got it — I saved this as your current source. "
-                "Now building your study card (you can also ask for vocabulary, speaking, test, or summary next)."
+                "Зрозуміло — зберегла це як поточне джерело. "
+                "Створюю для тебе одну навчальну картку warm_paper_v2…"
             )
+            status_line = None
         else:
+            LOGGER.info("Follow-up on active source chat_id=%s", chat_id)
+            preface = None
             status_line = (
-                f"Using your {_source_type_label(resolved.source_type)} source. "
-                f"Now creating: {intent_label(output_intent)}."
+                f"Беру матеріал з джерела ({_source_type_label_uk(resolved.source_type)}). "
+                "Формую картку…"
             )
 
         return PrepareResult(
             chat_id=chat_id,
             resolved=resolved,
-            output_intent=output_intent,
             preface=preface,
             status_line=status_line,
-            rerender_complete=None,
         )
 
     async def execute(self, prepare: PrepareResult) -> PipelineResult:
-        """AI generation + render + persist structured card (not used for re-render path)."""
         resolved = prepare.resolved
-        chat_id = prepare.chat_id
-        output_intent = prepare.output_intent
-
         raw_ai = resolved.text_for_ai
-        grounded = _ground_for_ai(raw_ai) + _combined_request_note(resolved.intent_seed or "")
-
-        user_template = _effective_template(resolved.template)
+        grounded = _ground_for_ai(raw_ai)
 
         try:
             card_json = await self._ai_service.generate_card_content(
                 grounded,
-                user_template,
-                output_intent=output_intent,
+                DEFAULT_TEMPLATE,
+                output_intent=OutputIntent.CARD,
                 is_followup=not resolved.persist_new_source,
             )
         except Exception as exc:  # noqa: BLE001
             LOGGER.exception("AI card generation failed: %s", exc)
-            raise GenerationFailedError() from exc
+            raise GenerationFailedError(
+                "Не вдалося згенерувати картку. Спробуй ще раз за хвилину."
+            ) from exc
 
-        eff = _effective_template(str(card_json.get("template") or user_template))
-        card_json["template"] = eff
+        card_json["template"] = DEFAULT_TEMPLATE
 
         topic = str(card_json.get("title", "education")).strip() or "education"
         image_url = await self._topic_image_service.fetch_topic_image(topic)
@@ -295,13 +175,10 @@ class ContentPipelineService:
         if image_url:
             card_for_render["image_url"] = image_url
 
-        used_template = eff
+        used_template = DEFAULT_TEMPLATE
         source_type = resolved.source_type
-        intent_caption = intent_label(output_intent)
-        html = self._template_service.render_html(card_for_render, used_template)
-
-        _ctx(chat_id)["last_intent"] = intent_caption
-        _save_generated_card(chat_id, card_for_render)
+        intent_caption = "Картка"
+        html = self._template_service.render_html(card_for_render, DEFAULT_TEMPLATE)
 
         try:
             image_bytes = await self._screenshot_service.html_to_image(html)
@@ -310,7 +187,6 @@ class ContentPipelineService:
                 source_type=source_type,
                 output_intent=intent_caption,
                 image_bytes=image_bytes,
-                suggestion=self._style_tip(used_template),
             )
         except Exception as exc:  # noqa: BLE001
             LOGGER.warning(
@@ -326,17 +202,7 @@ class ContentPipelineService:
                 source_type=source_type,
                 output_intent=intent_caption,
                 text_fallback=text_body,
-                suggestion=self._style_tip(used_template),
             )
-
-    @staticmethod
-    def _style_tip(current: str) -> str:
-        """Optional nudge — does not block generation."""
-        alts = [t for t in sorted(ALLOWED_TEMPLATES) if t != current][:3]
-        if not alts:
-            return ""
-        tags = " ".join(f"[template:{a}]" for a in alts)
-        return f"Other looks (same content): {tags}"
 
     @staticmethod
     def _format_card_text_reply(
@@ -352,7 +218,7 @@ class ContentPipelineService:
             raw_bullets = []
         cta = str(card.get("cta", "")).strip()
         lines = [
-            f"{intent_label_s} · {template_used} · source: {source_type}",
+            f"{intent_label_s} · {template_used} · джерело: {source_type}",
             "",
             f"📌 {title}",
         ]
@@ -377,7 +243,7 @@ class ContentPipelineService:
         if cta:
             lines.extend(["", f"💡 {cta}"])
         lines.append("")
-        lines.append("(Image preview unavailable — text card above.)")
+        lines.append("(Попередній перегляд зображення недоступний — текст картки вище.)")
         text = "\n".join(lines)
         if len(text) > 4000:
             return text[:3997] + "..."
@@ -395,13 +261,8 @@ class ContentPipelineService:
             transcript = await self._transcription_service.transcribe_voice(bot, message.voice.file_id)
             if not transcript:
                 raise RuntimeError("Voice transcription returned empty text")
-            template: Optional[str] = None
-            cap = (message.caption or "").strip()
-            if cap:
-                _, template = parse_template_hint(cap)
             return _ResolvedSource(
                 text_for_ai=transcript,
-                template=template,
                 source_type="voice",
                 persist_new_source=True,
                 intent_seed="",
@@ -410,16 +271,15 @@ class ContentPipelineService:
 
         raw = (message.text or message.caption or "").strip()
         if not raw:
-            raise ValueError("Unsupported message type. Send text, a voice message, or a YouTube link.")
+            raise ValueError("Надішли текст, голосове повідомлення або посилання на YouTube.")
 
-        cleaned_text, template = parse_template_hint(raw)
+        cleaned_text, _template = parse_template_hint(raw)
         video_id = extract_video_id(cleaned_text)
         if video_id:
             try:
                 transcript = await self._youtube_service.fetch_transcript(video_id)
                 return _ResolvedSource(
                     text_for_ai=transcript,
-                    template=template,
                     source_type="youtube",
                     persist_new_source=True,
                     intent_seed="",
@@ -435,7 +295,6 @@ class ContentPipelineService:
                 fallback_text = self._youtube_url_only_context(video_id, cleaned_text)
                 return _ResolvedSource(
                     text_for_ai=fallback_text,
-                    template=template,
                     source_type="youtube",
                     persist_new_source=True,
                     intent_seed="",
@@ -443,30 +302,15 @@ class ContentPipelineService:
                     video_id=video_id,
                 )
 
-        ctx = _ctx(chat_id)
-        stored_card = ctx.get("generated_card")
-
-        if not cleaned_text.strip() and template:
-            if stored_card and isinstance(stored_card, dict) and template in ALLOWED_TEMPLATES:
-                if active is None:
-                    raise NeedActiveSourceError()
-                return _ResolvedSource(
-                    text_for_ai="",
-                    template=template,
-                    source_type=str(active.get("type", "text")),
-                    persist_new_source=False,
-                    intent_seed="",
-                    rerender_only=True,
-                )
+        if not cleaned_text.strip() and _template:
             if active is None:
                 raise NeedActiveSourceError()
             instruction = (
-                "The user only sent a template preference. Regenerate the learning card for the same "
-                "source material using the preferred template."
+                "The user sent only a template tag. Regenerate ONE warm_paper_v2 study card from the same source material. "
+                "Do not change the topic; use only the stored source."
             )
             return _ResolvedSource(
                 text_for_ai=build_followup_prompt(instruction, active),
-                template=template,
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
                 intent_seed="",
@@ -477,7 +321,6 @@ class ContentPipelineService:
                 raise NeedActiveSourceError()
             return _ResolvedSource(
                 text_for_ai=build_followup_prompt(cleaned_text, active),
-                template=template,
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
                 intent_seed=cleaned_text,
@@ -485,7 +328,6 @@ class ContentPipelineService:
 
         return _ResolvedSource(
             text_for_ai=cleaned_text,
-            template=template,
             source_type="text",
             persist_new_source=True,
             intent_seed=cleaned_text,
@@ -496,16 +338,14 @@ class ContentPipelineService:
     def _youtube_url_only_context(video_id: str, user_link_text: str) -> str:
         canonical_url = f"https://www.youtube.com/watch?v={video_id}"
         return (
-            "[Transcript unavailable — no transcript text was fetched.]\n\n"
-            f"Video URL: {canonical_url}\n"
-            f"Video ID: {video_id}\n"
-            f"User message / link: {user_link_text}\n\n"
-            "Infer the likely topic or theme from the URL, video ID, and any cues in the link text. "
-            "Create an educational flashcard about that topic with clear, generally accurate learning points. "
-            "If the topic is ambiguous, choose a reasonable educational angle and frame the card helpfully."
+            "[Транскрипт недоступний — текст не отримано.]\n\n"
+            f"Посилання: {canonical_url}\n"
+            f"ID відео: {video_id}\n"
+            f"Повідомлення користувача: {user_link_text}\n\n"
+            "Визнач тему лише з URL та контексту повідомлення. "
+            "Згенеруй картку суворо в межах цієї теми, без вигаданих деталей."
         )
 
-    # Backwards-compatible entry (tests / callers): single-shot without UX split
     async def process_message(
         self,
         bot: Bot,
@@ -514,6 +354,4 @@ class ContentPipelineService:
     ) -> PipelineResult:
         chat_id = message.chat_id
         pr = await self.prepare(bot, message, chat_id)
-        if pr.rerender_complete:
-            return pr.rerender_complete
         return await self.execute(pr)
