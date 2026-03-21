@@ -1,11 +1,11 @@
 """
-Resolve a relevant image URL for an educational card topic.
+Resolve a topic-related illustration URL for card heroes.
 
-Default (strict): only Wikipedia thumbnails that meet a minimum size — avoids weak/random stock.
-Optional: set TOPIC_IMAGE_ALLOW_STOCK=1 to also try Unsplash/Pexels (requires API keys).
-DALL·E: TOPIC_IMAGE_ENABLE_DALLE=1 (billable).
+- Wikipedia first (skips logo-like titles; filters URL patterns; minimum thumb width).
+- Optional Unsplash/Pexels when TOPIC_IMAGE_ALLOW_STOCK=1 (still URL-filtered).
+- Optional DALL·E when TOPIC_IMAGE_ENABLE_DALLE=1 — abstract background only, no text/logos.
 
-If nothing succeeds, returns None — templates use the premium insight block instead.
+If nothing passes policy, returns None — templates use a gradient hero (no random stock).
 """
 
 import logging
@@ -14,9 +14,18 @@ from typing import Any, Awaitable, Callable, List, Optional, Tuple
 
 import httpx
 
+from bot.utils.image_policy import is_safe_topic_image_url, title_suggests_logo_or_non_photo
 from bot.utils.retry import with_retry
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _accept_url(url: Optional[str]) -> Optional[str]:
+    if url and is_safe_topic_image_url(url):
+        return url
+    if url:
+        LOGGER.info("Rejected topic image URL (policy): %s", url[:120])
+    return None
 
 
 class TopicImageService:
@@ -54,8 +63,10 @@ class TopicImageService:
                     operation_name=f"Topic image ({name})",
                 )
                 if url:
-                    LOGGER.info("Topic image from %s", name)
-                    return url
+                    accepted = _accept_url(url)
+                    if accepted:
+                        LOGGER.info("Topic image from %s", name)
+                        return accepted
             except Exception as exc:  # noqa: BLE001
                 LOGGER.debug("Topic image %s failed: %s", name, exc)
 
@@ -97,7 +108,7 @@ class TopicImageService:
                     "action": "query",
                     "list": "search",
                     "srsearch": query,
-                    "srlimit": "1",
+                    "srlimit": "5",
                     "format": "json",
                 },
             )
@@ -105,33 +116,35 @@ class TopicImageService:
             search = r.json().get("query", {}).get("search") or []
             if not search:
                 return None
-            title = search[0].get("title")
-            if not title:
-                return None
-            r2 = await client.get(
-                "https://en.wikipedia.org/w/api.php",
-                params={
-                    "action": "query",
-                    "titles": title,
-                    "prop": "pageimages",
-                    "format": "json",
-                    "pithumbsize": "640",
-                },
-            )
-            r2.raise_for_status()
-            pages = r2.json().get("query", {}).get("pages") or {}
-            for _pid, page in pages.items():
-                if page.get("missing"):
+            for hit in search[:5]:
+                title = hit.get("title")
+                if not title or title_suggests_logo_or_non_photo(title):
                     continue
-                th = page.get("thumbnail") or {}
-                thumb = th.get("source")
-                width = int(th.get("width") or 0)
-                if not thumb or not thumb.startswith("http"):
-                    continue
-                # Skip tiny thumbnails (poor on cards); unknown width still allowed (API quirk)
-                if 0 < width < 320:
-                    continue
-                return thumb
+                r2 = await client.get(
+                    "https://en.wikipedia.org/w/api.php",
+                    params={
+                        "action": "query",
+                        "titles": title,
+                        "prop": "pageimages",
+                        "format": "json",
+                        "pithumbsize": "640",
+                    },
+                )
+                r2.raise_for_status()
+                pages = r2.json().get("query", {}).get("pages") or {}
+                for _pid, page in pages.items():
+                    if page.get("missing"):
+                        continue
+                    th = page.get("thumbnail") or {}
+                    thumb = th.get("source")
+                    width = int(th.get("width") or 0)
+                    if not thumb or not thumb.startswith("http"):
+                        continue
+                    if 0 < width < 320:
+                        continue
+                    accepted = _accept_url(thumb)
+                    if accepted:
+                        return accepted
         return None
 
     async def _unsplash_first_photo(self, query: str) -> Optional[str]:
@@ -151,7 +164,7 @@ class TopicImageService:
             urls = results[0].get("urls") or {}
             u = urls.get("regular") or urls.get("small")
             if u and u.startswith("http"):
-                return u
+                return _accept_url(u)
         return None
 
     async def _pexels_first_photo(self, query: str) -> Optional[str]:
@@ -171,15 +184,16 @@ class TopicImageService:
             src = photos[0].get("src") or {}
             u = src.get("large") or src.get("medium")
             if u and u.startswith("http"):
-                return u
+                return _accept_url(u)
         return None
 
     async def _dalle_generate(self, topic: str) -> Optional[str]:
         if not self._openai:
             return None
         prompt = (
-            f"Soft educational illustration for language learning about: {topic}. "
-            "Clean, modern, friendly, no text, no letters, no watermark, suitable for a study card."
+            f"Abstract soft atmospheric background suggesting the mood of: {topic}. "
+            "Premium editorial style, subtle gradients, no text, no letters, no logos, no brand marks, "
+            "no screenshots, no UI, no app icons, no watermarks — suitable as a quiet card background only."
         )[:3900]
 
         async def _run() -> Optional[str]:

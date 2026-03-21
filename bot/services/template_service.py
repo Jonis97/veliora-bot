@@ -2,6 +2,8 @@ import re
 from html import escape
 from typing import Any, List, Optional, Tuple
 
+from bot.utils.image_policy import is_safe_topic_image_url
+
 
 ALLOWED_TEMPLATES = {
     "warm_paper",
@@ -15,6 +17,71 @@ ALLOWED_TEMPLATES = {
 # Default when no template tag and AI omits template: test v2 first; v1 still selectable explicitly.
 DEFAULT_TEMPLATE = "warm_paper_v2"
 
+# Hero: subtle photo treatment + gradient-only fallback (no random/sticker imagery).
+HERO_LAYER_CSS = """
+    .hero-media.hero-has-img .hero-img-stack {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      overflow: hidden;
+    }
+    .hero-media.hero-has-img .hero-img {
+      filter: saturate(0.9) contrast(1.04);
+    }
+    .hero-img-scrim {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255, 252, 248, 0.12) 0%, rgba(35, 28, 22, 0.18) 100%);
+    }
+    .hero-media.hero-no-img .hero-bg-fill {
+      width: 100%;
+      height: 100%;
+      min-height: 140px;
+      border-radius: inherit;
+      background:
+        radial-gradient(ellipse 100% 80% at 50% 30%, rgba(255, 252, 248, 0.55) 0%, transparent 45%),
+        linear-gradient(165deg, #ebe3d9 0%, #d8cec4 55%, #c9beb3 100%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.48);
+    }
+    .hero-media.hero-no-img.hero-warm .hero-bg-fill {
+      background:
+        radial-gradient(ellipse 90% 70% at 45% 35%, rgba(255, 248, 240, 0.5) 0%, transparent 50%),
+        linear-gradient(165deg, #efe6dc 0%, #e0d4c8 100%);
+    }
+    .hero-media.hero-no-img.hero-kitchen .hero-bg-fill {
+      background:
+        radial-gradient(ellipse 90% 70% at 45% 35%, rgba(255, 248, 240, 0.5) 0%, transparent 50%),
+        linear-gradient(165deg, #efe6dc 0%, #e0d4c8 100%);
+    }
+    .hero-media.hero-no-img.hero-influencer .hero-bg-fill {
+      background:
+        radial-gradient(ellipse 85% 65% at 55% 25%, rgba(255, 255, 255, 0.35) 0%, transparent 50%),
+        linear-gradient(155deg, #f0ede8 0%, #e2ddd6 100%);
+    }
+    .hero-media.hero-no-img.hero-warm_v2 .hero-bg-fill {
+      min-height: 156px;
+      background:
+        radial-gradient(ellipse 90% 70% at 45% 35%, rgba(255, 248, 242, 0.65) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 85% 80%, rgba(230, 210, 190, 0.22) 0%, transparent 45%),
+        linear-gradient(175deg, #ebe3d9 0%, #dfd4c8 45%, #d2c7bc 100%);
+    }
+    .hero-media.hero-no-img.hero-kitchen_v2 .hero-bg-fill {
+      min-height: 148px;
+      background:
+        radial-gradient(ellipse 90% 70% at 45% 35%, rgba(255, 250, 245, 0.55) 0%, transparent 48%),
+        linear-gradient(175deg, #ebe3d9 0%, #dfd4c8 70%, #d2c7bc 100%);
+    }
+    .hero-media.hero-no-img.hero-influencer_v2 .hero-bg-fill {
+      min-height: 156px;
+      background:
+        radial-gradient(ellipse 90% 60% at 50% 0%, rgba(255, 252, 248, 0.5) 0%, transparent 50%),
+        linear-gradient(165deg, #efe8e0 0%, #e0d4c8 100%);
+    }
+""".strip()
+
 
 def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     bullets = raw.get("bullets", [])
@@ -23,7 +90,9 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     # Short, sharp points (AI targets 3–4; cap at 4 for layout)
     cleaned_bullets = [escape(str(item)) for item in bullets[:4] if str(item).strip()]
     raw_url = str(raw.get("image_url", "") or raw.get("photo", "") or "").strip()
-    image_url = raw_url if raw_url.startswith(("http://", "https://")) else ""
+    image_url = ""
+    if raw_url.startswith("https://") and is_safe_topic_image_url(raw_url):
+        image_url = raw_url
     pl_raw = str(raw.get("punchline", "") or raw.get("takeaway", "") or "").strip()
     punchline = escape(pl_raw[:220]) if pl_raw else ""
     contrast = raw.get("contrast")
@@ -55,44 +124,26 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_takeaway_text(card: dict[str, Any]) -> str:
-    """Punchy one-liner for insight card when no photo (prefer AI punchline)."""
-    pl = str(card.get("punchline", "")).strip()
-    if pl:
-        return pl
-    bullets = card.get("bullets") or []
-    if isinstance(bullets, list) and bullets:
-        return str(bullets[0])
-    sub = str(card.get("subtitle", "")).strip()
-    if sub:
-        return sub[:160] + ("…" if len(sub) > 160 else "")
-    cta = str(card.get("cta", "")).strip()
-    if cta:
-        return cta[:160] + ("…" if len(cta) > 160 else "")
-    return "One fix beats a page of rules."
-
-
 def _hero_media_block(card: dict[str, Any], variant: str) -> str:
     """
-    Photo area: real image if `image_url` is set on the raw card; otherwise a styled insight card.
-    variant: warm | kitchen | influencer
+    Premium hero: topic photo with soft scrim, or gradient-only background (no random/sticker imagery).
+    Never overlays text on the image; no-image uses quiet gradient + texture via CSS.
     """
     url = (card.get("image_url") or "").strip()
+    if url and not is_safe_topic_image_url(url):
+        url = ""
     if url:
         safe = escape(url, quote=True)
         return (
-            f'<div class="hero-media hero-{variant}">'
-            f'<img class="hero-img" src="{safe}" alt="" />'
-            f"</div>"
+            f'<div class="hero-media hero-{variant} hero-has-img">'
+            f'<div class="hero-img-stack">'
+            f'<img class="hero-img" src="{safe}" alt="" loading="lazy" />'
+            f'<div class="hero-img-scrim" aria-hidden="true"></div>'
+            f"</div></div>"
         )
-    takeaway = _build_takeaway_text(card)
-    premium = " insight-premium" if variant == "warm_v2" else ""
     return (
-        f'<aside class="insight-card insight-{variant}{premium}" aria-label="Save this">'
-        f'<div class="insight-kicker">Save this</div>'
-        f'<p class="insight-body">{takeaway}</p>'
-        f'<div class="insight-accent" aria-hidden="true"></div>'
-        f"</aside>"
+        f'<div class="hero-media hero-{variant} hero-no-img" aria-hidden="true">'
+        f'<div class="hero-bg-fill"></div></div>'
     )
 
 
@@ -441,6 +492,7 @@ class TemplateService:
       overflow-wrap: anywhere;
       word-wrap: break-word;
     }}
+    {HERO_LAYER_CSS}
   </style>
 </head>
 <body>
@@ -660,6 +712,7 @@ class TemplateService:
     }}
     .pbody.light {{ color: #fff8f0; }}
     .muted {{ opacity: 0.5; font-style: italic; }}
+    {HERO_LAYER_CSS}
   </style>
 </head>
 <body>
@@ -919,6 +972,7 @@ class TemplateService:
       color: #5d4037;
       box-shadow: 0 2px 4px rgba(0,0,0,0.06);
     }}
+    {HERO_LAYER_CSS}
   </style>
 </head>
 <body>
@@ -1216,6 +1270,7 @@ class TemplateService:
         0 4px 12px rgba(15, 50, 25, 0.12);
     }}
     .speak-body-v2 {{ margin: 10px 0 0; font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; word-wrap: break-word; opacity: 0.97; }}
+    {HERO_LAYER_CSS}
   </style>
 </head>
 <body>
@@ -1412,6 +1467,7 @@ class TemplateService:
     .kbody-v2 {{ margin: 0; font-size: 11.5px; line-height: 1.45; overflow-wrap: anywhere; word-wrap: break-word; }}
     .kbody-v2.klight {{ color: #fff8f0; }}
     .muted {{ opacity: 0.5; font-style: italic; }}
+    {HERO_LAYER_CSS}
   </style>
 </head>
 <body>
@@ -1634,6 +1690,7 @@ class TemplateService:
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }}
     .muted {{ opacity: 0.55; font-style: italic; }}
+    {HERO_LAYER_CSS}
   </style>
 </head>
 <body>
