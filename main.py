@@ -9,6 +9,7 @@ from bot.services.ai_service import AIContentService
 from bot.services.pipeline_service import ContentPipelineService
 from bot.services.screenshot_service import ScreenshotService
 from bot.services.template_service import TemplateService
+from bot.services.topic_image_service import TopicImageService
 from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService
 from bot.utils.config import load_settings
@@ -46,6 +47,7 @@ def build_application() -> tuple[Application, str, int, str, str]:
         ai_service=AIContentService(openai_client, settings.openai_model),
         template_service=TemplateService(),
         screenshot_service=ScreenshotService(settings.screenshotone_api_key),
+        topic_image_service=TopicImageService(openai_client),
     )
     deduplicator = MessageDeduplicator(ttl_seconds=600)
     message_handler = MessageHandlerService(pipeline, deduplicator)

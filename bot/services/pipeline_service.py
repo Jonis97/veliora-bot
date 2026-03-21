@@ -7,6 +7,7 @@ from telegram import Bot, Message
 from bot.services.ai_service import AIContentService
 from bot.services.screenshot_service import ScreenshotService
 from bot.services.template_service import TemplateService
+from bot.services.topic_image_service import TopicImageService
 from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService, extract_video_id
 from bot.utils.input_parser import parse_template_hint
@@ -33,17 +34,24 @@ class ContentPipelineService:
         ai_service: AIContentService,
         template_service: TemplateService,
         screenshot_service: ScreenshotService,
+        topic_image_service: TopicImageService,
     ) -> None:
         self._youtube_service = youtube_service
         self._transcription_service = transcription_service
         self._ai_service = ai_service
         self._template_service = template_service
         self._screenshot_service = screenshot_service
+        self._topic_image_service = topic_image_service
 
     async def process_message(self, bot: Bot, message: Message) -> PipelineResult:
         text_source, preferred_template, source_type = await self._extract_source(bot, message)
         card_json = await self._ai_service.generate_card_content(text_source, preferred_template)
-        html = self._template_service.render_html(card_json, preferred_template)
+        topic = str(card_json.get("title", "education")).strip() or "education"
+        image_url = await self._topic_image_service.fetch_topic_image(topic)
+        card_for_render = dict(card_json)
+        if image_url:
+            card_for_render["image_url"] = image_url
+        html = self._template_service.render_html(card_for_render, preferred_template)
         used_template = preferred_template or str(card_json.get("template", "warm_paper"))
 
         try:
@@ -59,7 +67,7 @@ class ContentPipelineService:
                 exc,
                 exc_info=True,
             )
-            text_body = self._format_card_text_reply(card_json, used_template, source_type)
+            text_body = self._format_card_text_reply(card_for_render, used_template, source_type)
             return PipelineResult(
                 template_used=used_template,
                 source_type=source_type,
