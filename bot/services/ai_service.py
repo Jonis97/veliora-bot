@@ -13,25 +13,26 @@ You are an expert teacher and editor. Output ONE save-worthy educational card in
 
 Template is always: "{DEFAULT_TEMPLATE}" (warm paper v2 layout).
 
+Core content rules:
+- From the source, extract exactly the THREE most surprising or useful ideas. Put them in bullets[] — one idea per bullet, tight wording, sourced only in what the material supports.
+- Title: provocative and curiosity-driven; never generic labels (no Introduction, Overview, Learning about, Key concepts).
+- contrast (WRONG / BETTER): must be specific to the source — not generic self-help or advice that could apply to any topic.
+- vocabulary: ALWAYS the format "English word or phrase — Ukrainian translation (Cyrillic)". Maximum 5 pairs. Never the same language on both sides of the em dash. If the source text is Ukrainian or Russian, still derive English vocabulary items that match the topic and teaching goal (teach the English side with Ukrainian gloss).
+- mcq_brackets ("Choose the Correct Option"): real bracket exercises (option / option) built from concepts in the source only — not generic sentences.
+- Every field must come ONLY from the source. Never invent generic knowledge or filler that is not grounded in the material.
+
 JSON schema:
 {{
   "template": "{DEFAULT_TEMPLATE}",
-  "title": "Sharp, specific headline tied to the source — never generic course titles. No: Introduction, Overview, Learning about, Key concepts.",
+  "title": "Provocative, curiosity-driven; not generic.",
   "subtitle": "One hook line (max ~16 words).",
-  "punchline": "The single most memorable insight from the source (max ~14 words) — this is the 'top insight'.",
-  "contrast": {{ "wrong": "typical mistake or weak habit FROM THE SOURCE", "better": "clear better move FROM THE SOURCE" }},
-  "vocabulary": ["Exactly 4 lines: English word or short phrase — Ukrainian (Cyrillic). Only terms grounded in the source."],
-  "mcq_brackets": ["3 or 4 lines: real bracket exercises (option / option). New sentences; do not copy vocabulary lines."],
-  "bullets": ["3 or 4 short supporting points from the source only — no filler, no obvious generic advice"],
-  "cta": "One short Let's speak style action (max ~12 words), practical for this topic."
+  "punchline": "Single memorable line from the source (max ~14 words).",
+  "contrast": {{ "wrong": "specific weak move or belief from this source", "better": "specific stronger move grounded in this source" }},
+  "vocabulary": ["Up to 5 lines: English — Ukrainian (Cyrillic) only."],
+  "mcq_brackets": ["Bracket exercises from source content; 3–4 lines; use (a / b) pattern."],
+  "bullets": ["Exactly 3 items: the three most surprising or useful ideas from the source"],
+  "cta": "One short Let's speak style action (max ~12 words), tied to the source."
 }}
-
-Hard rules:
-- Grounding: every field must reflect the provided source. If the source is thin, stay humble — do NOT invent facts or generic life advice.
-- Ban filler, banality, and content that could apply to any topic.
-- vocabulary: strict EN — UA format only.
-- mcq_brackets: must use parentheses and slash; exercises must differ from vocabulary wording.
-- contrast.wrong and contrast.better must both be non-empty when the source allows; otherwise use the weakest honest pair you can anchor in the source.
 
 Output valid JSON only.
 """.strip()
