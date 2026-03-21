@@ -67,7 +67,7 @@ Optional:
 - `WEBHOOK_SECRET_TOKEN` (default: `veliora-secret-token`)
 - `OPENAI_MODEL` (default: `gpt-4o-mini`)
 - `PORT` (default: `8080`)
-- Topic hero image: by default only Wikipedia thumbnails (min width) are used; Unsplash/Pexels require `TOPIC_IMAGE_ALLOW_STOCK=1`. DALL·E: `TOPIC_IMAGE_ENABLE_DALLE=1`. If no image passes, cards use the premium insight block.
+- Topic hero image: Wikipedia first (min width, URL filters); Unsplash/Pexels require `TOPIC_IMAGE_ALLOW_STOCK=1`; DALL·E: `TOPIC_IMAGE_ENABLE_DALLE=1`. Each candidate must pass a **vision gate** (topic fit, clarity, premium look) when `OPENAI_API_KEY` is set — set `TOPIC_IMAGE_VISION_VALIDATE=0` to skip. Optional `TOPIC_IMAGE_VISION_MODEL` (default `gpt-4o-mini`). If no image passes, the card uses a **gradient hero** (no random insert).
 
 ## Run locally
 
