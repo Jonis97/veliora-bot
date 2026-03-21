@@ -19,6 +19,8 @@ Return JSON only (no markdown and no extra prose), with this schema:
 Constraints:
 - Keep text concise and clear for social sharing.
 - Output valid JSON object.
+- If the source only includes a YouTube URL (no transcript), infer the likely topic from the URL
+  and video ID and still produce a useful educational card.
 """.strip()
 
 

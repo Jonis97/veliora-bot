@@ -64,6 +64,30 @@ class ContentPipelineService:
         cleaned_text, template = parse_template_hint(text)
         video_id = extract_video_id(cleaned_text)
         if video_id:
-            transcript = await self._youtube_service.fetch_transcript(video_id)
-            return transcript, template, "youtube"
+            try:
+                transcript = await self._youtube_service.fetch_transcript(video_id)
+                return transcript, template, "youtube"
+            except Exception as exc:  # noqa: BLE001
+                LOGGER.warning(
+                    "YouTube transcript fetch failed for video_id=%s: %s. "
+                    "Falling back to URL-only context for GPT.",
+                    video_id,
+                    exc,
+                )
+                fallback_text = self._youtube_url_only_context(video_id, cleaned_text)
+                return fallback_text, template, "youtube"
         return cleaned_text, template, "text"
+
+    @staticmethod
+    def _youtube_url_only_context(video_id: str, user_link_text: str) -> str:
+        """When Supadata transcript is unavailable, GPT infers topic from URL only."""
+        canonical_url = f"https://www.youtube.com/watch?v={video_id}"
+        return (
+            "[Transcript unavailable — no transcript text was fetched.]\n\n"
+            f"Video URL: {canonical_url}\n"
+            f"Video ID: {video_id}\n"
+            f"User message / link: {user_link_text}\n\n"
+            "Infer the likely topic or theme from the URL, video ID, and any cues in the link text. "
+            "Create an educational flashcard about that topic with clear, generally accurate learning points. "
+            "If the topic is ambiguous, choose a reasonable educational angle and frame the card helpfully."
+        )
