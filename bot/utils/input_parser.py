@@ -4,7 +4,10 @@ from typing import Optional
 from bot.services.template_service import ALLOWED_TEMPLATES
 
 
-TEMPLATE_TAG_REGEX = re.compile(r"\[template:(warm_paper|kitchen_collage|influencer_card)\]", re.IGNORECASE)
+TEMPLATE_TAG_REGEX = re.compile(
+    r"\[template:(warm_paper_v2|kitchen_collage_v2|influencer_card_v2|warm_paper|kitchen_collage|influencer_card)\]",
+    re.IGNORECASE,
+)
 
 
 def parse_template_hint(text: str) -> tuple[str, Optional[str]]:

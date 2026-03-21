@@ -2,7 +2,14 @@ from html import escape
 from typing import Any, List, Optional, Tuple
 
 
-ALLOWED_TEMPLATES = {"warm_paper", "kitchen_collage", "influencer_card"}
+ALLOWED_TEMPLATES = {
+    "warm_paper",
+    "kitchen_collage",
+    "influencer_card",
+    "warm_paper_v2",
+    "kitchen_collage_v2",
+    "influencer_card_v2",
+}
 
 
 def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
@@ -97,10 +104,16 @@ class TemplateService:
         if template_name not in ALLOWED_TEMPLATES:
             template_name = "warm_paper"
         normalized["template"] = template_name
+        if template_name == "kitchen_collage_v2":
+            return self._kitchen_collage_v2_template(normalized)
         if template_name == "kitchen_collage":
             return self._kitchen_collage_template(normalized)
+        if template_name == "influencer_card_v2":
+            return self._influencer_card_v2_template(normalized)
         if template_name == "influencer_card":
             return self._influencer_card_template(normalized)
+        if template_name == "warm_paper_v2":
+            return self._warm_paper_v2_template(normalized)
         return self._warm_paper_template(normalized)
 
     # --- Template 1: warm_paper (idioms / vocabulary / phrases) ---
@@ -830,6 +843,423 @@ class TemplateService:
     <div class="level-badge">{level}</div>
     <header class="head-i">
       <h1 class="topic-title">{topic}</h1>
+    </header>
+    {hero_block}
+    {content_sections}
+  </div>
+</body>
+</html>"""
+
+    # --- v2: refined layout / typography (v1 retained); ScreenshotOne: .page 600×920, selector .page ---
+
+    def _warm_paper_v2_template(self, card: dict[str, Any]) -> str:
+        topic = card["title"]
+        level = _badge_level(card["subtitle"])
+        sub = (card.get("subtitle") or "").strip()
+        subtitle_html = (
+            f'<p class="topic-sub-v2">{sub}</p>' if sub else '<p class="topic-sub-v2 muted">Study note</p>'
+        )
+        bullets = card["bullets"]
+        cta = card["cta"]
+        pairs = _split_term_translation(bullets)
+        vocab_rows = []
+        for term, trans in pairs[:6]:
+            if trans:
+                vocab_rows.append(
+                    f'<div class="vr-v2"><span class="tv2">{term}</span>'
+                    f'<span class="sv2">—</span><span class="gv2">{trans}</span></div>'
+                )
+            else:
+                vocab_rows.append(f'<div class="vr-v2"><span class="tv2 full">{term}</span></div>')
+        if not vocab_rows:
+            vocab_rows.append('<div class="vr-v2 muted">Add pairs (term — gloss).</div>')
+
+        ex_lines = bullets[:4] if bullets else []
+        mcq_items = []
+        for i, line in enumerate(ex_lines, 1):
+            mcq_items.append(f'<div class="mcq-v2"><span class="nv2">{i}.</span> {line}</div>')
+        while len(mcq_items) < 3:
+            mcq_items.append(
+                f'<div class="mcq-v2 muted"><span class="nv2">{len(mcq_items) + 1}.</span> '
+                f"Choose the best option.</div>"
+            )
+
+        content_sections = f"""
+    <div class="cols-v2">
+      <section class="panel-v2 pv2-a" aria-label="Vocabulary">
+        <div class="pin-v2"></div>
+        <p class="label-v2">Vocabulary</p>
+        <div class="body-v2">{"".join(vocab_rows)}</div>
+      </section>
+      <section class="panel-v2 pv2-b" aria-label="Choose the correct option">
+        <div class="pin-v2"></div>
+        <p class="label-v2">Choose the correct option</p>
+        <div class="body-v2">{"".join(mcq_items[:4])}</div>
+      </section>
+    </div>
+    <section class="speak-v2" aria-label="Let's speak">
+      <p class="label-v2 light">Let’s speak</p>
+      <p class="speak-body-v2">{cta if cta else "Practice aloud in a short sentence."}</p>
+    </section>
+        """
+
+        hero_block = _hero_media_block(card, "warm_v2")
+        return self._wrap_warm_paper_v2_html(topic, level, subtitle_html, hero_block, content_sections)
+
+    def _wrap_warm_paper_v2_html(
+        self, topic: str, level: str, subtitle_html: str, hero_block: str, content_sections: str
+    ) -> str:
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{ background: #e0d4c4; font-family: "DM Serif Display", Georgia, serif; color: #2f2420; -webkit-font-smoothing: antialiased; }}
+    .page {{
+      width: 600px; min-height: 920px; position: relative; overflow: hidden;
+      background: #f7f2ea;
+      background-image:
+        linear-gradient(90deg, rgba(160, 140, 120, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(160, 140, 120, 0.06) 1px, transparent 1px);
+      background-size: 20px 20px, 20px 20px;
+      padding: 22px 20px 26px;
+    }}
+    .level-badge {{
+      position: absolute; top: 16px; left: 16px; width: 48px; height: 48px; border-radius: 50%;
+      background: #7a1f1f; color: #fffaf3; font-size: 10px; line-height: 1.05; display: flex;
+      align-items: center; justify-content: center; text-align: center; padding: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.14); z-index: 5; overflow-wrap: anywhere;
+    }}
+    .hdr-v2 {{ padding: 6px 56px 14px 60px; text-align: center; }}
+    .topic-title-v2 {{
+      font-family: "Caveat", cursive; font-size: 40px; line-height: 1.02; margin: 0; color: #3d2a22;
+      letter-spacing: -0.02em; word-wrap: break-word; overflow-wrap: anywhere;
+    }}
+    .topic-sub-v2 {{ margin: 8px auto 0; max-width: 92%; font-size: 12.5px; line-height: 1.45; color: #5c4a42; }}
+    .hero-media {{ margin: 14px auto 14px; width: 92%; max-width: 528px; border-radius: 16px; overflow: hidden;
+      border: 1px solid rgba(100, 70, 50, 0.22); box-shadow: 0 8px 24px rgba(40, 28, 20, 0.1); }}
+    .hero-img {{ display: block; width: 100%; height: auto; max-height: 152px; object-fit: cover; }}
+    .insight-card {{ margin: 14px auto 14px; width: 92%; max-width: 528px; min-height: 100px; padding: 16px 18px 18px 20px;
+      border-radius: 16px; position: relative; overflow: hidden; }}
+    .insight-card.insight-warm_v2 {{
+      background: linear-gradient(160deg, #fff 0%, #faf5ee 100%);
+      border: 1px solid rgba(120, 90, 70, 0.2);
+      box-shadow: 0 10px 28px rgba(45, 32, 24, 0.08);
+    }}
+    .insight-kicker {{ font-family: "Caveat", cursive; font-size: 21px; margin: 0 0 8px; color: #8b4513; }}
+    .insight-body {{ margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .insight-accent {{ position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 2px;
+      background: linear-gradient(180deg, #b71c1c, #5d4037); }}
+    .cols-v2 {{ display: flex; gap: 12px; align-items: stretch; margin-bottom: 12px; }}
+    .panel-v2 {{
+      flex: 1; min-width: 0; padding: 14px 12px 16px; border-radius: 14px; position: relative;
+      box-shadow: 0 6px 18px rgba(45, 35, 28, 0.09);
+    }}
+    .pv2-a {{ background: #fffefb; border: 1px solid rgba(190, 165, 135, 0.35); transform: rotate(-0.4deg); }}
+    .pv2-b {{ background: #fffdf8; border: 1px solid rgba(175, 155, 130, 0.32); transform: rotate(0.35deg); }}
+    .pin-v2 {{ position: absolute; top: -5px; right: 16px; width: 13px; height: 13px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff7961, #b71c1c); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }}
+    .label-v2 {{
+      font-family: "DM Serif Display", Georgia, serif; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: #6d4c41; margin: 0 0 10px;
+    }}
+    .label-v2.light {{ color: #e8f5e9; }}
+    .body-v2 {{ font-size: 12px; line-height: 1.42; }}
+    .vr-v2 {{ margin-bottom: 8px; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .tv2 {{ font-weight: 700; color: #2f2420; }}
+    .tv2.full {{ display: block; }}
+    .sv2 {{ margin: 0 5px; opacity: 0.45; }}
+    .gv2 {{ color: #4e3d36; }}
+    .mcq-v2 {{ margin-bottom: 8px; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .nv2 {{ font-weight: 700; color: #8b4513; margin-right: 5px; }}
+    .muted {{ color: rgba(47, 36, 32, 0.42); font-style: italic; }}
+    .speak-v2 {{
+      width: 100%; padding: 14px 16px 16px; border-radius: 14px;
+      background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 55%, #1b5e20 100%);
+      color: #f1f8f4; box-shadow: 0 6px 16px rgba(20, 60, 30, 0.22);
+    }}
+    .speak-body-v2 {{ margin: 6px 0 0; font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; word-wrap: break-word; }}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="level-badge">{level}</div>
+    <header class="hdr-v2">
+      <h1 class="topic-title-v2">{topic}</h1>
+      {subtitle_html}
+    </header>
+    {hero_block}
+    {content_sections}
+  </div>
+</body>
+</html>"""
+
+    def _kitchen_collage_v2_template(self, card: dict[str, Any]) -> str:
+        topic = card["title"]
+        level = _badge_level(card["subtitle"])
+        sub = (card.get("subtitle") or "").strip()
+        subtitle_html = (
+            f'<p class="ksub-v2">{sub}</p>' if sub else '<p class="ksub-v2 muted">Mixed practice</p>'
+        )
+        bullets = card["bullets"]
+        cta = card["cta"]
+        b = bullets + [""] * 5
+        sec_vocab = b[0] if b[0] else _placeholder_line()
+        sec_fix = b[1] if b[1] else _placeholder_line()
+        sec_choose = b[2] if b[2] else _placeholder_line()
+        sec_gap = b[3] if b[3] else _placeholder_line()
+        sec_speak = cta if cta else (b[4] if b[4] else "Short speaking cue.")
+
+        sections = (
+            ("01", "Vocabulary list", sec_vocab),
+            ("02", "Correct the mistake", sec_fix),
+            ("03", "Choose the option", sec_choose),
+            ("04", "Fill in the gaps", sec_gap),
+        )
+        blocks = []
+        for num, label, body in sections:
+            blocks.append(
+                f'<section class="kpanel-v2"><span class="knum-v2">{num}</span>'
+                f'<p class="klab-v2">{label}</p><p class="kbody-v2">{body}</p></section>'
+            )
+        blocks.append(
+            f'<section class="kpanel-v2 kspeak-v2"><span class="knum-v2 klight">05</span>'
+            f'<p class="klab-v2 klight">Speaking</p><p class="kbody-v2 klight">{sec_speak}</p></section>'
+        )
+        content_sections = '<div class="kstack-v2">' + "".join(blocks) + "</div>"
+
+        hero_block = _hero_media_block(card, "kitchen_v2")
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{ background: #c9b99a; font-family: "DM Serif Display", Georgia, serif; color: #2c221e; -webkit-font-smoothing: antialiased; }}
+    .page {{
+      width: 600px; min-height: 920px; position: relative;
+      background: #fdfaf5;
+      background-image: linear-gradient(0deg, rgba(235, 225, 210, 0.5) 1px, transparent 1px);
+      background-size: 100% 26px;
+      padding: 20px 18px 24px;
+      overflow: hidden;
+    }}
+    .level-badge {{
+      position: absolute; top: 14px; left: 14px; width: 48px; height: 48px; border-radius: 50%;
+      background: #7a1f1f; color: #fffaf3; font-size: 10px; display: flex; align-items: center;
+      justify-content: center; text-align: center; padding: 4px; box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+      z-index: 5; overflow-wrap: anywhere; line-height: 1.05;
+    }}
+    .khdr-v2 {{ padding: 4px 54px 12px 58px; text-align: center; }}
+    .ktop-v2 {{ font-family: "Caveat", cursive; font-size: 38px; line-height: 1.05; margin: 0; color: #3d2a22;
+      word-wrap: break-word; overflow-wrap: anywhere; }}
+    .ksub-v2 {{ margin: 8px auto 0; max-width: 94%; font-size: 12.5px; line-height: 1.45; color: #5a4a42; }}
+    .hero-media {{ margin: 12px auto 14px; width: 94%; border-radius: 14px; overflow: hidden;
+      border: 1px solid rgba(130, 100, 75, 0.25); box-shadow: 0 6px 20px rgba(40, 30, 22, 0.1); }}
+    .hero-img {{ display: block; width: 100%; height: auto; max-height: 136px; object-fit: cover; }}
+    .insight-card {{ margin: 12px auto 14px; width: 94%; min-height: 90px; padding: 14px 16px 16px 18px;
+      border-radius: 14px; position: relative; overflow: hidden; }}
+    .insight-card.insight-kitchen_v2 {{
+      background: linear-gradient(165deg, #fff 0%, #f5efe6 100%);
+      border: 1px solid rgba(150, 120, 90, 0.28);
+      box-shadow: 0 8px 22px rgba(45, 32, 24, 0.08);
+    }}
+    .insight-kicker {{ font-family: "Caveat", cursive; font-size: 20px; margin: 0 0 6px; color: #8b4513; }}
+    .insight-body {{ margin: 0; font-size: 12.5px; line-height: 1.48; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .insight-accent {{ position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px;
+      background: linear-gradient(180deg, #bf360c, #4e342e); }}
+    .kstack-v2 {{ display: flex; flex-direction: column; gap: 10px; }}
+    .kpanel-v2 {{
+      position: relative; padding: 12px 14px 14px 44px; border-radius: 12px;
+      background: #fffdf9; border: 1px solid rgba(190, 165, 135, 0.35);
+      box-shadow: 0 4px 14px rgba(45, 35, 28, 0.06);
+    }}
+    .kspeak-v2 {{
+      background: linear-gradient(125deg, #4e342e 0%, #3e2723 100%);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 6px 18px rgba(30, 20, 15, 0.2);
+    }}
+    .knum-v2 {{
+      position: absolute; left: 12px; top: 12px; width: 24px; height: 24px; border-radius: 50%;
+      background: #efe6dc; color: #5d4037; font-size: 9px; font-weight: 700; display: flex;
+      align-items: center; justify-content: center;
+    }}
+    .knum-v2.klight {{ background: rgba(255, 220, 180, 0.25); color: #ffe0b2; }}
+    .klab-v2 {{
+      margin: 0 0 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: #6d4c41;
+    }}
+    .klab-v2.klight {{ color: #ffe0b2; }}
+    .kbody-v2 {{ margin: 0; font-size: 11.5px; line-height: 1.45; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .kbody-v2.klight {{ color: #fff8f0; }}
+    .muted {{ opacity: 0.5; font-style: italic; }}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="level-badge">{level}</div>
+    <header class="khdr-v2">
+      <h1 class="ktop-v2">{topic}</h1>
+      {subtitle_html}
+    </header>
+    {hero_block}
+    {content_sections}
+  </div>
+</body>
+</html>"""
+
+    def _influencer_card_v2_template(self, card: dict[str, Any]) -> str:
+        topic = card["title"]
+        level = _badge_level(card["subtitle"])
+        sub = (card.get("subtitle") or "").strip()
+        subtitle_html = (
+            f'<p class="isub-v2">{sub}</p>' if sub else '<p class="isub-v2 muted">Social learning</p>'
+        )
+        bullets = card["bullets"]
+        cta = card["cta"]
+        b = bullets + [""] * 5
+        dq = b[0] if b[0] else "What is your take on this topic?"
+        vocab = b[1] if b[1] else "Key term — short definition."
+        tf = b[2] if b[2] else "True or false: [statement]."
+        gram = b[3] if b[3] else "Pattern: subject + verb + …"
+        write_pills = [p for p in bullets[:3] if p] or ["Brainstorm", "Draft", "Polish"]
+        pills_html = "".join(f'<span class="pill-v2">{p}</span>' for p in write_pills[:4])
+
+        content_sections = f"""
+    <div class="igrid-v2">
+      <section class="imod-v2 imod-span">
+        <p class="ilab-v2">Discussion</p>
+        <p class="itxt-v2">{dq}</p>
+      </section>
+      <section class="imod-v2 imod-span">
+        <p class="ilab-v2">Vocabulary</p>
+        <p class="itxt-v2 small">{vocab}</p>
+      </section>
+      <div class="irow-v2">
+        <section class="imod-v2 imod-half">
+          <p class="ilab-v2">True / false</p>
+          <p class="itxt-v2">{tf}</p>
+        </section>
+        <section class="imod-v2 imod-bubble imod-half">
+          <p class="ilab-v2">Grammar</p>
+          <div class="bubble-v2">{gram}</div>
+        </section>
+      </div>
+      <section class="imod-v2 imod-span imod-write">
+        <p class="ilab-v2">Writing</p>
+        <p class="itxt-v2 strong">{cta if cta else "Write 3–5 sentences."}</p>
+        <div class="pills-v2">{pills_html}</div>
+      </section>
+    </div>
+        """
+
+        hero_block = _hero_media_block(card, "influencer_v2")
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{ background: #121218; font-family: "DM Serif Display", Georgia, serif; color: #2a2420; -webkit-font-smoothing: antialiased; }}
+    .page {{
+      width: 600px; min-height: 920px; position: relative;
+      background: linear-gradient(168deg, #fefbf6 0%, #f3ebe3 38%, #e8ddd4 100%);
+      padding: 20px 16px 24px;
+      overflow: hidden;
+    }}
+    .page::before {{
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse 80% 50% at 100% 0%, rgba(255, 140, 100, 0.14) 0%, transparent 50%),
+                  radial-gradient(ellipse 70% 45% at 0% 100%, rgba(80, 120, 200, 0.1) 0%, transparent 45%);
+    }}
+    .level-badge {{
+      position: absolute; top: 14px; left: 14px; width: 48px; height: 48px; border-radius: 50%;
+      background: #1a1a1a; color: #faf6f0; font-size: 10px; display: flex; align-items: center;
+      justify-content: center; text-align: center; padding: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      z-index: 5; overflow-wrap: anywhere; line-height: 1.05;
+    }}
+    .ihdr-v2 {{ padding: 6px 52px 14px 56px; text-align: center; position: relative; z-index: 1; }}
+    .ititle-v2 {{
+      font-family: "Caveat", cursive; font-size: 42px; line-height: 1.02; margin: 0; color: #1f1612;
+      letter-spacing: -0.02em; word-wrap: break-word; overflow-wrap: anywhere;
+    }}
+    .isub-v2 {{ margin: 8px auto 0; max-width: 94%; font-size: 12.5px; line-height: 1.45; color: #4a3f38; }}
+    .hero-media {{
+      margin: 12px auto 14px; width: 94%; border-radius: 18px; overflow: hidden;
+      border: 1px solid rgba(40, 30, 25, 0.15); box-shadow: 0 10px 32px rgba(25, 18, 14, 0.15);
+      position: relative; z-index: 1;
+    }}
+    .hero-img {{ display: block; width: 100%; height: auto; max-height: 148px; object-fit: cover; }}
+    .insight-card {{
+      margin: 12px auto 14px; width: 94%; min-height: 96px; padding: 16px 18px 18px 22px;
+      border-radius: 18px; position: relative; z-index: 1; overflow: hidden;
+    }}
+    .insight-card.insight-influencer_v2 {{
+      background: linear-gradient(145deg, rgba(255,255,255,0.97) 0%, #faf6f1 100%);
+      border: 1px solid rgba(180, 140, 110, 0.28);
+      box-shadow: 0 12px 32px rgba(40, 30, 24, 0.1);
+    }}
+    .insight-kicker {{ font-family: "Caveat", cursive; font-size: 22px; margin: 0 0 8px; color: #c62828; }}
+    .insight-body {{ margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .insight-accent {{ position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 2px;
+      background: linear-gradient(180deg, #0d47a1, #6a1b9a, #c62828); }}
+    .igrid-v2 {{
+      display: flex; flex-direction: column; gap: 10px; position: relative; z-index: 1;
+    }}
+    .irow-v2 {{ display: flex; gap: 10px; align-items: stretch; }}
+    .imod-half {{ flex: 1; min-width: 0; }}
+    .imod-v2 {{
+      padding: 12px 14px 14px; border-radius: 14px;
+      background: rgba(255, 253, 250, 0.95);
+      border: 1px solid rgba(200, 175, 150, 0.35);
+      box-shadow: 0 6px 18px rgba(35, 26, 20, 0.07);
+    }}
+    .imod-write {{ border-left: 4px solid #4527a0; }}
+    .imod-bubble {{ border-left: 4px solid #1565c0; }}
+    .ilab-v2 {{
+      margin: 0 0 6px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+      color: #6d4c41;
+    }}
+    .itxt-v2 {{ margin: 0; font-size: 11.5px; line-height: 1.45; overflow-wrap: anywhere; word-wrap: break-word; }}
+    .itxt-v2.small {{ font-size: 11px; }}
+    .itxt-v2.strong {{ font-weight: 600; color: #1f1612; }}
+    .bubble-v2 {{
+      font-size: 11px; line-height: 1.4; padding: 10px 12px; border-radius: 20px;
+      background: linear-gradient(160deg, #e8eaf6 0%, #fff 100%);
+      border: 1px solid rgba(21, 101, 192, 0.2);
+      overflow-wrap: anywhere; word-wrap: break-word;
+    }}
+    .pills-v2 {{ margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }}
+    .pill-v2 {{
+      display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 10px;
+      background: #fff; border: 1px solid rgba(180, 150, 120, 0.45); color: #4e342e;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }}
+    .muted {{ opacity: 0.55; font-style: italic; }}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="level-badge">{level}</div>
+    <header class="ihdr-v2">
+      <h1 class="ititle-v2">{topic}</h1>
+      {subtitle_html}
     </header>
     {hero_block}
     {content_sections}

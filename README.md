@@ -14,6 +14,7 @@ veliora-bot/
 │   │   ├── pipeline_service.py
 │   │   ├── screenshot_service.py
 │   │   ├── template_service.py
+│   │   ├── topic_image_service.py
 │   │   ├── transcription_service.py
 │   │   └── youtube_service.py
 │   └── utils/
@@ -35,10 +36,10 @@ veliora-bot/
   - Voice note (Whisper transcription)
   - YouTube URL (Supadata transcript API)
 - AI JSON card generation via GPT-4o-mini.
-- HTML card templates:
-  - `warm_paper`
-  - `kitchen_collage`
-  - `influencer_card`
+- HTML card templates (v1 kept as backup; v2 = refined layout):
+  - `warm_paper` / `warm_paper_v2`
+  - `kitchen_collage` / `kitchen_collage_v2`
+  - `influencer_card` / `influencer_card_v2`
 - HTML screenshot rendering via ScreenshotOne.
 - Retry logic (3 attempts) and structured logging.
 - Duplicate update protection via `chat_id:message_id`.
@@ -74,8 +75,8 @@ Optional:
 
 In text messages, include an optional template tag:
 
-- `[template:warm_paper]`
-- `[template:kitchen_collage]`
-- `[template:influencer_card]`
+- `[template:warm_paper]` · `[template:warm_paper_v2]`
+- `[template:kitchen_collage]` · `[template:kitchen_collage_v2]`
+- `[template:influencer_card]` · `[template:influencer_card_v2]`
 
 If no tag is provided, default template is `warm_paper`.

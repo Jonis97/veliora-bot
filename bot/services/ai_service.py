@@ -12,7 +12,7 @@ specific, practical, and a bit surprising—not generic motivation.
 
 Return JSON only (no markdown and no extra prose), with this schema:
 {
-  "template": "warm_paper | kitchen_collage | influencer_card",
+  "template": "warm_paper | kitchen_collage | influencer_card | warm_paper_v2 | kitchen_collage_v2 | influencer_card_v2",
   "title": "short catchy headline (concrete, not vague)",
   "subtitle": "one substantive line (optionally two short clauses separated by em dash or semicolon)
     anchoring situation, level, and payoff—long enough to feel full, not a slogan",

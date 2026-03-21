@@ -28,8 +28,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
     await update.message.reply_text(
         "Send text, voice, or a YouTube link.\n"
-        "Optional template tag in text: [template:warm_paper], [template:kitchen_collage], "
-        "or [template:influencer_card]."
+        "Optional template tag: [template:warm_paper], [template:kitchen_collage], "
+        "[template:influencer_card], or v2: [template:warm_paper_v2], "
+        "[template:kitchen_collage_v2], [template:influencer_card_v2]."
     )
 
 
