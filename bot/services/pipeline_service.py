@@ -27,7 +27,20 @@ from bot.utils.intent import OutputIntent
 
 LOGGER = logging.getLogger(__name__)
 
+_LANDSCAPE_KEYWORDS = (
+    "альбомний",
+    "горизонтальний",
+    "landscape",
+    "для екрану",
+    "демонстрація",
+)
+
 _CHAT_CONTEXT: dict[int, dict[str, Any]] = {}
+
+
+def _user_message_wants_landscape(message: Message) -> bool:
+    raw = (message.text or message.caption or "").lower()
+    return any(kw in raw for kw in _LANDSCAPE_KEYWORDS)
 
 
 def _ctx(chat_id: int) -> dict[str, Any]:
@@ -92,6 +105,7 @@ class _ResolvedSource:
     persist_body: Optional[str] = None
     video_id: Optional[str] = None
     youtube_thumbnail_url: Optional[str] = None
+    landscape: bool = False
 
 
 @dataclass
@@ -185,7 +199,12 @@ class ContentPipelineService:
         html = self._template_service.render_html(card_for_render, DEFAULT_TEMPLATE)
 
         try:
-            image_bytes = await self._screenshot_service.html_to_image(html)
+            if resolved.landscape:
+                image_bytes = await self._screenshot_service.html_to_image(
+                    html, viewport_width=1280, viewport_height=720
+                )
+            else:
+                image_bytes = await self._screenshot_service.html_to_image(html)
             return PipelineResult(
                 template_used=used_template,
                 source_type=source_type,
@@ -260,6 +279,7 @@ class ContentPipelineService:
         chat_id: int,
     ) -> _ResolvedSource:
         active = _load_active_source(chat_id)
+        landscape = _user_message_wants_landscape(message)
 
         if message.voice:
             transcript = await self._transcription_service.transcribe_voice(bot, message.voice.file_id)
@@ -273,6 +293,7 @@ class ContentPipelineService:
                 persist_new_source=True,
                 intent_seed="",
                 persist_body=transcript,
+                landscape=landscape,
             )
 
         raw = (message.text or message.caption or "").strip()
@@ -303,6 +324,7 @@ class ContentPipelineService:
                 persist_body=transcript,
                 video_id=video_id,
                 youtube_thumbnail_url=image_url,
+                landscape=landscape,
             )
 
         if not cleaned_text.strip() and _template:
@@ -317,6 +339,7 @@ class ContentPipelineService:
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
                 intent_seed="",
+                landscape=landscape,
             )
 
         if followup_intent(cleaned_text):
@@ -327,6 +350,7 @@ class ContentPipelineService:
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
                 intent_seed=cleaned_text,
+                landscape=landscape,
             )
 
         return _ResolvedSource(
@@ -335,6 +359,7 @@ class ContentPipelineService:
             persist_new_source=True,
             intent_seed=cleaned_text,
             persist_body=cleaned_text,
+            landscape=landscape,
         )
 
     async def process_message(

@@ -13,7 +13,13 @@ class ScreenshotService:
         self._api_key = api_key
         self._endpoint = "https://api.screenshotone.com/take"
 
-    async def html_to_image(self, html: str) -> bytes:
+    async def html_to_image(
+        self,
+        html: str,
+        *,
+        viewport_width: int = 600,
+        viewport_height: int = 920,
+    ) -> bytes:
         """
         Render HTML to PNG using only the query parameters required by ScreenshotOne.
         The `html` value is passed as a request param; httpx URL-encodes it correctly.
@@ -28,8 +34,8 @@ class ScreenshotService:
                         "access_key": self._api_key,
                         "html": html,
                         "format": "png",
-                        "viewport_width": 600,
-                        "viewport_height": 920,
+                        "viewport_width": viewport_width,
+                        "viewport_height": viewport_height,
                         "selector": ".page",
                     },
                 )
