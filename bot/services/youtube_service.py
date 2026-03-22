@@ -48,13 +48,13 @@ class YouTubeTranscriptService:
         try:
             from youtube_transcript_api import YouTubeTranscriptApi
 
-            transcript_list = await asyncio.to_thread(
-                lambda: YouTubeTranscriptApi.get_transcript(
-                    video_id,
-                    languages=["uk", "ru", "en"],
-                )
-            )
-            fallback = " ".join([t["text"] for t in transcript_list]).strip()
+            def _yta_fallback() -> str:
+                api = YouTubeTranscriptApi()
+                transcript_list = api.fetch(video_id)
+                text = " ".join([t.text for t in transcript_list])
+                return text.strip()
+
+            fallback = await asyncio.to_thread(_yta_fallback)
         except Exception as exc:  # noqa: BLE001
             LOGGER.warning(
                 "youtube-transcript-api fallback failed for video_id=%s: %s",
