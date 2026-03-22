@@ -13,18 +13,15 @@ class ScreenshotService:
         self._api_key = api_key
         self._endpoint = "https://api.screenshotone.com/take"
 
-    async def html_to_image(
-        self,
-        html: str,
-        *,
-        viewport_width: int = 600,
-        viewport_height: int = 920,
-    ) -> bytes:
+    async def take_screenshot(self, html_content: str, orientation: str = "portrait") -> bytes:
         """
-        Render HTML to PNG using only the query parameters required by ScreenshotOne.
-        The `html` value is passed as a request param; httpx URL-encodes it correctly.
+        Render HTML to PNG. `orientation` is "landscape" (1280×720) or "portrait" (600×920).
         Templates must include a root `.page` element for `selector=.page`.
         """
+        if orientation == "landscape":
+            width, height = 1280, 720
+        else:
+            width, height = 600, 920
 
         async def _render() -> bytes:
             async with httpx.AsyncClient(timeout=60.0) as client:
@@ -32,10 +29,10 @@ class ScreenshotService:
                     self._endpoint,
                     params={
                         "access_key": self._api_key,
-                        "html": html,
+                        "html": html_content,
                         "format": "png",
-                        "viewport_width": viewport_width,
-                        "viewport_height": viewport_height,
+                        "viewport_width": width,
+                        "viewport_height": height,
                         "selector": ".page",
                     },
                 )
@@ -43,3 +40,12 @@ class ScreenshotService:
                 return response.content
 
         return await with_retry(_render, attempts=3, operation_name="Screenshot rendering")
+
+    async def html_to_image(
+        self,
+        html: str,
+        *,
+        orientation: str = "portrait",
+    ) -> bytes:
+        """Backward-compatible alias for `take_screenshot`."""
+        return await self.take_screenshot(html, orientation=orientation)
