@@ -50,7 +50,10 @@ class YouTubeTranscriptService:
 
             def _yta_fallback() -> str:
                 api = YouTubeTranscriptApi()
-                transcript_list = api.fetch(video_id)
+                transcript_list = api.fetch(
+                    video_id,
+                    languages=["ru", "uk", "en", "en-US", "en-GB"],
+                )
                 text = " ".join([t.text for t in transcript_list])
                 return text.strip()
 
