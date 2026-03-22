@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import re
 from typing import Any, Optional
@@ -34,8 +35,12 @@ class YouTubeTranscriptService:
                     headers={"x-api-key": self._api_key},
                 )
                 response.raise_for_status()
-                payload: dict[str, Any] = response.json()
-                return self._normalize_transcript(payload)
+                response_body = response.text
+                payload: dict[str, Any] = json.loads(response_body)
+                normalized = self._normalize_transcript(payload)
+                if not normalized.strip():
+                    LOGGER.warning(f"Supadata raw response: {response_body}")
+                return normalized
 
         text = await with_retry(
             _request,
