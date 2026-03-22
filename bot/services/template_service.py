@@ -109,6 +109,12 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     if isinstance(mc_in, list):
         mcq_bracket_lines = [escape(str(x).strip())[:320] for x in mc_in[:4] if str(x).strip()]
 
+    ig_raw = str(raw.get("instagram_handle", "") or "").strip()
+    instagram_handle_display = ""
+    if ig_raw:
+        h = ig_raw if ig_raw.startswith("@") else f"@{ig_raw}"
+        instagram_handle_display = escape(h[:80])
+
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
@@ -121,6 +127,7 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "contrast_better": cb,
         "vocabulary_lines": vocabulary_lines,
         "mcq_bracket_lines": mcq_bracket_lines,
+        "instagram_handle": instagram_handle_display,
     }
 
 
@@ -1069,8 +1076,18 @@ class TemplateService:
 
         hero_block = _hero_media_block(card, "warm_v2")
         contrast_strip = _contrast_strip_html(card, "wp2")
+        ig = (card.get("instagram_handle") or "").strip()
+        instagram_corner_html = (
+            f'<div class="ig-handle-v2" aria-label="Instagram">{ig}</div>' if ig else ""
+        )
         return self._wrap_warm_paper_v2_html(
-            topic, level, subtitle_html, hero_block, contrast_strip, content_sections
+            topic,
+            level,
+            subtitle_html,
+            hero_block,
+            contrast_strip,
+            content_sections,
+            instagram_corner_html=instagram_corner_html,
         )
 
     def _wrap_warm_paper_v2_html(
@@ -1081,6 +1098,7 @@ class TemplateService:
         hero_block: str,
         contrast_strip: str,
         content_sections: str,
+        instagram_corner_html: str = "",
     ) -> str:
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1130,6 +1148,12 @@ class TemplateService:
       align-items: center; justify-content: center; text-align: center; padding: 4px;
       box-shadow: 0 6px 16px rgba(60, 20, 20, 0.25), 0 2px 4px rgba(0,0,0,0.12);
       z-index: 5; overflow-wrap: anywhere;
+    }}
+    .ig-handle-v2 {{
+      position: absolute; top: 22px; right: 24px; z-index: 6; max-width: 42%;
+      font-family: "DM Serif Display", Georgia, serif; font-size: 9.5px; font-weight: 500;
+      letter-spacing: 0.14em; color: rgba(90, 72, 62, 0.58); text-align: right;
+      line-height: 1.25; overflow-wrap: anywhere; word-break: break-all;
     }}
     .hdr-v2 {{ padding: 8px 58px 18px 62px; text-align: center; }}
     .topic-title-v2 {{
@@ -1276,6 +1300,7 @@ class TemplateService:
 <body>
   <div class="page">
     <div class="level-badge">{level}</div>
+    {instagram_corner_html}
     <header class="hdr-v2">
       <h1 class="topic-title-v2">{topic}</h1>
       {subtitle_html}
