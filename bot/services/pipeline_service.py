@@ -91,6 +91,7 @@ class _ResolvedSource:
     intent_seed: str
     persist_body: Optional[str] = None
     video_id: Optional[str] = None
+    youtube_thumbnail_url: Optional[str] = None
 
 
 @dataclass
@@ -169,11 +170,14 @@ class ContentPipelineService:
 
         card_json["template"] = DEFAULT_TEMPLATE
 
-        topic = str(card_json.get("title", "education")).strip() or "education"
-        image_url = await self._topic_image_service.fetch_topic_image(topic)
         card_for_render = dict(card_json)
-        if image_url:
-            card_for_render["image_url"] = image_url
+        if resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
+            card_for_render["image_url"] = resolved.youtube_thumbnail_url
+        else:
+            topic = str(card_json.get("title", "education")).strip() or "education"
+            image_url = await self._topic_image_service.fetch_topic_image(topic)
+            if image_url:
+                card_for_render["image_url"] = image_url
 
         used_template = DEFAULT_TEMPLATE
         source_type = resolved.source_type
@@ -290,6 +294,7 @@ class ContentPipelineService:
             if not (transcript or "").strip():
                 LOGGER.warning("YouTube transcript empty for video_id=%s", video_id)
                 raise TranscriptUnavailableError()
+            image_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
             return _ResolvedSource(
                 text_for_ai=transcript,
                 source_type="youtube",
@@ -297,6 +302,7 @@ class ContentPipelineService:
                 intent_seed="",
                 persist_body=transcript,
                 video_id=video_id,
+                youtube_thumbnail_url=image_url,
             )
 
         if not cleaned_text.strip() and _template:

@@ -80,6 +80,9 @@ def is_safe_topic_image_url(url: str) -> bool:
     if not u.startswith("https://"):
         return False
     lower = u.lower()
+    # Official YouTube video thumbnails (blocked by generic "youtube" substring below).
+    if lower.startswith("https://img.youtube.com/vi/") and "maxresdefault.jpg" in lower:
+        return True
     for s in _BLOCKED_SUBSTRINGS:
         if s in lower:
             return False
