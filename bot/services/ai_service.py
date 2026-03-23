@@ -18,16 +18,21 @@ Core content rules:
 - Title: provocative and curiosity-driven; never generic labels (no Introduction, Overview, Learning about, Key concepts).
 - subtitle: one hook line tied specifically to THIS source — not generic. Max ~16 words.
 - contrast (WRONG / BETTER): must be specific to the source — not generic self-help or advice that could apply to any topic.
-- vocabulary: ALWAYS the format "English word or phrase — Ukrainian translation (Cyrillic)". Maximum 5 pairs. Never the same language on both sides of the em dash. If the source text is Ukrainian or Russian, still derive English vocabulary items that match the topic and teaching goal (teach the English side with Ukrainian gloss).
 - mcq_brackets: 3–4 bracket exercises from source concepts only. Each sentence must offer exactly two mutually exclusive choices — one clearly correct, one clearly wrong. Pattern: 'X leads to (a) growth / (b) stagnation.' NEVER place both options in the same clause joined by 'and'.
 - cta: one specific open question for speaking practice, tied to source content. Must start with What, How, or Why. Max ~12 words.
 - Every field must come ONLY from the source. Never invent generic knowledge or filler that is not grounded in the material.
 
-When intent is vocabulary:
-- extract ONLY specific words and phrases that appear in the source text
-- never use generic topic words
-- prioritize useful phrases, collocations, and expressions from the source
-- do not invent, generalize, or summarize vocabulary
+Vocabulary selection rules (think like an experienced teacher):
+1. Does this word/phrase actually help the student understand the topic?
+2. Is it not too obvious or too basic?
+3. Is it clearly connected to the lesson theme?
+4. Can it be used in speech or in a task?
+5. Does it help understand the video — not just exist in the text?
+
+Prefer phrases and collocations over single words (e.g. 'make progress' not just 'progress').
+Avoid isolated basic verbs unless they are part of a useful phrase or collocation.
+Avoid overly academic terms and random low-value nouns.
+Always use format: English phrase — Ukrainian translation.
 
 For vocab_card template:
 - title: must be the specific topic from source, never 'Learning Card'
