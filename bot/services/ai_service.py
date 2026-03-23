@@ -22,6 +22,29 @@ Core content rules:
 - cta: one specific open question for speaking practice, tied to source content. Must start with What, How, or Why. Max ~12 words.
 - Every field must come ONLY from the source. Never invent generic knowledge or filler that is not grounded in the material.
 
+EXTRACTION LAW — applies to ALL intents:
+Every word, phrase, or example must come directly from the source text or be a minimal cleanup of source wording.
+
+Test before including any item:
+'Can I find this exact phrase or idea in the transcript?'
+If NO -> do not include it. Period.
+
+For vocabulary specifically:
+- Take phrases that actually appear in the source
+- Clean them slightly if needed (remove filler words)
+- Never paraphrase into generic advice
+- Never use phrases that could apply to ANY topic
+
+Violation examples (never do this):
+- learn vocabulary
+- watch movies
+- study consistently
+
+Correct examples:
+- watch 15 films in English
+- learn 1500 words at A1
+- find a native speaker
+
 Learning logic:
 - Every card must help BOTH:
   1) understand (EN → UA)
