@@ -35,7 +35,7 @@ class YouTubeTranscriptService:
                 )
                 response.raise_for_status()
                 response_body = response.text
-                payload: dict[str, Any] = json.loads(response_body)
+                payload: Any = json.loads(response_body)
                 normalized = self._normalize_transcript(payload)
                 if not normalized.strip():
                     LOGGER.warning(f"Supadata raw response: {response_body}")
@@ -51,7 +51,12 @@ class YouTubeTranscriptService:
 
         raise TranscriptUnavailableError()
 
-    def _normalize_transcript(self, payload: dict[str, Any]) -> str:
+    def _normalize_transcript(self, payload: Any) -> str:
+        # Handle list of transcript chunks with "lang" and "text" fields
+        if isinstance(payload, list):
+            lines = [item.get("text", "") for item in payload if item.get("text")]
+            return " ".join(lines).strip()
+
         # Supadata may return either "content" or a list of transcript chunks.
         if isinstance(payload.get("content"), str):
             return payload["content"].strip()
