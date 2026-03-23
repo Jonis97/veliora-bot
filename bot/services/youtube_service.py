@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import re
@@ -50,31 +49,7 @@ class YouTubeTranscriptService:
         if text.strip():
             return text
 
-        try:
-            from youtube_transcript_api import YouTubeTranscriptApi
-
-            def _yta_fallback() -> str:
-                api = YouTubeTranscriptApi()
-                transcript_list = api.fetch(
-                    video_id,
-                    languages=["ru", "uk", "en", "en-US", "en-GB"],
-                )
-                text = " ".join([t.text for t in transcript_list])
-                return text.strip()
-
-            fallback = await asyncio.to_thread(_yta_fallback)
-        except Exception as exc:  # noqa: BLE001
-            LOGGER.warning(
-                "youtube-transcript-api fallback failed for video_id=%s: %s",
-                video_id,
-                exc,
-            )
-            raise TranscriptUnavailableError() from exc
-
-        if not fallback:
-            raise TranscriptUnavailableError()
-
-        return fallback
+        raise TranscriptUnavailableError()
 
     def _normalize_transcript(self, payload: dict[str, Any]) -> str:
         # Supadata may return either "content" or a list of transcript chunks.
