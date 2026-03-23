@@ -23,6 +23,12 @@ Core content rules:
 - cta: one specific open question for speaking practice, tied to source content. Must start with What, How, or Why. Max ~12 words.
 - Every field must come ONLY from the source. Never invent generic knowledge or filler that is not grounded in the material.
 
+When intent is vocabulary:
+- extract ONLY specific words and phrases that appear in the source text
+- never use generic topic words
+- prioritize useful phrases, collocations, and expressions from the source
+- do not invent, generalize, or summarize vocabulary
+
 JSON schema:
 {{
   "template": "{DEFAULT_TEMPLATE}",
