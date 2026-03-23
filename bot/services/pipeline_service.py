@@ -199,12 +199,12 @@ class ContentPipelineService:
         html = self._template_service.render_html(card_for_render, DEFAULT_TEMPLATE)
 
         try:
-            # Keywords like "альбомний" set resolved.landscape → orientation="landscape" for ScreenshotOne.
-            screenshot_orientation = "landscape" if resolved.landscape else "portrait"
-            image_bytes = await self._screenshot_service.take_screenshot(
-                html,
-                orientation=screenshot_orientation,
-            )
+            if resolved.landscape:
+                image_bytes = await self._screenshot_service.html_to_image(
+                    html, viewport_width=1280, viewport_height=720
+                )
+            else:
+                image_bytes = await self._screenshot_service.html_to_image(html)
             return PipelineResult(
                 template_used=used_template,
                 source_type=source_type,
