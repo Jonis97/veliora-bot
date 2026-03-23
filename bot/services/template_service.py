@@ -104,7 +104,15 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     voc_in: Any = raw.get("vocabulary")
     vocabulary_lines: List[str] = []
     if isinstance(voc_in, list):
-        vocabulary_lines = [escape(str(x).strip())[:200] for x in voc_in[:4] if str(x).strip()]
+        for x in voc_in[:4]:
+            if isinstance(x, dict):
+                t = str(x.get("term", "") or "").strip()
+                tr = str(x.get("translation", "") or x.get("gloss", "") or "").strip()
+                if t or tr:
+                    line = f"{t} — {tr}" if t and tr else (t or tr)
+                    vocabulary_lines.append(escape(line)[:200])
+            elif str(x).strip():
+                vocabulary_lines.append(escape(str(x).strip())[:200])
     mc_in: Any = raw.get("mcq_brackets") or raw.get("mcq_exercises")
     mcq_bracket_lines: List[str] = []
     if isinstance(mc_in, list):
@@ -121,9 +129,9 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
                 ex_raw = str(vocab_examples_in[i]).strip()
             if isinstance(item, dict):
                 term_u = str(item.get("term", "") or item.get("english", "") or "").strip()
-                gloss_u = str(
-                    item.get("gloss", "")
-                    or item.get("translation", "")
+                trans_u = str(
+                    item.get("translation", "")
+                    or item.get("gloss", "")
                     or item.get("uk", "")
                     or ""
                 ).strip()
@@ -132,11 +140,11 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
             else:
                 s = str(item).strip()
                 pairs = _split_term_translation([s])
-                term_u, gloss_u = pairs[0] if pairs else (s, "")
+                term_u, trans_u = pairs[0] if pairs else (s, "")
             term_e = escape(term_u[:120])
-            gloss_e = escape(gloss_u[:200])
+            trans_e = escape(trans_u[:200])
             ex_e = escape(ex_raw[:280]) if ex_raw else ""
-            vocab_card_rows.append({"term": term_e, "gloss": gloss_e, "example": ex_e})
+            vocab_card_rows.append({"term": term_e, "translation": trans_e, "example": ex_e})
 
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
@@ -1032,25 +1040,18 @@ class TemplateService:
         rows_in = list(card.get("vocab_card_rows") or [])
         if not rows_in and card.get("vocabulary_lines"):
             for vl in (card.get("vocabulary_lines") or [])[:8]:
-                rows_in.append({"term": vl, "gloss": "", "example": ""})
+                rows_in.append({"term": vl, "translation": "", "example": ""})
 
         item_html: List[str] = []
         for row in rows_in[:8]:
             term = row.get("term", "")
-            gloss = row.get("gloss", "")
+            translation = row.get("translation") or row.get("gloss", "")
             ex = row.get("example", "")
-            if gloss:
-                pair = (
-                    f'<p class="vc-pair"><span class="vc-term">{term}</span>'
-                    f'<span class="vc-dash">—</span><span class="vc-gloss">{gloss}</span></p>'
-                )
-            else:
-                pair = f'<p class="vc-pair vc-pair-single">{term}</p>'
-            ex_blk = (
-                f'<p class="vc-ex">{ex}</p>'
-                if ex
-                else ""
+            pair = (
+                f'<p class="vc-pair"><span class="vc-term">{term}</span>'
+                f'<span class="vc-dash">—</span><span class="vc-trans">{translation}</span></p>'
             )
+            ex_blk = f'<p class="vc-ex">{ex}</p>' if ex else ""
             item_html.append(f'<div class="vc-item">{pair}{ex_blk}</div>')
         while len(item_html) < 5:
             item_html.append(
@@ -1157,10 +1158,9 @@ class TemplateService:
     .vc-item {{ margin-bottom: 14px; }}
     .vc-item:last-child {{ margin-bottom: 0; }}
     .vc-pair {{ margin: 0; font-size: 13px; line-height: 1.45; }}
-    .vc-pair-single {{ font-size: 12.5px; }}
     .vc-term {{ font-weight: 700; color: #1f1612; }}
     .vc-dash {{ margin: 0 6px; opacity: 0.45; }}
-    .vc-gloss {{ color: #3e2723; }}
+    .vc-trans {{ color: #3e2723; }}
     .vc-ex {{
       margin: 6px 0 0;
       padding-left: 2px;

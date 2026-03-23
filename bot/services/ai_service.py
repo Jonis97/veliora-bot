@@ -74,9 +74,9 @@ For vocab_card template:
 - vocabulary: extract 6-8 most useful specific words from source text
 - cta: must be a real speaking question starting with What/How/Why
 
-JSON schema:
+JSON schema (warm_paper_v2 only — do not use this shape for vocab_card):
 {{
-  "template": "{DEFAULT_TEMPLATE}",
+  "template": "warm_paper_v2",
   "title": "Provocative, curiosity-driven; not generic.",
   "subtitle": "One hook line tied specifically to THIS source — not generic. Max ~16 words.",
   "punchline": "Single memorable line from the source (max ~14 words).",
@@ -87,6 +87,24 @@ JSON schema:
   "bullets": ["Exactly 3 items: the three most surprising or useful ideas from the source"],
   "cta": "Open question for speaking: What/How/Why + source-tied, max ~12 words."
 }}
+
+JSON schema for vocab_card only:
+{{
+  "template": "vocab_card",
+  "title": "Specific topic from source (never 'Learning Card').",
+  "subtitle": "One short line tied to this source.",
+  "punchline": "",
+  "contrast": {{ "wrong": "", "better": "" }},
+  "vocabulary": [
+    {{ "term": "English phrase", "translation": "Ukrainian translation", "example": "English example sentence" }}
+  ],
+  "vocabulary_examples": [],
+  "mcq_brackets": [],
+  "bullets": [],
+  "cta": "Real speaking question starting with What, How, or Why."
+}}
+
+For vocab_card: vocabulary must be an array of 6–8 objects; each object has exactly term, translation, and example (three separate fields). Do not use string lines or vocabulary_examples for vocab_card.
 
 Output valid JSON only.
 """.strip()
