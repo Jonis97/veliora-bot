@@ -22,6 +22,18 @@ Core content rules:
 - cta: one specific open question for speaking practice, tied to source content. Must start with What, How, or Why. Max ~12 words.
 - Every field must come ONLY from the source. Never invent generic knowledge or filler that is not grounded in the material.
 
+Learning logic:
+- Every card must help BOTH:
+  1) understand (EN → UA)
+  2) use in speech (UA → EN)
+- Each vocabulary item must include:
+  • English phrase
+  • Ukrainian translation
+  • Example sentence in English
+- The final block must force speaking:
+  • real question (What / How / Why)
+- The goal is not translation, but usage
+
 Vocabulary selection rules (think like an experienced teacher):
 1. Does this word/phrase actually help the student understand the topic?
 2. Is it not too obvious or too basic?
@@ -46,7 +58,8 @@ JSON schema:
   "subtitle": "One hook line tied specifically to THIS source — not generic. Max ~16 words.",
   "punchline": "Single memorable line from the source (max ~14 words).",
   "contrast": {{ "wrong": "specific weak move or belief from this source", "better": "specific stronger move grounded in this source" }},
-  "vocabulary": ["Up to 5 lines: English — Ukrainian (Cyrillic) only."],
+  "vocabulary": ["English phrase — Ukrainian translation; one string per item. Pair with vocabulary_examples (same order): English example sentence per item."],
+  "vocabulary_examples": ["English example sentences, same length and order as vocabulary[]"],
   "mcq_brackets": ["3–4 bracket exercises from source concepts only; two mutually exclusive choices per line; pattern e.g. X leads to (a) growth / (b) stagnation; never both options in one clause with 'and'."],
   "bullets": ["Exactly 3 items: the three most surprising or useful ideas from the source"],
   "cta": "Open question for speaking: What/How/Why + source-tied, max ~12 words."
@@ -105,7 +118,7 @@ class AIContentService:
                     "wrong": str(co.get("wrong", "") or ""),
                     "better": str(co.get("better", "") or ""),
                 }
-            for key in ("vocabulary", "mcq_brackets"):
+            for key in ("vocabulary", "mcq_brackets", "vocabulary_examples"):
                 v = data.get(key)
                 if not isinstance(v, list):
                     data[key] = []
