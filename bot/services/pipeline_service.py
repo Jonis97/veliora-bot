@@ -167,10 +167,12 @@ class ContentPipelineService:
         raw_ai = resolved.text_for_ai
         grounded = _ground_for_ai(raw_ai)
 
+        eff_template = "vocab_card" if resolved.intent == "vocabulary" else DEFAULT_TEMPLATE
+
         try:
             card_json = await self._ai_service.generate_card_content(
                 grounded,
-                DEFAULT_TEMPLATE,
+                eff_template,
                 output_intent=OutputIntent.CARD,
                 is_followup=not resolved.persist_new_source,
                 intent=resolved.intent,
@@ -181,7 +183,7 @@ class ContentPipelineService:
                 "Не вдалося згенерувати картку. Спробуй ще раз за хвилину."
             ) from exc
 
-        card_json["template"] = DEFAULT_TEMPLATE
+        card_json["template"] = eff_template
 
         card_for_render = dict(card_json)
         if resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
@@ -192,10 +194,10 @@ class ContentPipelineService:
             if image_url:
                 card_for_render["image_url"] = image_url
 
-        used_template = DEFAULT_TEMPLATE
+        used_template = eff_template
         source_type = resolved.source_type
         intent_caption = "Картка"
-        html = self._template_service.render_html(card_for_render, DEFAULT_TEMPLATE)
+        html = self._template_service.render_html(card_for_render, eff_template)
 
         try:
             image_bytes = await self._screenshot_service.html_to_image(html)

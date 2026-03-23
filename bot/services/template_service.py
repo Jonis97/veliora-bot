@@ -12,6 +12,7 @@ ALLOWED_TEMPLATES = {
     "warm_paper_v2",
     "kitchen_collage_v2",
     "influencer_card_v2",
+    "vocab_card",
 }
 
 # Default when no template tag and AI omits template: test v2 first; v1 still selectable explicitly.
@@ -109,6 +110,34 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
     if isinstance(mc_in, list):
         mcq_bracket_lines = [escape(str(x).strip())[:320] for x in mc_in[:4] if str(x).strip()]
 
+    vocab_examples_in: Any = raw.get("vocabulary_examples")
+    if not isinstance(vocab_examples_in, list):
+        vocab_examples_in = []
+    vocab_card_rows: List[dict[str, str]] = []
+    if isinstance(voc_in, list):
+        for i, item in enumerate(voc_in[:8]):
+            ex_raw = ""
+            if i < len(vocab_examples_in):
+                ex_raw = str(vocab_examples_in[i]).strip()
+            if isinstance(item, dict):
+                term_u = str(item.get("term", "") or item.get("english", "") or "").strip()
+                gloss_u = str(
+                    item.get("gloss", "")
+                    or item.get("translation", "")
+                    or item.get("uk", "")
+                    or ""
+                ).strip()
+                if not ex_raw and item.get("example"):
+                    ex_raw = str(item.get("example", "")).strip()
+            else:
+                s = str(item).strip()
+                pairs = _split_term_translation([s])
+                term_u, gloss_u = pairs[0] if pairs else (s, "")
+            term_e = escape(term_u[:120])
+            gloss_e = escape(gloss_u[:200])
+            ex_e = escape(ex_raw[:280]) if ex_raw else ""
+            vocab_card_rows.append({"term": term_e, "gloss": gloss_e, "example": ex_e})
+
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
@@ -121,6 +150,7 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "contrast_better": cb,
         "vocabulary_lines": vocabulary_lines,
         "mcq_bracket_lines": mcq_bracket_lines,
+        "vocab_card_rows": vocab_card_rows,
     }
 
 
@@ -246,6 +276,8 @@ class TemplateService:
             return self._influencer_card_v2_template(normalized)
         if template_name == "influencer_card":
             return self._influencer_card_template(normalized)
+        if template_name == "vocab_card":
+            return self._vocab_card_template(normalized)
         if template_name == "warm_paper_v2":
             return self._warm_paper_v2_template(normalized)
         return self._warm_paper_template(normalized)
@@ -983,6 +1015,201 @@ class TemplateService:
     </header>
     {hero_block}
     {content_sections}
+  </div>
+</body>
+</html>"""
+
+    # --- vocab_card: vocabulary-focused layout (warm paper family) ---
+
+    def _vocab_card_template(self, card: dict[str, Any]) -> str:
+        topic = card["title"]
+        level = _badge_level(card["subtitle"])
+        sub = (card.get("subtitle") or "").strip()
+        subtitle_html = (
+            f'<p class="vc-sub">{sub}</p>' if sub else '<p class="vc-sub muted">Vocabulary</p>'
+        )
+        cta = card["cta"]
+        rows_in = list(card.get("vocab_card_rows") or [])
+        if not rows_in and card.get("vocabulary_lines"):
+            for vl in (card.get("vocabulary_lines") or [])[:8]:
+                rows_in.append({"term": vl, "gloss": "", "example": ""})
+
+        item_html: List[str] = []
+        for row in rows_in[:8]:
+            term = row.get("term", "")
+            gloss = row.get("gloss", "")
+            ex = row.get("example", "")
+            if gloss:
+                pair = (
+                    f'<p class="vc-pair"><span class="vc-term">{term}</span>'
+                    f'<span class="vc-dash">—</span><span class="vc-gloss">{gloss}</span></p>'
+                )
+            else:
+                pair = f'<p class="vc-pair vc-pair-single">{term}</p>'
+            ex_blk = (
+                f'<p class="vc-ex">{ex}</p>'
+                if ex
+                else ""
+            )
+            item_html.append(f'<div class="vc-item">{pair}{ex_blk}</div>')
+        while len(item_html) < 5:
+            item_html.append(
+                '<div class="vc-item muted"><p class="vc-pair">word — слово</p></div>'
+            )
+
+        vocab_block = f'<div class="vc-list" aria-label="Vocabulary">{"".join(item_html[:8])}</div>'
+        try_block = f"""
+    <section class="vc-try" aria-label="Try it">
+      <p class="vc-try-label">Try it:</p>
+      <p class="vc-try-body">{cta if cta else "Say one sentence using two of the words above."}</p>
+    </section>
+        """
+        hero_block = _hero_media_block(card, "warm_v2")
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{
+      background: linear-gradient(165deg, #d8cdc2 0%, #c9beb3 50%, #d2c7bc 100%);
+      font-family: "DM Serif Display", Georgia, serif;
+      color: #2a1f1c;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .page {{
+      width: 600px;
+      min-height: 880px;
+      position: relative;
+      overflow: hidden;
+      background-color: #e5d9cc;
+      background-image:
+        linear-gradient(90deg, rgba(140, 120, 100, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(140, 120, 100, 0.034) 1px, transparent 1px),
+        radial-gradient(ellipse 85% 65% at 12% 25%, rgba(255, 255, 255, 0.5) 0%, transparent 48%),
+        radial-gradient(ellipse 70% 55% at 88% 75%, rgba(235, 218, 200, 0.45) 0%, transparent 50%),
+        radial-gradient(ellipse 110% 55% at 50% -5%, rgba(255, 252, 248, 0.92) 0%, transparent 52%),
+        linear-gradient(178deg, #fdfaf5 0%, #f4ebe1 35%, #ebe1d6 70%, #e5d9cc 100%);
+      background-size: 24px 24px, 24px 24px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+      box-shadow: inset 0 0 100px rgba(255, 250, 245, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      padding: 32px 28px 36px;
+    }}
+    .level-badge {{
+      position: absolute; top: 18px; left: 18px; width: 50px; height: 50px; border-radius: 50%;
+      background: linear-gradient(145deg, #8b2323 0%, #6a1a1a 100%);
+      color: #fffaf3; font-size: 10px; line-height: 1.05; display: flex;
+      align-items: center; justify-content: center; text-align: center; padding: 4px;
+      box-shadow: 0 6px 16px rgba(60, 20, 20, 0.25), 0 2px 4px rgba(0,0,0,0.12);
+      z-index: 5; overflow-wrap: anywhere;
+    }}
+    .vc-hdr {{ padding: 8px 58px 12px 62px; text-align: center; }}
+    .vc-title {{
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 34px;
+      font-weight: 700;
+      line-height: 1.08;
+      margin: 0;
+      color: #2a1f1c;
+      letter-spacing: -0.02em;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .vc-sub {{ margin: 10px auto 0; max-width: 92%; font-size: 12.5px; line-height: 1.5; color: #5c4a42; font-weight: 500; }}
+    .hero-media {{
+      margin: 14px auto 16px;
+      width: 88%;
+      max-width: 504px;
+      height: 140px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(70, 50, 38, 0.1);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.55) inset,
+        0 14px 40px rgba(35, 24, 18, 0.1),
+        0 5px 14px rgba(35, 24, 18, 0.06);
+    }}
+    .hero-img {{
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 140px;
+      object-fit: cover;
+      object-position: center;
+    }}
+    .vc-list {{
+      margin: 8px auto 0;
+      width: 92%;
+      max-width: 520px;
+      padding: 16px 18px 18px;
+      border-radius: 18px;
+      background: linear-gradient(168deg, #fffcf9 0%, #faf5ee 100%);
+      border: 1px solid rgba(200, 175, 150, 0.22);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 12px 32px rgba(45, 35, 28, 0.08);
+    }}
+    .vc-item {{ margin-bottom: 14px; }}
+    .vc-item:last-child {{ margin-bottom: 0; }}
+    .vc-pair {{ margin: 0; font-size: 13px; line-height: 1.45; }}
+    .vc-pair-single {{ font-size: 12.5px; }}
+    .vc-term {{ font-weight: 700; color: #1f1612; }}
+    .vc-dash {{ margin: 0 6px; opacity: 0.45; }}
+    .vc-gloss {{ color: #3e2723; }}
+    .vc-ex {{
+      margin: 6px 0 0;
+      padding-left: 2px;
+      font-size: 10.5px;
+      line-height: 1.4;
+      color: rgba(60, 48, 40, 0.72);
+      font-style: italic;
+    }}
+    .muted {{ color: rgba(47, 36, 32, 0.42); font-style: italic; }}
+    .vc-try {{
+      width: 100%;
+      margin-top: 18px;
+      padding: 16px 18px 18px;
+      border-radius: 18px;
+      background: linear-gradient(138deg, #1b5e20 0%, #2e7d32 48%, #1b5e20 100%);
+      color: #f6fcf7;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.12) inset,
+        0 12px 32px rgba(15, 50, 25, 0.22),
+        0 4px 12px rgba(15, 50, 25, 0.12);
+    }}
+    .vc-try-label {{
+      margin: 0 0 8px;
+      font-family: "Caveat", cursive;
+      font-size: 22px;
+      line-height: 1.1;
+      color: #e8f5e9;
+    }}
+    .vc-try-body {{
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+      opacity: 0.97;
+    }}
+    {HERO_LAYER_CSS}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="level-badge">{level}</div>
+    <header class="vc-hdr">
+      <h1 class="vc-title">{topic}</h1>
+      {subtitle_html}
+    </header>
+    {hero_block}
+    {vocab_block}
+    {try_block}
   </div>
 </body>
 </html>"""
