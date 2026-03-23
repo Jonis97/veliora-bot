@@ -9,7 +9,6 @@ MVP: one premium warm_paper_v2 card per request from the latest source only.
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -37,18 +36,6 @@ _LANDSCAPE_KEYWORDS = (
 )
 
 _CHAT_CONTEXT: dict[int, dict[str, Any]] = {}
-
-# @username — skip when @ is part of an email (letter/digit before @).
-_INSTAGRAM_HANDLE_RE = re.compile(r"(?<![A-Za-z0-9])@([A-Za-z0-9._]{1,30})")
-
-
-def _maybe_save_instagram_handle(chat_id: int, message: Message) -> None:
-    raw = (message.text or message.caption or "").strip()
-    if not raw:
-        return
-    m = _INSTAGRAM_HANDLE_RE.search(raw)
-    if m:
-        _ctx(chat_id)["instagram_handle"] = m.group(1)
 
 
 def _user_message_wants_landscape(message: Message) -> bool:
@@ -147,7 +134,6 @@ class ContentPipelineService:
         self._topic_image_service = topic_image_service
 
     async def prepare(self, bot: Bot, message: Message, chat_id: int) -> PrepareResult:
-        _maybe_save_instagram_handle(chat_id, message)
         resolved = await self._resolve_source(bot, message, chat_id)
 
         if resolved.persist_new_source and resolved.persist_body:
@@ -199,10 +185,6 @@ class ContentPipelineService:
         card_json["template"] = DEFAULT_TEMPLATE
 
         card_for_render = dict(card_json)
-        ig = _ctx(prepare.chat_id).get("instagram_handle")
-        if isinstance(ig, str) and ig.strip():
-            card_for_render["instagram_handle"] = f"@{ig.strip().lstrip('@')}"
-
         if resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
             card_for_render["image_url"] = resolved.youtube_thumbnail_url
         else:
