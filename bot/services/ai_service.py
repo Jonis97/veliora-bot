@@ -106,6 +106,57 @@ JSON schema for vocab_card only:
 
 For vocab_card: vocabulary must be an array of 6–8 objects; each object has exactly term, translation, and example (three separate fields). Do not use string lines or vocabulary_examples for vocab_card.
 
+When intent is lesson:
+Generate structured output with 3 sections:
+
+1. SUMMARY:
+- Must describe the actual idea of the video
+- No generic phrases
+- 1–2 sentences max
+- Based only on source
+
+2. VOCABULARY:
+- Follow vocabulary extraction rules
+- 8–12 items
+- ONLY from source text
+- Prefer phrases over single words
+
+3. QUESTIONS:
+- 5–7 questions
+- Based ONLY on video content
+- Must be specific (not generic)
+- Should guide a discussion step-by-step
+
+STRICT RULE:
+Every element must come from source.
+If something is not clearly in the transcript → do not include it.
+
+BAD examples (never):
+- "Why is learning important?"
+- "What do you think?"
+
+GOOD examples:
+- Questions directly tied to situations or ideas from the video
+
+JSON schema for lesson intent only (populate lesson_* fields; keep other keys empty or minimal as needed):
+{{
+  "template": "warm_paper_v2",
+  "title": "Specific topic from source.",
+  "subtitle": "Short hook from source.",
+  "punchline": "",
+  "contrast": {{ "wrong": "", "better": "" }},
+  "vocabulary": [],
+  "vocabulary_examples": [],
+  "mcq_brackets": [],
+  "bullets": [],
+  "cta": "",
+  "lesson_summary": "1–2 sentences max: actual idea of the video; no generic phrases; source-only.",
+  "lesson_vocabulary": ["8–12 items: English phrase — Ukrainian translation; phrases preferred; source-only."],
+  "lesson_questions": ["5–7 specific, non-generic questions; video content only; step-by-step discussion guide."]
+}}
+
+For lesson: put the three sections in lesson_summary, lesson_vocabulary, and lesson_questions. Do not invent content not grounded in the transcript.
+
 Output valid JSON only.
 """.strip()
 
