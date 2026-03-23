@@ -29,6 +29,11 @@ When intent is vocabulary:
 - prioritize useful phrases, collocations, and expressions from the source
 - do not invent, generalize, or summarize vocabulary
 
+For vocab_card template:
+- title: must be the specific topic from source, never 'Learning Card'
+- vocabulary: extract 6-8 most useful specific words from source text
+- cta: must be a real speaking question starting with What/How/Why
+
 JSON schema:
 {{
   "template": "{DEFAULT_TEMPLATE}",
