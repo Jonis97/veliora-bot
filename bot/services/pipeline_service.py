@@ -30,6 +30,17 @@ LOGGER = logging.getLogger(__name__)
 _CHAT_CONTEXT: dict[int, dict[str, Any]] = {}
 
 
+def _detect_user_intent(message: Message) -> str:
+    raw = (message.text or message.caption or "").lower()
+    if any(s in raw for s in ("слова", "словник", "vocabulary", "лексика")):
+        return "vocabulary"
+    if any(s in raw for s in ("вправи", "завдання", "задание", "exercises")):
+        return "exercises"
+    if any(s in raw for s in ("виправ", "помилки", "fix", "mistakes")):
+        return "fix_mistakes"
+    return "card"
+
+
 def _ctx(chat_id: int) -> dict[str, Any]:
     if chat_id not in _CHAT_CONTEXT:
         _CHAT_CONTEXT[chat_id] = {"active_source": None}
@@ -92,6 +103,7 @@ class _ResolvedSource:
     persist_body: Optional[str] = None
     video_id: Optional[str] = None
     youtube_thumbnail_url: Optional[str] = None
+    intent: str = "card"
 
 
 @dataclass
@@ -161,6 +173,7 @@ class ContentPipelineService:
                 DEFAULT_TEMPLATE,
                 output_intent=OutputIntent.CARD,
                 is_followup=not resolved.persist_new_source,
+                intent=resolved.intent,
             )
         except Exception as exc:  # noqa: BLE001
             LOGGER.exception("AI card generation failed: %s", exc)
@@ -260,6 +273,7 @@ class ContentPipelineService:
         chat_id: int,
     ) -> _ResolvedSource:
         active = _load_active_source(chat_id)
+        intent = _detect_user_intent(message)
 
         if message.voice:
             transcript = await self._transcription_service.transcribe_voice(bot, message.voice.file_id)
@@ -273,6 +287,7 @@ class ContentPipelineService:
                 persist_new_source=True,
                 intent_seed="",
                 persist_body=transcript,
+                intent=intent,
             )
 
         raw = (message.text or message.caption or "").strip()
@@ -303,6 +318,7 @@ class ContentPipelineService:
                 persist_body=transcript,
                 video_id=video_id,
                 youtube_thumbnail_url=image_url,
+                intent=intent,
             )
 
         if not cleaned_text.strip() and _template:
@@ -317,6 +333,7 @@ class ContentPipelineService:
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
                 intent_seed="",
+                intent=intent,
             )
 
         if followup_intent(cleaned_text):
@@ -327,6 +344,7 @@ class ContentPipelineService:
                 source_type=str(active.get("type", "text")),
                 persist_new_source=False,
                 intent_seed=cleaned_text,
+                intent=intent,
             )
 
         return _ResolvedSource(
@@ -335,6 +353,7 @@ class ContentPipelineService:
             persist_new_source=True,
             intent_seed=cleaned_text,
             persist_body=cleaned_text,
+            intent=intent,
         )
 
     async def process_message(

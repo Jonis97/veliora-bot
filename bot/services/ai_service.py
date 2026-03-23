@@ -52,10 +52,12 @@ class AIContentService:
         *,
         output_intent: OutputIntent = OutputIntent.CARD,
         is_followup: bool = False,
+        intent: str = "card",
     ) -> dict[str, Any]:
         eff = template or DEFAULT_TEMPLATE
         user_prompt = (
             f"Source material:\n{source_text}\n\n"
+            f"User intent: {intent}.\n"
             f"Produce exactly one premium card for template {eff}. "
             "Prioritize usefulness and clarity — strong teacher + strong editor. "
             "The card must feel worth saving and sharing.\n"
