@@ -52,6 +52,13 @@ class YouTubeTranscriptService:
         raise TranscriptUnavailableError()
 
     def _normalize_transcript(self, payload: Any) -> str:
+        # Handle Supadata format: {"content": [...]}
+        if isinstance(payload, dict):
+            content = payload.get("content")
+            if isinstance(content, list):
+                lines = [item.get("text", "") for item in content if item.get("text")]
+                return " ".join(lines).strip()
+
         # Handle list of transcript chunks with "lang" and "text" fields
         if isinstance(payload, list):
             lines = [item.get("text", "") for item in payload if item.get("text")]
