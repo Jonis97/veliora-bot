@@ -22,6 +22,20 @@ Core content rules:
 - cta: one specific open question for speaking practice, tied to source content. Must start with What, How, or Why. Max ~12 words.
 - Every field must come ONLY from the source. Never invent generic knowledge or filler that is not grounded in the material.
 
+Optional output field for all intents (omit or use empty string if not needed):
+- image_query: 3-4 English words describing a person doing something visually clear and directly related to the topic.
+  Format: 'person + action + context'.
+  Examples:
+  - 'person avoiding work desk'
+  - 'student learning vocabulary'
+  - 'person thinking alone'
+  - 'teacher explaining lesson'
+  Rules:
+  - Avoid abstract words
+  - Avoid landscape-only queries
+  - Prefer visible human action
+  - Keep it simple and search-friendly
+
 EXTRACTION LAW — applies to ALL intents:
 Every word, phrase, or example must come directly from the source text or be a minimal cleanup of source wording.
 
@@ -85,7 +99,8 @@ JSON schema (warm_paper_v2 only — do not use this shape for vocab_card):
   "vocabulary_examples": ["English example sentences, same length and order as vocabulary[]"],
   "mcq_brackets": ["3–4 bracket exercises from source concepts only; two mutually exclusive choices per line; pattern e.g. X leads to (a) growth / (b) stagnation; never both options in one clause with 'and'."],
   "bullets": ["Exactly 3 items: the three most surprising or useful ideas from the source"],
-  "cta": "Open question for speaking: What/How/Why + source-tied, max ~12 words."
+  "cta": "Open question for speaking: What/How/Why + source-tied, max ~12 words.",
+  "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
 JSON schema for vocab_card only:
@@ -101,7 +116,8 @@ JSON schema for vocab_card only:
   "vocabulary_examples": [],
   "mcq_brackets": [],
   "bullets": [],
-  "cta": "Real speaking question starting with What, How, or Why."
+  "cta": "Real speaking question starting with What, How, or Why.",
+  "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
 For vocab_card: vocabulary must be an array of 6–8 objects; each object has exactly term, translation, and example (three separate fields). Do not use string lines or vocabulary_examples for vocab_card.
@@ -130,7 +146,8 @@ JSON schema for questions_card only:
   "vocabulary_examples": [],
   "mcq_brackets": [],
   "bullets": [],
-  "cta": ""
+  "cta": "",
+  "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
 For questions_card: fill questions[] with 6–9 items; title is the video topic; handle optional; image_url is set by the app for YouTube thumbnails.
@@ -167,10 +184,11 @@ JSON schema for lesson_card_v1 only:
   "vocabulary_examples": [],
   "mcq_brackets": [],
   "bullets": [],
-  "cta": ""
+  "cta": "",
+  "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
-For lesson: use template lesson_card_v1 and populate topic, lead_in_questions, and choices only (other keys empty or minimal). Do not invent content not grounded in the source.
+For lesson: use template lesson_card_v1 and populate topic, lead_in_questions, and choices only (other keys empty or minimal). Include image_query when useful. Do not invent content not grounded in the source.
 
 Output valid JSON only.
 """.strip()
@@ -236,6 +254,8 @@ class AIContentService:
                 v = data.get(key)
                 if not isinstance(v, list):
                     data[key] = []
+            if data.get("image_query") is not None:
+                data["image_query"] = str(data.get("image_query") or "").strip()
             return data
 
         return await with_retry(_generate, attempts=3, operation_name="GPT card generation")

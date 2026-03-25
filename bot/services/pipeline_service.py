@@ -271,10 +271,11 @@ class ContentPipelineService:
 
         if eff_template == "lesson_card_v1":
             unsplash_url: Optional[str] = None
-            kw = _lesson_visual_keyword_from_card_fields(card_json)
-            if kw and self._unsplash_access_key:
+            iq = str(card_json.get("image_query") or "").strip()
+            query = iq if iq else (_lesson_visual_keyword_from_card_fields(card_json) or "")
+            if query and self._unsplash_access_key:
                 unsplash_url = await _fetch_unsplash_regular_image_url(
-                    kw, self._unsplash_access_key
+                    query, self._unsplash_access_key
                 )
             if unsplash_url:
                 card_for_render["image_url"] = unsplash_url
