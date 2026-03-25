@@ -1212,6 +1212,16 @@ class TemplateService:
             choices = [escape("—")]
         choice_items = "".join(f'<li class="lc-li lc-choice">{c}</li>' for c in choices)
 
+        raw_img = str(card.get("image_url") or "").strip()
+        if raw_img and is_safe_topic_image_url(raw_img):
+            safe_img = escape(raw_img, quote=True)
+            media_html = (
+                f'<figure class="lc-media lc-media-img">'
+                f'<img src="{safe_img}" alt="" loading="lazy" /></figure>'
+            )
+        else:
+            media_html = '<div class="lc-media lc-media-placeholder" aria-hidden="true"></div>'
+
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1342,6 +1352,28 @@ class TemplateService:
       font-size: 13.5px;
       line-height: 1.48;
     }}
+    .lc-media {{
+      margin: 10px auto 0;
+      width: 100%;
+      max-width: 504px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(100, 78, 58, 0.14);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 10px 28px rgba(45, 35, 28, 0.09),
+        0 4px 12px rgba(45, 35, 28, 0.05);
+    }}
+    .lc-media-img img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+    }}
+    .lc-media-placeholder {{
+      min-height: 168px;
+      background: linear-gradient(168deg, #f2e8de 0%, #e9ddd2 45%, #e0d2c6 100%);
+    }}
   </style>
 </head>
 <body>
@@ -1360,6 +1392,7 @@ class TemplateService:
       <h2 id="lc-tot" class="lc-h2">This or that</h2>
       <ul class="lc-ul">{choice_items}</ul>
     </section>
+    {media_html}
   </div>
 </body>
 </html>"""
