@@ -34,6 +34,11 @@ def _detect_user_intent(message: Message) -> str:
     raw = (message.text or message.caption or "").lower()
     if any(s in raw for s in ("слова", "словник", "vocabulary", "лексика")):
         return "vocabulary"
+    if any(
+        s in raw
+        for s in ("питання", "вопросы", "questions", "запитання", "обговорення")
+    ):
+        return "questions"
     if any(s in raw for s in ("вправи", "завдання", "задание", "exercises")):
         return "exercises"
     if any(s in raw for s in ("виправ", "помилки", "fix", "mistakes")):
@@ -167,7 +172,12 @@ class ContentPipelineService:
         raw_ai = resolved.text_for_ai
         grounded = _ground_for_ai(raw_ai)
 
-        eff_template = "vocab_card" if resolved.intent == "vocabulary" else DEFAULT_TEMPLATE
+        if resolved.intent == "vocabulary":
+            eff_template = "vocab_card"
+        elif resolved.intent == "questions":
+            eff_template = "questions_card"
+        else:
+            eff_template = DEFAULT_TEMPLATE
 
         try:
             card_json = await self._ai_service.generate_card_content(

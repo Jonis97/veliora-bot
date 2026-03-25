@@ -13,6 +13,7 @@ ALLOWED_TEMPLATES = {
     "kitchen_collage_v2",
     "influencer_card_v2",
     "vocab_card",
+    "questions_card",
 }
 
 # Default when no template tag and AI omits template: test v2 first; v1 still selectable explicitly.
@@ -146,6 +147,16 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
             ex_e = escape(ex_raw[:280]) if ex_raw else ""
             vocab_card_rows.append({"term": term_e, "translation": trans_e, "example": ex_e})
 
+    ques_in: Any = raw.get("questions")
+    questions_lines: List[str] = []
+    if isinstance(ques_in, list):
+        questions_lines = [escape(str(x).strip())[:500] for x in ques_in[:9] if str(x).strip()]
+    handle_raw = str(raw.get("handle", "") or raw.get("instagram_handle", "") or "").strip()
+    handle_display = ""
+    if handle_raw:
+        h = handle_raw if handle_raw.startswith("@") else f"@{handle_raw.lstrip('@')}"
+        handle_display = escape(h[:80])
+
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
@@ -159,6 +170,8 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "vocabulary_lines": vocabulary_lines,
         "mcq_bracket_lines": mcq_bracket_lines,
         "vocab_card_rows": vocab_card_rows,
+        "questions_lines": questions_lines,
+        "handle_display": handle_display,
     }
 
 
@@ -286,6 +299,8 @@ class TemplateService:
             return self._influencer_card_template(normalized)
         if template_name == "vocab_card":
             return self._vocab_card_template(normalized)
+        if template_name == "questions_card":
+            return self._questions_card_template(normalized)
         if template_name == "warm_paper_v2":
             return self._warm_paper_v2_template(normalized)
         return self._warm_paper_template(normalized)
@@ -1023,6 +1038,118 @@ class TemplateService:
     </header>
     {hero_block}
     {content_sections}
+  </div>
+</body>
+</html>"""
+
+    def _questions_card_template(self, card: dict[str, Any]) -> str:
+        title = card["title"]
+        handle = (card.get("handle_display") or "").strip()
+        handle_html = f'<p class="qc-handle">{handle}</p>' if handle else ""
+        questions = list(card.get("questions_lines") or [])[:9]
+        if not questions:
+            questions = [escape("—")]
+        cells = "".join(
+            f'<div class="qc-card" role="article"><p class="qc-q">{q}</p></div>' for q in questions
+        )
+        grid_html = f'<div class="qc-grid">{cells}</div>'
+
+        thumb_url = (card.get("image_url") or "").strip()
+        if thumb_url and is_safe_topic_image_url(thumb_url):
+            safe_u = escape(thumb_url, quote=True)
+            thumb_html = f'<figure class="qc-thumb"><img src="{safe_u}" alt="" loading="lazy" /></figure>'
+        else:
+            thumb_html = ""
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{ background: #e8e8e8; font-family: "DM Serif Display", Georgia, serif; -webkit-font-smoothing: antialiased; }}
+    .qc-page {{
+      width: 600px;
+      min-height: 920px;
+      margin: 0 auto;
+      background: #f5f5f5;
+      padding: 36px 28px 32px;
+      position: relative;
+    }}
+    .qc-title {{
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.12;
+      color: #0a0a0a;
+      text-align: center;
+      letter-spacing: -0.02em;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .qc-handle {{
+      margin: 10px 0 0;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: #555;
+    }}
+    .qc-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+      align-content: start;
+    }}
+    .qc-card {{
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid #1a1a1a;
+      padding: 18px 16px;
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 8px 24px rgba(0,0,0,0.06);
+    }}
+    .qc-q {{
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 500;
+      color: #141414;
+      text-align: center;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }}
+    .qc-thumb {{
+      margin: 28px auto 0;
+      max-width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+    }}
+    .qc-thumb img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+    }}
+  </style>
+</head>
+<body>
+  <div class="qc-page page">
+    <header>
+      <h1 class="qc-title">{title}</h1>
+      {handle_html}
+    </header>
+    {grid_html}
+    {thumb_html}
   </div>
 </body>
 </html>"""

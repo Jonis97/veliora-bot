@@ -106,6 +106,35 @@ JSON schema for vocab_card only:
 
 For vocab_card: vocabulary must be an array of 6–8 objects; each object has exactly term, translation, and example (three separate fields). Do not use string lines or vocabulary_examples for vocab_card.
 
+When intent is questions:
+- Generate 6–9 questions depending on source richness
+- Mix: simple → medium → deeper
+- Prefer quality over quantity
+
+EXTRACTION LAW for questions:
+Every question must come from a specific idea, fact or statement in source.
+Test: "Can I point to the exact part of the transcript this comes from?"
+If NO → do not include it.
+Never generic questions. Never invented content.
+
+JSON schema for questions_card only:
+{{
+  "template": "questions_card",
+  "title": "Topic of the video (from source).",
+  "subtitle": "",
+  "handle": "Optional @instagram handle or empty string.",
+  "questions": ["6–9 questions as strings; source-grounded only."],
+  "punchline": "",
+  "contrast": {{ "wrong": "", "better": "" }},
+  "vocabulary": [],
+  "vocabulary_examples": [],
+  "mcq_brackets": [],
+  "bullets": [],
+  "cta": ""
+}}
+
+For questions_card: fill questions[] with 6–9 items; title is the video topic; handle optional; image_url is set by the app for YouTube thumbnails.
+
 When intent is lesson:
 Generate structured output with 3 sections:
 
@@ -210,7 +239,7 @@ class AIContentService:
                     "wrong": str(co.get("wrong", "") or ""),
                     "better": str(co.get("better", "") or ""),
                 }
-            for key in ("vocabulary", "mcq_brackets", "vocabulary_examples"):
+            for key in ("vocabulary", "mcq_brackets", "vocabulary_examples", "questions"):
                 v = data.get(key)
                 if not isinstance(v, list):
                     data[key] = []
