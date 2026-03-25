@@ -49,6 +49,7 @@ def build_application() -> tuple[Application, str, int, str, str]:
         template_service=TemplateService(),
         screenshot_service=ScreenshotService(settings.screenshotone_api_key),
         topic_image_service=TopicImageService(openai_client),
+        unsplash_access_key=settings.unsplash_access_key,
     )
     deduplicator = MessageDeduplicator(ttl_seconds=600)
     message_handler = MessageHandlerService(pipeline, deduplicator)

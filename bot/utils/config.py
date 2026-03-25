@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -13,6 +14,7 @@ class Settings:
     webhook_path: str
     webhook_secret_token: str
     openai_model: str
+    unsplash_access_key: Optional[str] = None
 
 
 def _required(name: str) -> str:
@@ -33,4 +35,5 @@ def load_settings() -> Settings:
         webhook_path=os.getenv("WEBHOOK_PATH", "/telegram/webhook"),
         webhook_secret_token=os.getenv("WEBHOOK_SECRET_TOKEN", "veliora-secret-token"),
         openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+        unsplash_access_key=os.getenv("UNSPLASH_ACCESS_KEY"),
     )

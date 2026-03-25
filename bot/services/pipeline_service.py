@@ -9,9 +9,11 @@ MVP: one premium warm_paper_v2 card per request from the latest source only.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any, Optional
 
+import httpx
 from telegram import Bot, Message
 
 from bot.services.ai_service import AIContentService
@@ -28,6 +30,55 @@ from bot.utils.intent import OutputIntent
 LOGGER = logging.getLogger(__name__)
 
 _CHAT_CONTEXT: dict[int, dict[str, Any]] = {}
+
+_UNSPLASH_GENERIC_WORDS = frozenset(
+    {"understanding", "why", "how", "the", "and", "its", "of"}
+)
+
+
+def _first_meaningful_topic_word(title: str) -> Optional[str]:
+    """Strip generic words; return first remaining topic token (e.g. for Unsplash query)."""
+    for raw in re.findall(r"[A-Za-zА-Яа-яЇїІіЄєҐґ']+", title.lower()):
+        w = raw.strip("'")
+        if len(w) < 2:
+            continue
+        if w in _UNSPLASH_GENERIC_WORDS:
+            continue
+        return w
+    return None
+
+
+def _lesson_visual_keyword_from_card_fields(card_json: dict[str, Any]) -> Optional[str]:
+    """Prefer GPT `title`, then `topic`, for the same word-extraction rule as the spec."""
+    raw = str(card_json.get("title", "") or card_json.get("topic", "") or "").strip()
+    if not raw:
+        return None
+    return _first_meaningful_topic_word(raw)
+
+
+async def _fetch_unsplash_regular_image_url(keyword: str, access_key: str) -> Optional[str]:
+    if not access_key or not keyword:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                "https://api.unsplash.com/photos/random",
+                params={
+                    "query": keyword,
+                    "orientation": "landscape",
+                    "content_filter": "high",
+                },
+                headers={"Authorization": f"Client-ID {access_key}"},
+            )
+            response.raise_for_status()
+            data = response.json()
+            urls = data.get("urls")
+            if isinstance(urls, dict):
+                out = str(urls.get("regular") or "").strip()
+                return out or None
+    except Exception as exc:  # noqa: BLE001
+        LOGGER.warning("Unsplash random photo fetch failed: %s", exc)
+    return None
 
 
 def _detect_user_intent(message: Message) -> str:
@@ -139,6 +190,7 @@ class ContentPipelineService:
         template_service: TemplateService,
         screenshot_service: ScreenshotService,
         topic_image_service: TopicImageService,
+        unsplash_access_key: Optional[str] = None,
     ) -> None:
         self._youtube_service = youtube_service
         self._transcription_service = transcription_service
@@ -146,6 +198,7 @@ class ContentPipelineService:
         self._template_service = template_service
         self._screenshot_service = screenshot_service
         self._topic_image_service = topic_image_service
+        self._unsplash_access_key = unsplash_access_key
 
     async def prepare(self, bot: Bot, message: Message, chat_id: int) -> PrepareResult:
         resolved = await self._resolve_source(bot, message, chat_id)
@@ -215,7 +268,24 @@ class ContentPipelineService:
             ).strip()
             if merged_title:
                 card_for_render["title"] = merged_title
-        if resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
+
+        if eff_template == "lesson_card_v1":
+            unsplash_url: Optional[str] = None
+            kw = _lesson_visual_keyword_from_card_fields(card_json)
+            if kw and self._unsplash_access_key:
+                unsplash_url = await _fetch_unsplash_regular_image_url(
+                    kw, self._unsplash_access_key
+                )
+            if unsplash_url:
+                card_for_render["image_url"] = unsplash_url
+            elif resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
+                card_for_render["image_url"] = resolved.youtube_thumbnail_url
+            else:
+                topic = str(card_json.get("title", "education")).strip() or "education"
+                image_url = await self._topic_image_service.fetch_topic_image(topic)
+                if image_url:
+                    card_for_render["image_url"] = image_url
+        elif resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
             card_for_render["image_url"] = resolved.youtube_thumbnail_url
         else:
             topic = str(card_json.get("title", "education")).strip() or "education"
