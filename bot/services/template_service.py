@@ -15,6 +15,7 @@ ALLOWED_TEMPLATES = {
     "vocab_card",
     "questions_card",
     "lesson_card_v1",
+    "phrases_card",
 }
 
 # Default when no template tag and AI omits template: test v2 first; v1 still selectable explicitly.
@@ -84,6 +85,21 @@ HERO_LAYER_CSS = """
         linear-gradient(165deg, #efe8e0 0%, #e0d4c8 100%);
     }
 """.strip()
+
+
+def _phrases_example_line_html(raw: str) -> str:
+    """**segments** in example strings become bold blue spans; escape the rest."""
+    if not raw:
+        return ""
+    parts = re.split(r"(\*\*[\s\S]*?\*\*)", raw)
+    chunks: List[str] = []
+    for p in parts:
+        if p.startswith("**") and p.endswith("**") and len(p) >= 4:
+            inner = escape(p[2:-2].strip())
+            chunks.append(f'<span class="pc-ex-bold">{inner}</span>')
+        else:
+            chunks.append(escape(p))
+    return "".join(chunks)
 
 
 def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
@@ -198,6 +214,32 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
                 if s:
                     choice_lines.append(escape(s)[:500])
 
+    phrases_in: Any = raw.get("phrases")
+    phrases_blocks: List[dict[str, str]] = []
+    if isinstance(phrases_in, list):
+        for i, item in enumerate(phrases_in[:5]):
+            if not isinstance(item, dict):
+                continue
+            ph = str(item.get("phrase", "") or "").strip()
+            tr = str(item.get("translation", "") or "").strip()
+            form = str(item.get("formula", "") or "").strip()
+            ex_raw = item.get("examples")
+            ex_list: List[str] = []
+            if isinstance(ex_raw, list):
+                ex_list = [str(x).strip() for x in ex_raw[:2] if str(x).strip()]
+            while len(ex_list) < 2:
+                ex_list.append("")
+            phrases_blocks.append(
+                {
+                    "phrase_e": escape(ph[:400]),
+                    "translation_e": escape(tr[:200]),
+                    "formula_e": escape(form[:400]),
+                    "ex1_html": _phrases_example_line_html(ex_list[0][:500]),
+                    "ex2_html": _phrases_example_line_html(ex_list[1][:500]),
+                    "num": str(i + 1),
+                }
+            )
+
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
@@ -216,6 +258,7 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "lesson_topic": lesson_topic,
         "lead_in_questions_lines": lead_in_questions_lines,
         "choice_lines": choice_lines,
+        "phrases_blocks": phrases_blocks,
     }
 
 
@@ -347,6 +390,8 @@ class TemplateService:
             return self._questions_card_template(normalized)
         if template_name == "lesson_card_v1":
             return self._lesson_card_v1_template(normalized)
+        if template_name == "phrases_card":
+            return self._phrases_card_template(normalized)
         if template_name == "warm_paper_v2":
             return self._warm_paper_v2_template(normalized)
         return self._warm_paper_template(normalized)
@@ -1393,6 +1438,230 @@ class TemplateService:
       <ul class="lc-ul">{choice_items}</ul>
     </section>
     {media_html}
+  </div>
+</body>
+</html>"""
+
+    def _phrases_card_template(self, card: dict[str, Any]) -> str:
+        title = card["title"]
+        sub_raw = str(card.get("subtitle") or "").strip()
+        subtitle_html = f'<p class="pc-subtitle">{sub_raw}</p>' if sub_raw else ""
+        handle = (card.get("handle_display") or "").strip()
+        handle_html = f'<p class="pc-handle">{handle}</p>' if handle else ""
+
+        blocks_in = list(card.get("phrases_blocks") or [])
+        if not blocks_in:
+            blocks_in = [
+                {
+                    "phrase_e": escape("—"),
+                    "translation_e": "",
+                    "formula_e": escape("—"),
+                    "ex1_html": "",
+                    "ex2_html": "",
+                    "num": "1",
+                }
+            ]
+
+        plane_svg = """<svg class="pc-plane-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path fill="rgba(110, 140, 168, 0.42)" d="M2 21l20-9L2 3v7l12 2-12 2v7z"/></svg>"""
+
+        block_parts: List[str] = []
+        for b in blocks_in:
+            tr = (b.get("translation_e") or "").strip()
+            trans_part = (
+                f' <span class="pc-trans">({tr})</span>' if tr else ""
+            )
+            ex1 = b.get("ex1_html") or ""
+            ex2 = b.get("ex2_html") or ""
+            li1c = ex1 if ex1 else escape("—")
+            li2c = ex2 if ex2 else escape("—")
+            block_parts.append(
+                f"""<article class="pc-block">
+  <div class="pc-num-circle" aria-hidden="true"><span class="pc-num-inner">{b.get("num", "?")}</span></div>
+  <div class="pc-block-main">
+    <p class="pc-phrase-line"><span class="pc-phrase-text">{b.get("phrase_e", "")}</span>{trans_part}</p>
+    <div class="pc-formula">{b.get("formula_e", "")}</div>
+    <ul class="pc-ex-ul">
+      <li class="pc-ex-li">{li1c}</li>
+      <li class="pc-ex-li">{li2c}</li>
+    </ul>
+  </div>
+</article>"""
+            )
+
+        blocks_html = "\n".join(block_parts)
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{
+      background: #e8e4de;
+      font-family: "DM Serif Display", Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .pc-page {{
+      width: 600px;
+      min-height: 920px;
+      margin: 0 auto;
+      position: relative;
+      background: #fdf8f0;
+      padding: 36px 36px 44px;
+      overflow: hidden;
+    }}
+    .pc-decor {{
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }}
+    .pc-line {{
+      position: absolute;
+      border: 1px solid rgba(140, 170, 195, 0.28);
+      border-radius: 50%;
+    }}
+    .pc-line-a {{ width: 240px; height: 150px; top: 70px; left: -90px; transform: rotate(-26deg); }}
+    .pc-line-b {{ width: 200px; height: 120px; bottom: 140px; right: -50px; transform: rotate(22deg); }}
+    .pc-line-c {{ width: 280px; height: 170px; top: 42%; left: 8%; transform: rotate(12deg); opacity: 0.75; }}
+    .pc-line-d {{ width: 160px; height: 100px; top: 18%; right: 12%; transform: rotate(-15deg); opacity: 0.55; }}
+    .pc-plane {{
+      position: absolute;
+      z-index: 2;
+      pointer-events: none;
+    }}
+    .pc-plane-tr {{ top: 20px; right: 24px; }}
+    .pc-plane-br {{ bottom: 32px; right: 28px; }}
+    .pc-plane-svg {{ display: block; }}
+    .pc-handle {{
+      position: absolute;
+      top: 28px;
+      left: 28px;
+      z-index: 3;
+      margin: 0;
+      font-size: 11px;
+      font-style: italic;
+      color: #888;
+      letter-spacing: 0.02em;
+      max-width: 42%;
+      overflow-wrap: anywhere;
+    }}
+    .pc-head {{
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 8px 48px 28px;
+    }}
+    .pc-title {{
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+      color: #0a0a0a;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .pc-subtitle {{
+      margin: 12px 0 0;
+      font-size: 13px;
+      font-style: italic;
+      color: #777;
+      line-height: 1.45;
+    }}
+    .pc-phrases {{
+      position: relative;
+      z-index: 1;
+    }}
+    .pc-block {{
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 36px;
+    }}
+    .pc-block:last-child {{ margin-bottom: 0; }}
+    .pc-num-circle {{
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #2d6fa8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+      box-shadow: 0 2px 6px rgba(45, 111, 168, 0.25);
+    }}
+    .pc-num-inner {{
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }}
+    .pc-block-main {{ flex: 1; min-width: 0; }}
+    .pc-phrase-line {{
+      margin: 0 0 10px;
+      font-size: 15px;
+      line-height: 1.45;
+    }}
+    .pc-phrase-text {{ font-weight: 700; color: #0a0a0a; }}
+    .pc-trans {{
+      font-weight: 400;
+      font-style: italic;
+      color: #777;
+    }}
+    .pc-formula {{
+      display: inline-block;
+      max-width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #f0e8d8;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }}
+    .pc-ex-ul {{
+      margin: 12px 0 0;
+      padding: 0 0 0 18px;
+    }}
+    .pc-ex-li {{
+      margin: 0 0 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #1a1a1a;
+    }}
+    .pc-ex-li:last-child {{ margin-bottom: 0; }}
+    .pc-ex-bold {{
+      color: #2d6fa8;
+      font-weight: 700;
+    }}
+  </style>
+</head>
+<body>
+  <div class="pc-page page">
+    <div class="pc-decor" aria-hidden="true">
+      <div class="pc-line pc-line-a"></div>
+      <div class="pc-line pc-line-b"></div>
+      <div class="pc-line pc-line-c"></div>
+      <div class="pc-line pc-line-d"></div>
+    </div>
+    <div class="pc-plane pc-plane-tr">{plane_svg}</div>
+    <div class="pc-plane pc-plane-br">{plane_svg}</div>
+    {handle_html}
+    <header class="pc-head">
+      <h1 class="pc-title">{title}</h1>
+      {subtitle_html}
+    </header>
+    <div class="pc-phrases">
+      {blocks_html}
+    </div>
   </div>
 </body>
 </html>"""

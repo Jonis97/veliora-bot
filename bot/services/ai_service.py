@@ -152,6 +152,38 @@ JSON schema for questions_card only:
 
 For questions_card: fill questions[] with 6–9 items; title is the video topic; handle optional; image_url is set by the app for YouTube thumbnails.
 
+When intent is phrases:
+- Extract 3–5 key grammatical structures or patterns from the source only.
+- Each item must include phrase (English), translation (Ukrainian gloss), formula (pattern / rule), and exactly two example sentences grounded in the source.
+- Mark key words in examples with **double asterisks** for emphasis (they render bold blue on the card).
+- EXTRACTION LAW applies: every phrase, formula, and example must be traceable to the source material.
+
+JSON schema for phrases_card only:
+{{
+  "template": "phrases_card",
+  "title": "Topic from source.",
+  "subtitle": "Short line; optional.",
+  "handle": "Optional @instagram handle or empty string.",
+  "phrases": [
+    {{
+      "phrase": "English structure",
+      "translation": "Ukrainian gloss",
+      "formula": "Pattern / rule",
+      "examples": ["sentence with **key** words marked", "second example sentence"]
+    }}
+  ],
+  "punchline": "",
+  "contrast": {{ "wrong": "", "better": "" }},
+  "vocabulary": [],
+  "vocabulary_examples": [],
+  "mcq_brackets": [],
+  "bullets": [],
+  "cta": "",
+  "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
+}}
+
+For phrases_card: fill phrases[] with 3–5 objects; each has phrase, translation, formula, and examples (exactly two strings).
+
 When intent is lesson:
 - All content must come from the source only. Do not invent facts, examples, or situations not supported by the material.
 - topic: the main theme / title as it follows from the source (video topic).
@@ -250,6 +282,7 @@ class AIContentService:
                 "questions",
                 "lead_in_questions",
                 "choices",
+                "phrases",
             ):
                 v = data.get(key)
                 if not isinstance(v, list):

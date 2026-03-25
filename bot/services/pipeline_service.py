@@ -93,6 +93,17 @@ def _detect_user_intent(message: Message) -> str:
     if any(
         s in raw
         for s in (
+            "структури",
+            "phrases",
+            "фрази",
+            "граматика",
+            "grammar",
+        )
+    ):
+        return "phrases"
+    if any(
+        s in raw
+        for s in (
             "урок",
             "lesson",
             "розпочати урок",
@@ -242,6 +253,8 @@ class ContentPipelineService:
             eff_template = "questions_card"
         elif resolved.intent == "lesson":
             eff_template = "lesson_card_v1"
+        elif resolved.intent == "phrases":
+            eff_template = "phrases_card"
         else:
             eff_template = DEFAULT_TEMPLATE
 
@@ -373,6 +386,40 @@ class ContentPipelineService:
             if len(text) > 4000:
                 return text[:3997] + "..."
             return text
+
+        if template_used == "phrases_card":
+            title_p = str(card.get("title", "Learning Card")).strip()
+            sub_p = str(card.get("subtitle", "")).strip()
+            lines_p = [
+                f"{intent_label_s} · {template_used} · джерело: {source_type}",
+                "",
+                f"📌 {title_p}",
+            ]
+            if sub_p:
+                lines_p.append(sub_p)
+            lines_p.append("")
+            ph = card.get("phrases")
+            if isinstance(ph, list):
+                for i, item in enumerate(ph[:5], 1):
+                    if not isinstance(item, dict):
+                        continue
+                    lines_p.append(f"{i}. {str(item.get('phrase', '')).strip()}")
+                    tr = str(item.get("translation", "")).strip()
+                    if tr:
+                        lines_p.append(f"   ({tr})")
+                    fo = str(item.get("formula", "")).strip()
+                    if fo:
+                        lines_p.append(f"   [{fo}]")
+                    ex = item.get("examples")
+                    if isinstance(ex, list):
+                        for exs in ex[:2]:
+                            lines_p.append(f"   • {str(exs).strip()}")
+                    lines_p.append("")
+            lines_p.append("(Попередній перегляд зображення недоступний — текст картки вище.)")
+            text_p = "\n".join(lines_p)
+            if len(text_p) > 4000:
+                return text_p[:3997] + "..."
+            return text_p
 
         title = str(card.get("title", "Learning Card")).strip()
         subtitle = str(card.get("subtitle", "")).strip()
