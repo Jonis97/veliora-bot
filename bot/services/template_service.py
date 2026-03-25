@@ -1212,15 +1212,6 @@ class TemplateService:
             choices = [escape("—")]
         choice_items = "".join(f'<li class="lc-li lc-choice">{c}</li>' for c in choices)
 
-        thumb_url = (card.get("image_url") or "").strip()
-        if thumb_url and is_safe_topic_image_url(thumb_url):
-            safe_u = escape(thumb_url, quote=True)
-            thumb_html = (
-                f'<figure class="lc-thumb"><img src="{safe_u}" alt="" loading="lazy" /></figure>'
-            )
-        else:
-            thumb_html = ""
-
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1228,48 +1219,112 @@ class TemplateService:
   <meta name="viewport" content="width=600, initial-scale=1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
   <style>
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
     body {{
-      background: #e0d8ce;
+      background: linear-gradient(165deg, #d8cdc2 0%, #c9beb3 50%, #d2c7bc 100%);
       font-family: "DM Serif Display", Georgia, serif;
-      color: #2c241f;
+      color: #2a1f1c;
       -webkit-font-smoothing: antialiased;
     }}
-    .lc-page {{
+    .lc-page.page {{
       width: 600px;
       min-height: 920px;
       margin: 0 auto;
-      background: #faf6f0;
-      padding: 36px 32px 36px;
-      border-radius: 4px;
-      box-shadow: 0 2px 24px rgba(60, 48, 40, 0.08);
+      position: relative;
+      overflow: hidden;
+      background-color: #e5d9cc;
+      background-image:
+        linear-gradient(90deg, rgba(140, 120, 100, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(140, 120, 100, 0.034) 1px, transparent 1px),
+        radial-gradient(ellipse 85% 65% at 12% 25%, rgba(255, 255, 255, 0.5) 0%, transparent 48%),
+        radial-gradient(ellipse 70% 55% at 88% 75%, rgba(235, 218, 200, 0.45) 0%, transparent 50%),
+        radial-gradient(ellipse 110% 55% at 50% -5%, rgba(255, 252, 248, 0.92) 0%, transparent 52%),
+        linear-gradient(178deg, #fdfaf5 0%, #f4ebe1 35%, #ebe1d6 70%, #e5d9cc 100%);
+      background-size:
+        24px 24px,
+        24px 24px,
+        100% 100%,
+        100% 100%,
+        100% 100%,
+        100% 100%;
+      background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+      box-shadow: inset 0 0 100px rgba(255, 250, 245, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+      padding: 32px 28px 36px;
     }}
-    .lc-topic {{
-      margin: 0 0 28px;
-      font-size: 30px;
-      font-weight: 700;
-      line-height: 1.15;
-      color: #1a1512;
+    .lc-header {{
+      margin: 0 auto 20px;
+      width: 100%;
+      max-width: 504px;
+      padding: 26px 24px 24px;
+      border-radius: 20px;
       text-align: center;
+      background: linear-gradient(168deg, #f2e8de 0%, #e9ddd2 45%, #e0d2c6 100%);
+      border: 1px solid rgba(100, 78, 58, 0.16);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 14px 36px rgba(45, 35, 28, 0.08),
+        0 5px 14px rgba(45, 35, 28, 0.05);
+    }}
+    .lc-topic-title {{
+      font-family: "Caveat", cursive;
+      font-size: 40px;
+      font-weight: 600;
+      line-height: 1.08;
+      margin: 0;
+      color: #3d2a22;
       letter-spacing: -0.02em;
       word-wrap: break-word;
       overflow-wrap: anywhere;
     }}
-    .lc-block {{
-      margin-bottom: 28px;
+    .lc-header-divider {{
+      height: 2px;
+      width: min(220px, 72%);
+      margin: 18px auto 0;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent 0%, rgba(90, 65, 48, 0.42) 50%, transparent 100%);
+    }}
+    .lc-panel {{
+      margin: 0 auto 18px;
+      width: 100%;
+      max-width: 504px;
+      padding: 18px 20px 20px;
+      border-radius: 18px;
+      position: relative;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 14px 36px rgba(45, 35, 28, 0.09),
+        0 5px 12px rgba(45, 35, 28, 0.04);
+    }}
+    .lc-panel-a {{
+      background: linear-gradient(168deg, #fffcf9 0%, #faf5ee 100%);
+      border: 1px solid rgba(200, 175, 150, 0.2);
+      transform: rotate(-0.55deg);
+    }}
+    .lc-panel-b {{
+      background: linear-gradient(168deg, #fffef9 0%, #f8f2ea 100%);
+      border: 1px solid rgba(190, 165, 140, 0.2);
+      transform: rotate(0.45deg);
+    }}
+    .lc-pin {{
+      position: absolute;
+      top: -6px;
+      right: 18px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff8a80, #c62828);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.22);
     }}
     .lc-h2 {{
       margin: 0 0 14px;
-      font-size: 11px;
+      font-size: 9.5px;
       font-weight: 700;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      color: #6b5344;
-      border-bottom: 2px solid rgba(107, 83, 68, 0.25);
-      padding-bottom: 8px;
+      color: #5c4a42;
     }}
     .lc-ul {{
       margin: 0;
@@ -1277,43 +1332,34 @@ class TemplateService:
     }}
     .lc-li {{
       margin: 0 0 12px;
-      font-size: 15px;
-      line-height: 1.55;
-      color: #2c241f;
+      font-size: 14px;
+      line-height: 1.52;
+      color: #2f2420;
+      font-weight: 500;
     }}
     .lc-li:last-child {{ margin-bottom: 0; }}
     .lc-choice {{
-      font-size: 14px;
-      line-height: 1.5;
-    }}
-    .lc-thumb {{
-      margin: 32px auto 0;
-      max-width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid rgba(60, 48, 40, 0.12);
-      box-shadow: 0 4px 16px rgba(60, 48, 40, 0.1);
-    }}
-    .lc-thumb img {{
-      display: block;
-      width: 100%;
-      height: auto;
-      vertical-align: middle;
+      font-size: 13.5px;
+      line-height: 1.48;
     }}
   </style>
 </head>
 <body>
   <div class="lc-page page">
-    <h1 class="lc-topic">{topic}</h1>
-    <section class="lc-block" aria-labelledby="lc-leadin">
+    <header class="lc-header" aria-label="Topic">
+      <h1 class="lc-topic-title">{topic}</h1>
+      <div class="lc-header-divider" aria-hidden="true"></div>
+    </header>
+    <section class="lc-panel lc-panel-a" aria-labelledby="lc-leadin">
+      <div class="lc-pin" aria-hidden="true"></div>
       <h2 id="lc-leadin" class="lc-h2">Lead-in</h2>
       <ul class="lc-ul">{lead_items}</ul>
     </section>
-    <section class="lc-block" aria-labelledby="lc-tot">
+    <section class="lc-panel lc-panel-b" aria-labelledby="lc-tot">
+      <div class="lc-pin" aria-hidden="true"></div>
       <h2 id="lc-tot" class="lc-h2">This or that</h2>
       <ul class="lc-ul">{choice_items}</ul>
     </section>
-    {thumb_html}
   </div>
 </body>
 </html>"""
