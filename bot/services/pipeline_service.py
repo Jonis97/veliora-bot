@@ -81,42 +81,59 @@ async def _fetch_unsplash_regular_image_url(keyword: str, access_key: str) -> Op
     return None
 
 
+_INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "phrases": (
+        "структури",
+        "phrases",
+        "фрази",
+        "граматика",
+        "grammar",
+    ),
+    "vocabulary": ("слова", "словник", "vocabulary", "лексика"),
+    "questions": (
+        "питання",
+        "вопросы",
+        "questions",
+        "запитання",
+        "обговорення",
+    ),
+    "lesson": (
+        "урок",
+        "lesson",
+        "розпочати урок",
+        "warm up",
+        "розігрів",
+    ),
+    "exercises": ("вправи", "завдання", "задание", "exercises"),
+    "fix_mistakes": ("виправ", "помилки", "fix", "mistakes"),
+}
+
+# When two intents have the same keyword match count, prefer earlier in this tuple.
+_INTENT_TIEBREAK_ORDER = (
+    "phrases",
+    "vocabulary",
+    "questions",
+    "lesson",
+    "exercises",
+    "fix_mistakes",
+)
+
+
 def _detect_user_intent(message: Message) -> str:
     raw = (message.text or message.caption or "").lower()
-    if any(s in raw for s in ("слова", "словник", "vocabulary", "лексика")):
-        return "vocabulary"
-    if any(
-        s in raw
-        for s in ("питання", "вопросы", "questions", "запитання", "обговорення")
-    ):
-        return "questions"
-    if any(
-        s in raw
-        for s in (
-            "структури",
-            "phrases",
-            "фрази",
-            "граматика",
-            "grammar",
-        )
-    ):
-        return "phrases"
-    if any(
-        s in raw
-        for s in (
-            "урок",
-            "lesson",
-            "розпочати урок",
-            "warm up",
-            "розігрів",
-        )
-    ):
-        return "lesson"
-    if any(s in raw for s in ("вправи", "завдання", "задание", "exercises")):
-        return "exercises"
-    if any(s in raw for s in ("виправ", "помилки", "fix", "mistakes")):
-        return "fix_mistakes"
-    return "card"
+    scores: dict[str, int] = {}
+    for intent, keywords in _INTENT_KEYWORDS.items():
+        scores[intent] = sum(1 for kw in keywords if kw in raw)
+    best = max(scores.values(), default=0)
+    if best == 0:
+        return "card"
+    leaders = [intent for intent, n in scores.items() if n == best]
+    if len(leaders) == 1:
+        return leaders[0]
+    for intent in _INTENT_TIEBREAK_ORDER:
+        if intent in leaders:
+            return intent
+    return leaders[0]
 
 
 def _ctx(chat_id: int) -> dict[str, Any]:
