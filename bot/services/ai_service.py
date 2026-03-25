@@ -143,6 +143,16 @@ When intent is lesson:
 - No vocabulary lists and no exercises — those belong to other templates (vocab_card, warm_paper_v2, etc.).
 - image_url is set by the app for YouTube thumbnails when applicable.
 
+DEPTH RULE:
+Before generating any question or choice, identify 3-5
+most surprising or counterintuitive facts from the source.
+Build lead-in and choices around THESE facts.
+
+Example from procrastination video:
+- NOT 'Why do people procrastinate?' (generic)
+- YES 'Is procrastination laziness or a fear response?' (from source)
+- YES 'Self-compassion or strict discipline — which breaks the cycle?' (from source)
+
 JSON schema for lesson_card_v1 only:
 {{
   "template": "lesson_card_v1",
