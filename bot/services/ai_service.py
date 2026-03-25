@@ -136,55 +136,31 @@ JSON schema for questions_card only:
 For questions_card: fill questions[] with 6–9 items; title is the video topic; handle optional; image_url is set by the app for YouTube thumbnails.
 
 When intent is lesson:
-Generate structured output with 3 sections:
+- All content must come from the source only. Do not invent facts, examples, or situations not supported by the material.
+- topic: the main theme / title as it follows from the source (video topic).
+- lead_in_questions: 2–3 short, engaging questions that activate curiosity and start discussion — not quizzes or knowledge tests.
+- choices: 4–6 situational "this or that" prompts for speaking practice — fun, relevant, tied to ideas from the source. Each item is one line in the form "Option A or Option B?" (or equivalent clear pair). You may use strings or objects with two options (e.g. a/b or option_a/option_b).
+- No vocabulary lists and no exercises — those belong to other templates (vocab_card, warm_paper_v2, etc.).
+- image_url is set by the app for YouTube thumbnails when applicable.
 
-1. SUMMARY:
-- Must describe the actual idea of the video
-- No generic phrases
-- 1–2 sentences max
-- Based only on source
-
-2. VOCABULARY:
-- Follow vocabulary extraction rules
-- 8–12 items
-- ONLY from source text
-- Prefer phrases over single words
-
-3. QUESTIONS:
-- 5–7 questions
-- Based ONLY on video content
-- Must be specific (not generic)
-- Should guide a discussion step-by-step
-
-STRICT RULE:
-Every element must come from source.
-If something is not clearly in the transcript → do not include it.
-
-BAD examples (never):
-- "Why is learning important?"
-- "What do you think?"
-
-GOOD examples:
-- Questions directly tied to situations or ideas from the video
-
-JSON schema for lesson intent only (populate lesson_* fields; keep other keys empty or minimal as needed):
+JSON schema for lesson_card_v1 only:
 {{
-  "template": "warm_paper_v2",
-  "title": "Specific topic from source.",
-  "subtitle": "Short hook from source.",
+  "template": "lesson_card_v1",
+  "topic": "Main theme from source.",
+  "lead_in_questions": ["2–3 warmup questions; curiosity and discussion, not testing knowledge."],
+  "choices": ["4–6 lines: 'X or Y?' style; speaking practice; source-grounded only."],
+  "title": "",
+  "subtitle": "",
   "punchline": "",
   "contrast": {{ "wrong": "", "better": "" }},
   "vocabulary": [],
   "vocabulary_examples": [],
   "mcq_brackets": [],
   "bullets": [],
-  "cta": "",
-  "lesson_summary": "1–2 sentences max: actual idea of the video; no generic phrases; source-only.",
-  "lesson_vocabulary": ["8–12 items: English phrase — Ukrainian translation; phrases preferred; source-only."],
-  "lesson_questions": ["5–7 specific, non-generic questions; video content only; step-by-step discussion guide."]
+  "cta": ""
 }}
 
-For lesson: put the three sections in lesson_summary, lesson_vocabulary, and lesson_questions. Do not invent content not grounded in the transcript.
+For lesson: use template lesson_card_v1 and populate topic, lead_in_questions, and choices only (other keys empty or minimal). Do not invent content not grounded in the source.
 
 Output valid JSON only.
 """.strip()
@@ -239,7 +215,14 @@ class AIContentService:
                     "wrong": str(co.get("wrong", "") or ""),
                     "better": str(co.get("better", "") or ""),
                 }
-            for key in ("vocabulary", "mcq_brackets", "vocabulary_examples", "questions"):
+            for key in (
+                "vocabulary",
+                "mcq_brackets",
+                "vocabulary_examples",
+                "questions",
+                "lead_in_questions",
+                "choices",
+            ):
                 v = data.get(key)
                 if not isinstance(v, list):
                     data[key] = []

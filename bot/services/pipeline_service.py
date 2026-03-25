@@ -39,6 +39,17 @@ def _detect_user_intent(message: Message) -> str:
         for s in ("питання", "вопросы", "questions", "запитання", "обговорення")
     ):
         return "questions"
+    if any(
+        s in raw
+        for s in (
+            "урок",
+            "lesson",
+            "розпочати урок",
+            "warm up",
+            "розігрів",
+        )
+    ):
+        return "lesson"
     if any(s in raw for s in ("вправи", "завдання", "задание", "exercises")):
         return "exercises"
     if any(s in raw for s in ("виправ", "помилки", "fix", "mistakes")):
@@ -176,6 +187,8 @@ class ContentPipelineService:
             eff_template = "vocab_card"
         elif resolved.intent == "questions":
             eff_template = "questions_card"
+        elif resolved.intent == "lesson":
+            eff_template = "lesson_card_v1"
         else:
             eff_template = DEFAULT_TEMPLATE
 
@@ -196,6 +209,12 @@ class ContentPipelineService:
         card_json["template"] = eff_template
 
         card_for_render = dict(card_json)
+        if eff_template == "lesson_card_v1":
+            merged_title = str(
+                card_json.get("topic", "") or card_json.get("title", "") or ""
+            ).strip()
+            if merged_title:
+                card_for_render["title"] = merged_title
         if resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
             card_for_render["image_url"] = resolved.youtube_thumbnail_url
         else:
@@ -240,6 +259,50 @@ class ContentPipelineService:
         source_type: str,
         intent_label_s: str,
     ) -> str:
+        if template_used == "lesson_card_v1":
+            topic = str(card.get("topic", "") or card.get("title", "Lesson")).strip()
+            lines_l = [
+                f"{intent_label_s} · {template_used} · джерело: {source_type}",
+                "",
+                f"📌 {topic}",
+                "",
+                "Lead-in:",
+            ]
+            li = card.get("lead_in_questions")
+            if isinstance(li, list):
+                for q in li[:3]:
+                    lines_l.append(f"• {str(q).strip()}")
+            else:
+                lines_l.append("• —")
+            lines_l.extend(["", "This or that:"])
+            ch = card.get("choices")
+            if isinstance(ch, list):
+                for c in ch[:6]:
+                    if isinstance(c, dict):
+                        a = str(
+                            c.get("a", "")
+                            or c.get("option_a", "")
+                            or c.get("A", "")
+                        ).strip()
+                        b = str(
+                            c.get("b", "")
+                            or c.get("option_b", "")
+                            or c.get("B", "")
+                        ).strip()
+                        line = f"{a} or {b}?" if a and b else str(
+                            c.get("text", "") or c.get("line", "") or ""
+                        ).strip()
+                        lines_l.append(f"• {line or '—'}")
+                    else:
+                        lines_l.append(f"• {str(c).strip()}")
+            else:
+                lines_l.append("• —")
+            lines_l.extend(["", "(Попередній перегляд зображення недоступний — текст картки вище.)"])
+            text = "\n".join(lines_l)
+            if len(text) > 4000:
+                return text[:3997] + "..."
+            return text
+
         title = str(card.get("title", "Learning Card")).strip()
         subtitle = str(card.get("subtitle", "")).strip()
         raw_bullets = card.get("bullets") or []

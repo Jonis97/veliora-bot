@@ -14,6 +14,7 @@ ALLOWED_TEMPLATES = {
     "influencer_card_v2",
     "vocab_card",
     "questions_card",
+    "lesson_card_v1",
 }
 
 # Default when no template tag and AI omits template: test v2 first; v1 still selectable explicitly.
@@ -157,6 +158,46 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         h = handle_raw if handle_raw.startswith("@") else f"@{handle_raw.lstrip('@')}"
         handle_display = escape(h[:80])
 
+    topic_src = str(raw.get("topic", "") or "").strip()
+    title_src = str(raw.get("title", "") or "").strip()
+    lesson_topic_src = topic_src or title_src or "Lesson"
+    lesson_topic = escape(lesson_topic_src[:220])
+
+    lead_in_in: Any = raw.get("lead_in_questions")
+    lead_in_questions_lines: List[str] = []
+    if isinstance(lead_in_in, list):
+        lead_in_questions_lines = [
+            escape(str(x).strip())[:500] for x in lead_in_in[:3] if str(x).strip()
+        ]
+
+    choices_in: Any = raw.get("choices")
+    choice_lines: List[str] = []
+    if isinstance(choices_in, list):
+        for c in choices_in[:6]:
+            if isinstance(c, dict):
+                a = str(
+                    c.get("a", "")
+                    or c.get("option_a", "")
+                    or c.get("A", "")
+                    or c.get("left", "")
+                ).strip()
+                b = str(
+                    c.get("b", "")
+                    or c.get("option_b", "")
+                    or c.get("B", "")
+                    or c.get("right", "")
+                ).strip()
+                if a and b:
+                    choice_lines.append(escape(f"{a} or {b}?")[:500])
+                else:
+                    t = str(c.get("text", "") or c.get("line", "") or "").strip()
+                    if t:
+                        choice_lines.append(escape(t)[:500])
+            else:
+                s = str(c).strip()
+                if s:
+                    choice_lines.append(escape(s)[:500])
+
     return {
         "template": raw.get("template", DEFAULT_TEMPLATE),
         "title": escape(str(raw.get("title", "Learning Card"))),
@@ -172,6 +213,9 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "vocab_card_rows": vocab_card_rows,
         "questions_lines": questions_lines,
         "handle_display": handle_display,
+        "lesson_topic": lesson_topic,
+        "lead_in_questions_lines": lead_in_questions_lines,
+        "choice_lines": choice_lines,
     }
 
 
@@ -301,6 +345,8 @@ class TemplateService:
             return self._vocab_card_template(normalized)
         if template_name == "questions_card":
             return self._questions_card_template(normalized)
+        if template_name == "lesson_card_v1":
+            return self._lesson_card_v1_template(normalized)
         if template_name == "warm_paper_v2":
             return self._warm_paper_v2_template(normalized)
         return self._warm_paper_template(normalized)
@@ -1149,6 +1195,124 @@ class TemplateService:
       {handle_html}
     </header>
     {grid_html}
+    {thumb_html}
+  </div>
+</body>
+</html>"""
+
+    def _lesson_card_v1_template(self, card: dict[str, Any]) -> str:
+        topic = (card.get("lesson_topic") or card.get("title") or "Lesson").strip()
+        lead_in = list(card.get("lead_in_questions_lines") or [])[:3]
+        if not lead_in:
+            lead_in = [escape("—")]
+        lead_items = "".join(f'<li class="lc-li">{q}</li>' for q in lead_in)
+
+        choices = list(card.get("choice_lines") or [])[:6]
+        if not choices:
+            choices = [escape("—")]
+        choice_items = "".join(f'<li class="lc-li lc-choice">{c}</li>' for c in choices)
+
+        thumb_url = (card.get("image_url") or "").strip()
+        if thumb_url and is_safe_topic_image_url(thumb_url):
+            safe_u = escape(thumb_url, quote=True)
+            thumb_html = (
+                f'<figure class="lc-thumb"><img src="{safe_u}" alt="" loading="lazy" /></figure>'
+            )
+        else:
+            thumb_html = ""
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{
+      background: #e0d8ce;
+      font-family: "DM Serif Display", Georgia, serif;
+      color: #2c241f;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .lc-page {{
+      width: 600px;
+      min-height: 920px;
+      margin: 0 auto;
+      background: #faf6f0;
+      padding: 36px 32px 36px;
+      border-radius: 4px;
+      box-shadow: 0 2px 24px rgba(60, 48, 40, 0.08);
+    }}
+    .lc-topic {{
+      margin: 0 0 28px;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.15;
+      color: #1a1512;
+      text-align: center;
+      letter-spacing: -0.02em;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .lc-block {{
+      margin-bottom: 28px;
+    }}
+    .lc-h2 {{
+      margin: 0 0 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #6b5344;
+      border-bottom: 2px solid rgba(107, 83, 68, 0.25);
+      padding-bottom: 8px;
+    }}
+    .lc-ul {{
+      margin: 0;
+      padding: 0 0 0 20px;
+    }}
+    .lc-li {{
+      margin: 0 0 12px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #2c241f;
+    }}
+    .lc-li:last-child {{ margin-bottom: 0; }}
+    .lc-choice {{
+      font-size: 14px;
+      line-height: 1.5;
+    }}
+    .lc-thumb {{
+      margin: 32px auto 0;
+      max-width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(60, 48, 40, 0.12);
+      box-shadow: 0 4px 16px rgba(60, 48, 40, 0.1);
+    }}
+    .lc-thumb img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+    }}
+  </style>
+</head>
+<body>
+  <div class="lc-page page">
+    <h1 class="lc-topic">{topic}</h1>
+    <section class="lc-block" aria-labelledby="lc-leadin">
+      <h2 id="lc-leadin" class="lc-h2">Lead-in</h2>
+      <ul class="lc-ul">{lead_items}</ul>
+    </section>
+    <section class="lc-block" aria-labelledby="lc-tot">
+      <h2 id="lc-tot" class="lc-h2">This or that</h2>
+      <ul class="lc-ul">{choice_items}</ul>
+    </section>
     {thumb_html}
   </div>
 </body>
