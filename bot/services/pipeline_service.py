@@ -83,26 +83,30 @@ async def _fetch_unsplash_regular_image_url(keyword: str, access_key: str) -> Op
 
 _INTENT_KEYWORDS: dict[str, tuple[str, ...]] = {
     "phrases": (
-        "структури",
-        "phrases",
-        "фрази",
-        "граматика",
+        "грамат",
         "grammar",
+        "фраз",
+        "phrase",
+        "структур",
+        "sentence pattern",
+        "речен",
     ),
-    "vocabulary": ("слова", "словник", "vocabulary", "лексика"),
+    "vocabulary": ("слов", "vocab", "лексик", "перекла", "word", "translat"),
     "questions": (
-        "питання",
-        "вопросы",
-        "questions",
-        "запитання",
-        "обговорення",
+        "питан",
+        "вопрос",
+        "question",
+        "запитан",
+        "обговор",
+        "discussion",
     ),
     "lesson": (
         "урок",
         "lesson",
-        "розпочати урок",
+        "розпочат",
         "warm up",
-        "розігрів",
+        "розігр",
+        "lead in",
     ),
     "exercises": ("вправи", "завдання", "задание", "exercises"),
     "fix_mistakes": ("виправ", "помилки", "fix", "mistakes"),
@@ -120,10 +124,12 @@ _INTENT_TIEBREAK_ORDER = (
 
 
 def _detect_user_intent(message: Message) -> str:
-    raw = (message.text or message.caption or "").lower()
+    user_text = (message.text or message.caption or "").lower()
     scores: dict[str, int] = {}
     for intent, keywords in _INTENT_KEYWORDS.items():
-        scores[intent] = sum(1 for kw in keywords if kw in raw)
+        scores[intent] = sum(
+            1 for keyword in keywords if keyword in user_text
+        )
     best = max(scores.values(), default=0)
     if best == 0:
         return "card"
