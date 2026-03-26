@@ -38,6 +38,46 @@ _ONB_LEVEL_KB = InlineKeyboardMarkup(
     ]
 )
 
+# Post-card actions (prefix onb_p_ — matches CallbackQueryHandler ^onb_ in main).
+_POST_CARD_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("🔄 Змінити формат", callback_data="onb_p_fmt"),
+            InlineKeyboardButton("📊 Змінити рівень", callback_data="onb_p_lvl"),
+        ],
+    ]
+)
+
+_POST_CARD_FMT_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("📚 Урок", callback_data="onb_p_f_lesson"),
+            InlineKeyboardButton("💬 Speaking", callback_data="onb_p_f_questions"),
+        ],
+        [
+            InlineKeyboardButton("📖 Слова", callback_data="onb_p_f_vocabulary"),
+            InlineKeyboardButton("✏️ Граматика", callback_data="onb_p_f_phrases"),
+        ],
+    ]
+)
+
+_POST_CARD_LVL_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("A2", callback_data="onb_p_l_A2"),
+            InlineKeyboardButton("B1", callback_data="onb_p_l_B1"),
+            InlineKeyboardButton("B2", callback_data="onb_p_l_B2"),
+        ],
+    ]
+)
+
+_FMT_CHANGE_LABELS = {
+    "lesson": "📚 Урок",
+    "questions": "💬 Speaking",
+    "vocabulary": "📖 Слова",
+    "phrases": "✏️ Граматика",
+}
+
 
 class _OnboardingEnrichedMessage:
     """Proxy so pipeline sees enriched text/caption without mutating the real Message."""
@@ -84,6 +124,34 @@ class MessageHandlerService:
         await query.answer()
         chat_id = query.message.chat_id
         data = (query.data or "").strip()
+
+        if data == "onb_p_fmt":
+            await query.edit_message_reply_markup(reply_markup=_POST_CARD_FMT_KB)
+            return
+        if data == "onb_p_lvl":
+            await query.edit_message_reply_markup(reply_markup=_POST_CARD_LVL_KB)
+            return
+        if data.startswith("onb_p_f_"):
+            fmt = data.removeprefix("onb_p_f_")
+            label = _FMT_CHANGE_LABELS.get(fmt, fmt)
+            st = user_state.setdefault(chat_id, {})
+            st["format"] = fmt
+            await query.message.reply_text(
+                f"Формат змінено на: {label}\n"
+                "Скинь YouTube-відео ще раз або напиши тему 👇"
+            )
+            await query.edit_message_reply_markup(reply_markup=_POST_CARD_KB)
+            return
+        if data.startswith("onb_p_l_"):
+            level = data.removeprefix("onb_p_l_")
+            st = user_state.setdefault(chat_id, {})
+            st["level"] = level
+            await query.message.reply_text(
+                f"Рівень змінено на: {level}\n"
+                "Скинь YouTube-відео ще раз або напиши тему 👇"
+            )
+            await query.edit_message_reply_markup(reply_markup=_POST_CARD_KB)
+            return
 
         if data.startswith("onb_fmt_"):
             fmt = data.removeprefix("onb_fmt_")
@@ -172,9 +240,6 @@ class MessageHandlerService:
             await message.reply_text("Не вдалося завершити картку. Спробуй ще раз за хвилину.")
             return
 
-        if isinstance(pipeline_message, _OnboardingEnrichedMessage):
-            user_state.pop(chat_id, None)
-
         await self._send_pipeline_result(message, result)
 
     async def _send_pipeline_result(self, message, result) -> None:
@@ -183,6 +248,7 @@ class MessageHandlerService:
             await message.reply_photo(
                 photo=image_file,
                 caption=f"Картка · {result.template_used} · {result.source_type}",
+                reply_markup=_POST_CARD_KB,
             )
         elif result.text_fallback:
             await message.reply_text(result.text_fallback)
