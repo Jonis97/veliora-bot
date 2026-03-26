@@ -30,8 +30,9 @@ def build_application() -> tuple[Application, str, int, str, str]:
     settings = load_settings()
     openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
+    youtube_service = YouTubeTranscriptService(settings.supadata_api_key)
     pipeline = ContentPipelineService(
-        youtube_service=YouTubeTranscriptService(settings.supadata_api_key),
+        youtube_service=youtube_service,
         transcription_service=VoiceTranscriptionService(openai_client),
         ai_service=AIContentService(openai_client, settings.openai_model),
         template_service=TemplateService(),
@@ -40,7 +41,13 @@ def build_application() -> tuple[Application, str, int, str, str]:
         unsplash_access_key=settings.unsplash_access_key,
     )
     deduplicator = MessageDeduplicator(ttl_seconds=600)
-    message_handler = MessageHandlerService(pipeline, deduplicator)
+    message_handler = MessageHandlerService(
+        pipeline,
+        deduplicator,
+        youtube_service,
+        openai_client,
+        settings.openai_model,
+    )
 
     app = Application.builder().token(settings.telegram_token).build()
     app.add_handler(CommandHandler("start", message_handler.start_command))

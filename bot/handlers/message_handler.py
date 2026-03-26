@@ -1,10 +1,13 @@
+import json
 import logging
 from typing import Any, Optional, Union
 
+from openai import AsyncOpenAI
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, Update
 from telegram.ext import ContextTypes
 
 from bot.services.pipeline_service import ContentPipelineService
+from bot.services.youtube_service import YouTubeTranscriptService, extract_video_id
 from bot.utils.active_source import NeedActiveSourceError
 from bot.utils.dedup import MessageDeduplicator
 from bot.utils.errors import GenerationFailedError, TranscriptUnavailableError
@@ -14,6 +17,20 @@ LOGGER = logging.getLogger(__name__)
 
 # Onboarding only — separate from active_source / pipeline memory.
 user_state: dict[int, dict[str, Optional[str]]] = {}
+
+# Temporary guided-preview state — separate from active_source.
+preview_state: dict[int, dict[str, Any]] = {}
+
+_PREVIEW_TRANSCRIPT_MAX = 14_000
+
+_PREVIEW_SYSTEM = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "From the source transcript below ONLY (no invented facts):\n"
+    '- "topic": one short line (teacher-friendly)\n'
+    '- "key_ideas": exactly 3 short strings, each one bullet-worthy idea from the source\n'
+    '- "words": 3 to 5 useful English words or short phrases that appear in or are clearly grounded in the source\n'
+    "Keep everything short. No card layout, no images."
+)
 
 _ONB_FMT_STEP1_KB = InlineKeyboardMarkup(
     [
@@ -73,6 +90,40 @@ _POST_CARD_LVL_KB = InlineKeyboardMarkup(
     ]
 )
 
+_PREVIEW_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("✅ Все ок", callback_data="onb_prv_ok"),
+            InlineKeyboardButton("✏️ Змінити формат", callback_data="onb_prv_fmt"),
+            InlineKeyboardButton("📊 Змінити рівень", callback_data="onb_prv_lvl"),
+        ],
+    ]
+)
+
+_PREVIEW_FMT_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("📚 Урок", callback_data="onb_prv_pf_lesson"),
+            InlineKeyboardButton("💬 Speaking", callback_data="onb_prv_pf_questions"),
+        ],
+        [
+            InlineKeyboardButton("📖 Слова", callback_data="onb_prv_pf_vocabulary"),
+            InlineKeyboardButton("✏️ Граматика", callback_data="onb_prv_pf_phrases"),
+        ],
+    ]
+)
+
+_PREVIEW_LVL_KB = InlineKeyboardMarkup(
+    [
+        [
+            InlineKeyboardButton("A1", callback_data="onb_prv_ll_A1"),
+            InlineKeyboardButton("A2", callback_data="onb_prv_ll_A2"),
+            InlineKeyboardButton("B1", callback_data="onb_prv_ll_B1"),
+            InlineKeyboardButton("B2", callback_data="onb_prv_ll_B2"),
+        ],
+    ]
+)
+
 _FMT_CHANGE_LABELS = {
     "lesson": "📚 Урок",
     "questions": "💬 Speaking",
@@ -102,16 +153,85 @@ class _OnboardingEnrichedMessage:
         return getattr(self._base, name)
 
 
+def _format_preview_message(preview_data: dict[str, Any]) -> str:
+    topic = str(preview_data.get("topic") or "—").strip() or "—"
+    ideas = preview_data.get("key_ideas")
+    if not isinstance(ideas, list):
+        ideas = []
+    ideas = [str(x).strip() for x in ideas if str(x).strip()]
+    while len(ideas) < 3:
+        ideas.append("—")
+    ideas = ideas[:3]
+    words = preview_data.get("words")
+    if not isinstance(words, list):
+        words = []
+    words = [str(x).strip() for x in words if str(x).strip()][:8]
+    words_str = ", ".join(words) if words else "—"
+    return (
+        "📋 Ось що знайшов:\n\n"
+        f"📌 Тема: {topic}\n\n"
+        "💡 Ідеї:\n"
+        f"• {ideas[0]}\n• {ideas[1]}\n• {ideas[2]}\n\n"
+        f"📚 Слова:\n{words_str}"
+    )
+
+
 class MessageHandlerService:
-    def __init__(self, pipeline: ContentPipelineService, deduplicator: MessageDeduplicator) -> None:
+    def __init__(
+        self,
+        pipeline: ContentPipelineService,
+        deduplicator: MessageDeduplicator,
+        youtube_service: YouTubeTranscriptService,
+        openai_client: AsyncOpenAI,
+        openai_model: str,
+    ) -> None:
         self._pipeline = pipeline
         self._deduplicator = deduplicator
+        self._youtube_service = youtube_service
+        self._openai_client = openai_client
+        self._openai_model = openai_model
+
+    async def _call_preview_gpt(self, transcript: str) -> dict[str, Any]:
+        snippet = transcript.strip()
+        if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
+            snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
+        response = await self._openai_client.chat.completions.create(
+            model=self._openai_model,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": _PREVIEW_SYSTEM},
+                {"role": "user", "content": f"Transcript:\n{snippet}"},
+            ],
+        )
+        raw = response.choices[0].message.content or "{}"
+        data = json.loads(raw)
+        topic = str(data.get("topic", "") or "").strip()
+        key_ideas = data.get("key_ideas")
+        words = data.get("words")
+        if not isinstance(key_ideas, list):
+            key_ideas = []
+        if not isinstance(words, list):
+            words = []
+        ki = [str(x).strip() for x in key_ideas if str(x).strip()][:3]
+        while len(ki) < 3:
+            ki.append("—")
+        wd = [str(x).strip() for x in words if str(x).strip()][:5]
+        return {
+            "topic": topic or "—",
+            "key_ideas": ki,
+            "words": wd,
+        }
+
+    def _guided_ready(self, chat_id: int) -> bool:
+        st = user_state.get(chat_id)
+        return bool(st and st.get("format") and st.get("level"))
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.message:
             return
         chat_id = update.message.chat_id
         user_state.pop(chat_id, None)
+        preview_state.pop(chat_id, None)
         await update.message.reply_text(
             "👋 Привіт! Я Veliora 🎓\n\n"
             "Допоможу швидко підготувати матеріал для уроку англійської.\n\n"
@@ -126,6 +246,131 @@ class MessageHandlerService:
         await query.answer()
         chat_id = query.message.chat_id
         data = (query.data or "").strip()
+
+        if data == "onb_prv_ok":
+            prv = preview_state.get(chat_id)
+            if not prv or not prv.get("transcript"):
+                await query.message.reply_text(
+                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                )
+                return
+            if prv.get("confirmed") or prv.get("generating"):
+                return
+            prv["generating"] = True
+            prv["confirmed"] = True
+            st = user_state.get(chat_id)
+            fmt = (st or {}).get("format") or prv.get("format")
+            lvl = (st or {}).get("level") or prv.get("level")
+            transcript = str(prv.get("transcript") or "").strip()
+            enriched = (
+                f"[FORMAT={fmt}]\n[LEVEL={lvl}]\n\n"
+                f"USER CONTENT:\n{transcript}"
+            )
+            proxy = _OnboardingEnrichedMessage(query.message, enriched)
+            try:
+                prepare = await self._pipeline.prepare(context.bot, proxy, chat_id)
+                if prepare.preface:
+                    await query.message.reply_text("Вже готую твій матеріал ✨")
+                elif prepare.status_line:
+                    await query.message.reply_text(prepare.status_line)
+                result = await self._pipeline.execute(prepare)
+            except TranscriptUnavailableError as err:
+                prv["generating"] = False
+                prv["confirmed"] = False
+                await query.message.reply_text(err.user_message)
+                return
+            except GenerationFailedError as err:
+                prv["generating"] = False
+                prv["confirmed"] = False
+                await query.message.reply_text(err.user_message)
+                return
+            except Exception as error:  # noqa: BLE001
+                LOGGER.exception("Guided confirm pipeline failed: %s", error)
+                prv["generating"] = False
+                prv["confirmed"] = False
+                await query.message.reply_text("Не вдалося згенерувати картку. Спробуй ще раз.")
+                return
+            preview_state.pop(chat_id, None)
+            await self._send_pipeline_result(query.message, result)
+            return
+
+        if data == "onb_prv_fmt":
+            prv = preview_state.get(chat_id)
+            if not prv or not prv.get("transcript"):
+                await query.message.reply_text(
+                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                )
+                return
+            await query.edit_message_reply_markup(reply_markup=_PREVIEW_FMT_KB)
+            return
+
+        if data == "onb_prv_lvl":
+            prv = preview_state.get(chat_id)
+            if not prv or not prv.get("transcript"):
+                await query.message.reply_text(
+                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                )
+                return
+            await query.edit_message_reply_markup(reply_markup=_PREVIEW_LVL_KB)
+            return
+
+        if data.startswith("onb_prv_pf_"):
+            fmt = data.removeprefix("onb_prv_pf_")
+            prv = preview_state.get(chat_id)
+            if not prv or not prv.get("transcript"):
+                await query.message.reply_text(
+                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                )
+                return
+            user_state.setdefault(chat_id, {})["format"] = fmt
+            prv["format"] = fmt
+            prv["confirmed"] = False
+            prv["generating"] = False
+            try:
+                prv["preview_data"] = await self._call_preview_gpt(str(prv["transcript"]))
+            except Exception as exc:  # noqa: BLE001
+                LOGGER.exception("Preview GPT failed: %s", exc)
+                await query.message.reply_text(
+                    "Не вдалося оновити попередній перегляд. Спробуй ще раз."
+                )
+                return
+            text = _format_preview_message(prv["preview_data"])
+            try:
+                await query.edit_message_text(text, reply_markup=_PREVIEW_KB)
+            except Exception as exc:  # noqa: BLE001
+                LOGGER.warning("Preview edit after format: %s", exc)
+                sent = await query.message.reply_text(text, reply_markup=_PREVIEW_KB)
+                prv["preview_message_id"] = sent.message_id
+            return
+
+        if data.startswith("onb_prv_ll_"):
+            level = data.removeprefix("onb_prv_ll_")
+            prv = preview_state.get(chat_id)
+            if not prv or not prv.get("transcript"):
+                await query.message.reply_text(
+                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                )
+                return
+            user_state.setdefault(chat_id, {})["level"] = level
+            prv["level"] = level
+            prv["confirmed"] = False
+            prv["generating"] = False
+            try:
+                prv["preview_data"] = await self._call_preview_gpt(str(prv["transcript"]))
+            except Exception as exc:  # noqa: BLE001
+                LOGGER.exception("Preview GPT failed: %s", exc)
+                await query.message.reply_text(
+                    "Не вдалося оновити попередній перегляд. Спробуй ще раз."
+                )
+                return
+            text = _format_preview_message(prv["preview_data"])
+            try:
+                await query.edit_message_text(text, reply_markup=_PREVIEW_KB)
+            except Exception as exc:  # noqa: BLE001
+                LOGGER.warning("Preview edit after level: %s", exc)
+                sent = await query.message.reply_text(text, reply_markup=_PREVIEW_KB)
+                prv["preview_message_id"] = sent.message_id
+            return
 
         if data == "onb_p_fmt":
             await query.edit_message_reply_markup(reply_markup=_POST_CARD_FMT_KB)
@@ -158,6 +403,7 @@ class MessageHandlerService:
         if data.startswith("onb_fmt_"):
             fmt = data.removeprefix("onb_fmt_")
             user_state[chat_id] = {"format": fmt, "level": None}
+            preview_state.pop(chat_id, None)
             await query.edit_message_text(
                 "Для якого рівня?",
                 reply_markup=_ONB_LEVEL_KB,
@@ -171,6 +417,7 @@ class MessageHandlerService:
                 await query.edit_message_text("Натисни /start, щоб почати спочатку.")
                 return
             st["level"] = level
+            preview_state.pop(chat_id, None)
             await query.edit_message_text("Супер. Скинь YouTube-відео або напиши тему 👇")
             return
 
@@ -187,6 +434,48 @@ class MessageHandlerService:
             return
 
         st = user_state.get(chat_id)
+        original_content = (message.text or message.caption or "").strip()
+
+        if (
+            self._guided_ready(chat_id)
+            and not message.voice
+            and original_content
+        ):
+            video_id = extract_video_id(original_content)
+            if video_id:
+                preview_state[chat_id] = {
+                    "transcript": None,
+                    "format": st.get("format"),
+                    "level": st.get("level"),
+                    "preview_data": {},
+                    "confirmed": False,
+                    "generating": False,
+                    "preview_message_id": None,
+                }
+                try:
+                    transcript = await self._youtube_service.fetch_transcript(video_id)
+                except TranscriptUnavailableError as err:
+                    preview_state.pop(chat_id, None)
+                    await message.reply_text(err.user_message)
+                    return
+                preview_state[chat_id]["transcript"] = transcript
+                try:
+                    preview_data = await self._call_preview_gpt(transcript)
+                except Exception as exc:  # noqa: BLE001
+                    LOGGER.exception("Preview GPT failed: %s", exc)
+                    preview_state.pop(chat_id, None)
+                    await message.reply_text(
+                        "Не вдалося зробити попередній перегляд. Спробуй ще раз."
+                    )
+                    return
+                preview_state[chat_id]["preview_data"] = preview_data
+                sent = await message.reply_text(
+                    _format_preview_message(preview_data),
+                    reply_markup=_PREVIEW_KB,
+                )
+                preview_state[chat_id]["preview_message_id"] = sent.message_id
+                return
+
         pipeline_message: Union[Message, _OnboardingEnrichedMessage] = message
         if (
             st
@@ -194,7 +483,6 @@ class MessageHandlerService:
             and st.get("level")
             and not message.voice
         ):
-            original_content = (message.text or message.caption or "").strip()
             if original_content:
                 enriched = (
                     f"[FORMAT={st['format']}]\n[LEVEL={st['level']}]\n\n"
