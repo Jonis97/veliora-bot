@@ -29,8 +29,23 @@ _PREVIEW_SYSTEM = (
     '- "topic": one short line (teacher-friendly)\n'
     '- "key_ideas": exactly 3 short strings, each one bullet-worthy idea from the source\n'
     '- "words": 3 to 5 useful English words or short phrases that appear in or are clearly grounded in the source\n'
-    "Keep everything short. No card layout, no images."
+    "Keep everything short. No card layout, no images.\n"
+    "Follow any additional instruction without breaking source-only rules."
 )
+
+_PREVIEW_INSTR_EASY = (
+    "Make the material easier. Simplify vocabulary and ideas. "
+    "Keep source meaning unchanged."
+)
+
+_PREVIEW_INSTR_DEEP = (
+    "Deepen the material. Give stronger ideas and richer vocabulary. "
+    "Stay within source content only. Do not invent new topics."
+)
+
+_PREVIEW_LIMIT_TEXT = "Давай підтвердимо або почнемо з нового 👇"
+
+_MAX_PREVIEW_EDIT_ROUNDS = 2
 
 _ONB_FMT_STEP1_KB = InlineKeyboardMarkup(
     [
@@ -94,32 +109,26 @@ _PREVIEW_KB = InlineKeyboardMarkup(
     [
         [
             InlineKeyboardButton("✅ Все ок", callback_data="onb_prv_ok"),
-            InlineKeyboardButton("✏️ Змінити формат", callback_data="onb_prv_fmt"),
-            InlineKeyboardButton("📊 Змінити рівень", callback_data="onb_prv_lvl"),
+            InlineKeyboardButton("✏️ Уточнити", callback_data="onb_prv_ref"),
         ],
     ]
 )
 
-_PREVIEW_FMT_KB = InlineKeyboardMarkup(
+_PREVIEW_REFINE_KB = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton("📚 Урок", callback_data="onb_prv_pf_lesson"),
-            InlineKeyboardButton("💬 Speaking", callback_data="onb_prv_pf_questions"),
-        ],
-        [
-            InlineKeyboardButton("📖 Слова", callback_data="onb_prv_pf_vocabulary"),
-            InlineKeyboardButton("✏️ Граматика", callback_data="onb_prv_pf_phrases"),
+            InlineKeyboardButton("📉 Простіше", callback_data="onb_prv_r_easy"),
+            InlineKeyboardButton("📚 Глибше", callback_data="onb_prv_r_deep"),
+            InlineKeyboardButton("✍️ Своє", callback_data="onb_prv_r_own"),
         ],
     ]
 )
 
-_PREVIEW_LVL_KB = InlineKeyboardMarkup(
+_PREVIEW_LIMIT_KB = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton("A1", callback_data="onb_prv_ll_A1"),
-            InlineKeyboardButton("A2", callback_data="onb_prv_ll_A2"),
-            InlineKeyboardButton("B1", callback_data="onb_prv_ll_B1"),
-            InlineKeyboardButton("B2", callback_data="onb_prv_ll_B2"),
+            InlineKeyboardButton("✅ Все ок", callback_data="onb_prv_ok"),
+            InlineKeyboardButton("🔄 Нове джерело", callback_data="onb_prv_new"),
         ],
     ]
 )
@@ -191,16 +200,23 @@ class MessageHandlerService:
         self._openai_client = openai_client
         self._openai_model = openai_model
 
-    async def _call_preview_gpt(self, transcript: str) -> dict[str, Any]:
+    async def _call_preview_gpt(
+        self,
+        transcript: str,
+        extra_instruction: Optional[str] = None,
+    ) -> dict[str, Any]:
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
+        user_block = f"Transcript:\n{snippet}"
+        if extra_instruction and extra_instruction.strip():
+            user_block += f"\n\nAdditional instruction:\n{extra_instruction.strip()}"
         response = await self._openai_client.chat.completions.create(
             model=self._openai_model,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": _PREVIEW_SYSTEM},
-                {"role": "user", "content": f"Transcript:\n{snippet}"},
+                {"role": "user", "content": user_block},
             ],
         )
         raw = response.choices[0].message.content or "{}"
@@ -225,6 +241,75 @@ class MessageHandlerService:
     def _guided_ready(self, chat_id: int) -> bool:
         st = user_state.get(chat_id)
         return bool(st and st.get("format") and st.get("level"))
+
+    def _preview_state_bootstrap(self) -> dict[str, Any]:
+        return {
+            "transcript": None,
+            "format": None,
+            "level": None,
+            "preview_data": {},
+            "generating": False,
+            "preview_message_id": None,
+            "awaiting_edit": False,
+            "edit_rounds": 0,
+            "limit_reached": False,
+        }
+
+    async def _edit_or_reply_preview(
+        self,
+        bot: Any,
+        chat_id: int,
+        prv: dict[str, Any],
+        anchor_message: Message,
+        text: str,
+        reply_markup: InlineKeyboardMarkup,
+    ) -> None:
+        mid = prv.get("preview_message_id")
+        try:
+            if mid:
+                await bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=int(mid),
+                    text=text,
+                    reply_markup=reply_markup,
+                )
+                return
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.warning("Preview edit failed, sending new message: %s", exc)
+        sent = await anchor_message.reply_text(text, reply_markup=reply_markup)
+        prv["preview_message_id"] = sent.message_id
+
+    async def _after_refine_increment(
+        self,
+        bot: Any,
+        chat_id: int,
+        prv: dict[str, Any],
+        anchor_message: Message,
+        preview_data: dict[str, Any],
+    ) -> None:
+        prv["preview_data"] = preview_data
+        prv["edit_rounds"] = int(prv.get("edit_rounds") or 0) + 1
+        prv["awaiting_edit"] = False
+        prv["limit_reached"] = False
+        if prv["edit_rounds"] >= _MAX_PREVIEW_EDIT_ROUNDS:
+            prv["limit_reached"] = True
+            await self._edit_or_reply_preview(
+                bot,
+                chat_id,
+                prv,
+                anchor_message,
+                _PREVIEW_LIMIT_TEXT,
+                _PREVIEW_LIMIT_KB,
+            )
+        else:
+            await self._edit_or_reply_preview(
+                bot,
+                chat_id,
+                prv,
+                anchor_message,
+                _format_preview_message(preview_data),
+                _PREVIEW_KB,
+            )
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not update.message:
@@ -254,10 +339,9 @@ class MessageHandlerService:
                     "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
                 )
                 return
-            if prv.get("confirmed") or prv.get("generating"):
+            if prv.get("generating"):
                 return
             prv["generating"] = True
-            prv["confirmed"] = True
             st = user_state.get(chat_id)
             fmt = (st or {}).get("format") or prv.get("format")
             lvl = (st or {}).get("level") or prv.get("level")
@@ -276,100 +360,118 @@ class MessageHandlerService:
                 result = await self._pipeline.execute(prepare)
             except TranscriptUnavailableError as err:
                 prv["generating"] = False
-                prv["confirmed"] = False
                 await query.message.reply_text(err.user_message)
                 return
             except GenerationFailedError as err:
                 prv["generating"] = False
-                prv["confirmed"] = False
                 await query.message.reply_text(err.user_message)
                 return
             except Exception as error:  # noqa: BLE001
                 LOGGER.exception("Guided confirm pipeline failed: %s", error)
                 prv["generating"] = False
-                prv["confirmed"] = False
                 await query.message.reply_text("Не вдалося згенерувати картку. Спробуй ще раз.")
                 return
             preview_state.pop(chat_id, None)
             await self._send_pipeline_result(query.message, result)
             return
 
-        if data == "onb_prv_fmt":
-            prv = preview_state.get(chat_id)
-            if not prv or not prv.get("transcript"):
-                await query.message.reply_text(
-                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
-                )
-                return
-            await query.edit_message_reply_markup(reply_markup=_PREVIEW_FMT_KB)
+        if data == "onb_prv_new":
+            preview_state.pop(chat_id, None)
+            await query.message.reply_text("Надішли посилання на YouTube ще раз 👇")
+            try:
+                await query.edit_message_reply_markup(reply_markup=None)
+            except Exception:  # noqa: BLE001
+                pass
             return
 
-        if data == "onb_prv_lvl":
+        if data == "onb_prv_ref":
             prv = preview_state.get(chat_id)
             if not prv or not prv.get("transcript"):
                 await query.message.reply_text(
                     "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
                 )
                 return
-            await query.edit_message_reply_markup(reply_markup=_PREVIEW_LVL_KB)
-            return
-
-        if data.startswith("onb_prv_pf_"):
-            fmt = data.removeprefix("onb_prv_pf_")
-            prv = preview_state.get(chat_id)
-            if not prv or not prv.get("transcript"):
-                await query.message.reply_text(
-                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
-                )
+            if prv.get("limit_reached") or int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
                 return
-            user_state.setdefault(chat_id, {})["format"] = fmt
-            prv["format"] = fmt
-            prv["confirmed"] = False
-            prv["generating"] = False
+            prv["awaiting_edit"] = False
             try:
-                prv["preview_data"] = await self._call_preview_gpt(str(prv["transcript"]))
-            except Exception as exc:  # noqa: BLE001
-                LOGGER.exception("Preview GPT failed: %s", exc)
-                await query.message.reply_text(
-                    "Не вдалося оновити попередній перегляд. Спробуй ще раз."
+                await query.edit_message_text(
+                    "Як адаптувати матеріал?",
+                    reply_markup=_PREVIEW_REFINE_KB,
                 )
-                return
-            text = _format_preview_message(prv["preview_data"])
-            try:
-                await query.edit_message_text(text, reply_markup=_PREVIEW_KB)
             except Exception as exc:  # noqa: BLE001
-                LOGGER.warning("Preview edit after format: %s", exc)
-                sent = await query.message.reply_text(text, reply_markup=_PREVIEW_KB)
+                LOGGER.warning("Refine menu edit failed: %s", exc)
+                sent = await query.message.reply_text(
+                    "Як адаптувати матеріал?",
+                    reply_markup=_PREVIEW_REFINE_KB,
+                )
                 prv["preview_message_id"] = sent.message_id
             return
 
-        if data.startswith("onb_prv_ll_"):
-            level = data.removeprefix("onb_prv_ll_")
+        if data == "onb_prv_r_easy":
             prv = preview_state.get(chat_id)
             if not prv or not prv.get("transcript"):
                 await query.message.reply_text(
                     "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
                 )
                 return
-            user_state.setdefault(chat_id, {})["level"] = level
-            prv["level"] = level
-            prv["confirmed"] = False
-            prv["generating"] = False
+            if int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
+                return
             try:
-                prv["preview_data"] = await self._call_preview_gpt(str(prv["transcript"]))
+                pd = await self._call_preview_gpt(
+                    str(prv["transcript"]),
+                    extra_instruction=_PREVIEW_INSTR_EASY,
+                )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.exception("Preview GPT failed: %s", exc)
                 await query.message.reply_text(
-                    "Не вдалося оновити попередній перегляд. Спробуй ще раз."
+                    "Не вдалося оновити перегляд. Надішли джерело знову або спробуй пізніше."
                 )
                 return
-            text = _format_preview_message(prv["preview_data"])
+            await self._after_refine_increment(
+                context.bot, chat_id, prv, query.message, pd
+            )
+            return
+
+        if data == "onb_prv_r_deep":
+            prv = preview_state.get(chat_id)
+            if not prv or not prv.get("transcript"):
+                await query.message.reply_text(
+                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                )
+                return
+            if int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
+                return
             try:
-                await query.edit_message_text(text, reply_markup=_PREVIEW_KB)
+                pd = await self._call_preview_gpt(
+                    str(prv["transcript"]),
+                    extra_instruction=_PREVIEW_INSTR_DEEP,
+                )
             except Exception as exc:  # noqa: BLE001
-                LOGGER.warning("Preview edit after level: %s", exc)
-                sent = await query.message.reply_text(text, reply_markup=_PREVIEW_KB)
-                prv["preview_message_id"] = sent.message_id
+                LOGGER.exception("Preview GPT failed: %s", exc)
+                await query.message.reply_text(
+                    "Не вдалося оновити перегляд. Надішли джерело знову або спробуй пізніше."
+                )
+                return
+            await self._after_refine_increment(
+                context.bot, chat_id, prv, query.message, pd
+            )
+            return
+
+        if data == "onb_prv_r_own":
+            prv = preview_state.get(chat_id)
+            if not prv or not prv.get("transcript"):
+                await query.message.reply_text(
+                    "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                )
+                return
+            if int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
+                return
+            prv["awaiting_edit"] = True
+            await query.message.reply_text(
+                "Напиши одним реченням що змінити 👇\n"
+                "Наприклад: 'фокус на Present Simple' або 'для бізнес теми'"
+            )
             return
 
         if data == "onb_p_fmt":
@@ -436,6 +538,42 @@ class MessageHandlerService:
         st = user_state.get(chat_id)
         original_content = (message.text or message.caption or "").strip()
 
+        prv_early = preview_state.get(chat_id)
+        if prv_early and prv_early.get("awaiting_edit"):
+            if message.voice:
+                await message.reply_text(
+                    "Напиши одним реченням текстом, що змінити 👇"
+                )
+                return
+            if not original_content:
+                return
+            video_id_early = extract_video_id(original_content)
+            if video_id_early:
+                prv_early["awaiting_edit"] = False
+            else:
+                if not prv_early.get("transcript"):
+                    preview_state.pop(chat_id, None)
+                    await message.reply_text(
+                        "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
+                    )
+                    return
+                try:
+                    pd = await self._call_preview_gpt(
+                        str(prv_early["transcript"]),
+                        extra_instruction=original_content,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    LOGGER.exception("Preview GPT failed (awaiting edit): %s", exc)
+                    prv_early["awaiting_edit"] = False
+                    await message.reply_text(
+                        "Не вдалося оновити перегляд. Надішли джерело знову або спробуй пізніше."
+                    )
+                    return
+                await self._after_refine_increment(
+                    context.bot, chat_id, prv_early, message, pd
+                )
+                return
+
         if (
             self._guided_ready(chat_id)
             and not message.voice
@@ -443,15 +581,10 @@ class MessageHandlerService:
         ):
             video_id = extract_video_id(original_content)
             if video_id:
-                preview_state[chat_id] = {
-                    "transcript": None,
-                    "format": st.get("format"),
-                    "level": st.get("level"),
-                    "preview_data": {},
-                    "confirmed": False,
-                    "generating": False,
-                    "preview_message_id": None,
-                }
+                base = self._preview_state_bootstrap()
+                base["format"] = st.get("format")
+                base["level"] = st.get("level")
+                preview_state[chat_id] = base
                 try:
                     transcript = await self._youtube_service.fetch_transcript(video_id)
                 except TranscriptUnavailableError as err:
