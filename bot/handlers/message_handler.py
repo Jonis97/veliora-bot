@@ -23,7 +23,7 @@ preview_state: dict[int, dict[str, Any]] = {}
 
 _PREVIEW_TRANSCRIPT_MAX = 14_000
 
-_PREVIEW_SYSTEM = (
+_PREVIEW_SYSTEM_DEFAULT = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "From the source transcript below ONLY (no invented facts):\n"
     '- "topic": one short line (teacher-friendly)\n'
@@ -31,6 +31,45 @@ _PREVIEW_SYSTEM = (
     '- "words": 3 to 5 useful English words or short phrases that appear in or are clearly grounded in the source\n'
     "Keep everything short. No card layout, no images.\n"
     "Follow any additional instruction without breaking source-only rules."
+)
+
+_PREVIEW_SYSTEM_LESSON = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the transcript below ONLY as the source (no invented facts).\n"
+    'Return ONLY these keys for a lesson preview:\n'
+    '- "topic": one short line (teacher-friendly)\n'
+    '- "warmup_questions": exactly 3 short warm-up questions for the lesson, grounded in the source\n'
+    '- "support_words": 0 to 3 optional simple English words or short chunks from the source (no key_ideas, no generic word list)\n'
+    "Do not include key_ideas, discussion_questions, or vocabulary_items."
+)
+
+_PREVIEW_SYSTEM_QUESTIONS = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the transcript below ONLY as the source (no invented facts).\n"
+    'Return ONLY these keys for a speaking / discussion preview:\n'
+    '- "topic": one short line (teacher-friendly)\n'
+    '- "discussion_questions": 3 to 4 short discussion questions grounded in the source\n'
+    "Do not include key_ideas, words, warmup_questions, vocabulary_items, or grammar_patterns."
+)
+
+_PREVIEW_SYSTEM_VOCABULARY = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the transcript below ONLY as the source (no invented facts).\n"
+    'Return ONLY these keys for a vocabulary preview:\n'
+    '- "topic": one short line (teacher-friendly)\n'
+    '- "vocabulary_items": 8 to 10 items. Each item is an object with:\n'
+    '  "english": word or short chunk from the source, and "note": short Ukrainian or English meaning/gloss\n'
+    "Do not include key_ideas, warmup_questions, discussion_questions, or grammar_patterns."
+)
+
+_PREVIEW_SYSTEM_PHRASES = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the transcript below ONLY as the source (no invented facts).\n"
+    'Return ONLY these keys for a grammar / phrases preview:\n'
+    '- "topic": one short line (teacher-friendly)\n'
+    '- "grammar_patterns": 2 to 3 objects, each with:\n'
+    '  "structure": short name of the pattern, and "formula": short formula (e.g. "used to + verb")\n'
+    "Do not include key_ideas, words, vocabulary_items, or discussion_questions."
 )
 
 _PREVIEW_INSTR_EASY = (
@@ -45,12 +84,10 @@ _PREVIEW_INSTR_DEEP = (
 
 _PREVIEW_PATCH_SYSTEM = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
-    'Keys: "topic" (string), "key_ideas" (exactly 3 short strings), '
-    '"words" (3 to 5 strings).\n'
-    "Ground facts in the original transcript only. You are PATCHING the current "
-    "preview: change only what the teacher instruction targets; for any part not "
-    "targeted, output that field exactly as given in the current preview "
-    "(same wording)."
+    "The user message includes the full current preview as JSON — after your edit, output "
+    "the SAME keys and structure (format-specific). Do not add keys from other formats. "
+    "Ground facts in the original transcript only. PATCH only what the teacher targets; "
+    "copy unchanged fields exactly from the current preview JSON (same wording)."
 )
 
 _PREVIEW_PATCH_RULES = """Rules:
@@ -174,6 +211,79 @@ _FMT_CHANGE_LABELS = {
 }
 
 
+def _preview_format_kind(fmt: Optional[str]) -> str:
+    if not fmt:
+        return "default"
+    f = str(fmt).strip().lower()
+    if f == "lesson":
+        return "lesson"
+    if f in ("speaking", "questions"):
+        return "questions"
+    if f in ("vocabulary", "words"):
+        return "vocabulary"
+    if f in ("grammar", "phrases"):
+        return "phrases"
+    return "default"
+
+
+def _preview_system_for_initial(kind: str) -> str:
+    return {
+        "lesson": _PREVIEW_SYSTEM_LESSON,
+        "questions": _PREVIEW_SYSTEM_QUESTIONS,
+        "vocabulary": _PREVIEW_SYSTEM_VOCABULARY,
+        "phrases": _PREVIEW_SYSTEM_PHRASES,
+        "default": _PREVIEW_SYSTEM_DEFAULT,
+    }.get(kind, _PREVIEW_SYSTEM_DEFAULT)
+
+
+def _preview_merge_list_keys(kind: str) -> tuple[str, ...]:
+    return {
+        "lesson": ("warmup_questions", "support_words"),
+        "questions": ("discussion_questions",),
+        "vocabulary": ("vocabulary_items",),
+        "phrases": ("grammar_patterns",),
+        "default": ("questions", "exercises"),
+    }.get(kind, ("questions", "exercises"))
+
+
+def _coerce_vocabulary_items(raw: Any) -> list[str]:
+    out: list[str] = []
+    if not isinstance(raw, list):
+        return []
+    for x in raw:
+        if isinstance(x, dict):
+            en = str(x.get("english") or x.get("en") or "").strip()
+            note = str(
+                x.get("note") or x.get("ua") or x.get("meaning") or x.get("gloss") or ""
+            ).strip()
+            if en:
+                out.append(f"{en} — {note}" if note else en)
+        else:
+            s = str(x).strip()
+            if s:
+                out.append(s)
+    return out[:10]
+
+
+def _coerce_grammar_patterns(raw: Any) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
+    if not isinstance(raw, list):
+        return []
+    for x in raw:
+        if isinstance(x, dict):
+            st = str(
+                x.get("structure") or x.get("pattern") or x.get("name") or ""
+            ).strip()
+            fm = str(x.get("formula") or "").strip()
+            if st or fm:
+                out.append({"structure": st or "—", "formula": fm})
+        else:
+            s = str(x).strip()
+            if s:
+                out.append({"structure": s, "formula": ""})
+    return out[:3]
+
+
 class _OnboardingEnrichedMessage:
     """Proxy so pipeline sees enriched text/caption without mutating the real Message."""
 
@@ -195,8 +305,43 @@ class _OnboardingEnrichedMessage:
         return getattr(self._base, name)
 
 
-def _normalize_gpt_preview_dict(data: dict[str, Any]) -> dict[str, Any]:
-    topic = str(data.get("topic", "") or "").strip()
+def _normalize_preview_output(data: dict[str, Any], kind: str) -> dict[str, Any]:
+    topic = str(data.get("topic", "") or "").strip() or "—"
+
+    if kind == "lesson":
+        wq = data.get("warmup_questions")
+        if not isinstance(wq, list):
+            wq = []
+        wq = [str(x).strip() for x in wq if str(x).strip()][:3]
+        while len(wq) < 3:
+            wq.append("—")
+        sw = data.get("support_words")
+        if not isinstance(sw, list):
+            sw = []
+        sw = [str(x).strip() for x in sw if str(x).strip()][:3]
+        return {"topic": topic, "warmup_questions": wq, "support_words": sw}
+
+    if kind == "questions":
+        dq = data.get("discussion_questions")
+        if not isinstance(dq, list):
+            dq = []
+        dq = [str(x).strip() for x in dq if str(x).strip()][:4]
+        while len(dq) < 3:
+            dq.append("—")
+        return {"topic": topic, "discussion_questions": dq}
+
+    if kind == "vocabulary":
+        items = _coerce_vocabulary_items(data.get("vocabulary_items"))
+        while len(items) < 8:
+            items.append("—")
+        return {"topic": topic, "vocabulary_items": items[:10]}
+
+    if kind == "phrases":
+        gp = _coerce_grammar_patterns(data.get("grammar_patterns"))
+        while len(gp) < 2:
+            gp.append({"structure": "—", "formula": ""})
+        return {"topic": topic, "grammar_patterns": gp[:3]}
+
     key_ideas = data.get("key_ideas")
     words = data.get("words")
     if not isinstance(key_ideas, list):
@@ -208,7 +353,7 @@ def _normalize_gpt_preview_dict(data: dict[str, Any]) -> dict[str, Any]:
         ki.append("—")
     wd = [str(x).strip() for x in words if str(x).strip()][:15]
     out: dict[str, Any] = {
-        "topic": topic or "—",
+        "topic": topic,
         "key_ideas": ki,
         "words": wd,
     }
@@ -219,6 +364,10 @@ def _normalize_gpt_preview_dict(data: dict[str, Any]) -> dict[str, Any]:
                 str(x).strip() for x in extra_val if str(x).strip()
             ][:25]
     return out
+
+
+def _normalize_gpt_preview_dict(data: dict[str, Any]) -> dict[str, Any]:
+    return _normalize_preview_output(data, "default")
 
 
 def _preview_blocks_for_prompt(preview_data: dict[str, Any]) -> tuple[str, str, str]:
@@ -260,8 +409,61 @@ def _build_preview_patch_user_content(
     )
 
 
-def _format_preview_message(preview_data: dict[str, Any]) -> str:
+def _format_preview_message(
+    preview_data: dict[str, Any],
+    format_key: Optional[str] = None,
+) -> str:
+    kind = _preview_format_kind(format_key)
     topic = str(preview_data.get("topic") or "—").strip() or "—"
+    header = "📋 Ось що знайшов:\n\n" + f"📌 Тема: {topic}\n\n"
+
+    if kind == "lesson":
+        wq = preview_data.get("warmup_questions")
+        if not isinstance(wq, list):
+            wq = []
+        wq = [str(x).strip() for x in wq if str(x).strip()]
+        sw = preview_data.get("support_words")
+        if not isinstance(sw, list):
+            sw = []
+        sw = [str(x).strip() for x in sw if str(x).strip()]
+        body = "🔥 Розминка:\n" + "\n".join(f"• {x}" for x in wq) + "\n\n"
+        if sw:
+            body += "📚 Слова: " + ", ".join(sw)
+        return header + body
+
+    if kind == "questions":
+        dq = preview_data.get("discussion_questions")
+        if not isinstance(dq, list):
+            dq = []
+        dq = [str(x).strip() for x in dq if str(x).strip()]
+        body = "💬 Питання для обговорення:\n" + "\n".join(f"• {x}" for x in dq)
+        return header + body
+
+    if kind == "vocabulary":
+        items = preview_data.get("vocabulary_items")
+        if not isinstance(items, list):
+            items = []
+        lines = [str(x).strip() for x in items if str(x).strip()]
+        body = "📖 Ключові слова:\n" + "\n".join(f"• {x}" for x in lines)
+        return header + body
+
+    if kind == "phrases":
+        gp = preview_data.get("grammar_patterns")
+        if not isinstance(gp, list):
+            gp = []
+        parts: list[str] = []
+        for x in gp:
+            if isinstance(x, dict):
+                st = str(x.get("structure") or "—").strip()
+                fm = str(x.get("formula") or "").strip()
+                parts.append(f"• {st}" + (f": {fm}" if fm else ""))
+            else:
+                s = str(x).strip()
+                if s:
+                    parts.append(f"• {s}")
+        body = "✏️ Граматика / структури:\n" + "\n".join(parts)
+        return header + body
+
     ideas = preview_data.get("key_ideas")
     if not isinstance(ideas, list):
         ideas = []
@@ -275,8 +477,7 @@ def _format_preview_message(preview_data: dict[str, Any]) -> str:
     words = [str(x).strip() for x in words if str(x).strip()][:15]
     words_str = ", ".join(words) if words else "—"
     lines = [
-        "📋 Ось що знайшов:\n\n",
-        f"📌 Тема: {topic}\n\n",
+        header,
         "💡 Ідеї:\n",
         "\n".join(f"• {x}" for x in ideas) + "\n\n",
         f"📚 Слова:\n{words_str}",
@@ -314,8 +515,11 @@ class MessageHandlerService:
     async def _call_preview_gpt(
         self,
         transcript: str,
+        format_key: Optional[str] = None,
         extra_instruction: Optional[str] = None,
     ) -> dict[str, Any]:
+        kind = _preview_format_kind(format_key)
+        system = _preview_system_for_initial(kind)
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
@@ -326,7 +530,7 @@ class MessageHandlerService:
             model=self._openai_model,
             response_format={"type": "json_object"},
             messages=[
-                {"role": "system", "content": _PREVIEW_SYSTEM},
+                {"role": "system", "content": system},
                 {"role": "user", "content": user_block},
             ],
         )
@@ -334,7 +538,7 @@ class MessageHandlerService:
         data = json.loads(raw)
         if not isinstance(data, dict):
             data = {}
-        return _normalize_gpt_preview_dict(data)
+        return _normalize_preview_output(data, kind)
 
     async def _call_preview_patch_gpt(
         self,
@@ -343,11 +547,13 @@ class MessageHandlerService:
         teacher_text: str,
         *,
         custom_correction: bool = False,
+        preview_format: Optional[str] = None,
     ) -> dict[str, Any]:
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
         pd_in = preview_data if isinstance(preview_data, dict) else {}
+        patch_kind = _preview_format_kind(preview_format)
         rules_block = (
             _PREVIEW_PATCH_RULES_CUSTOM
             if custom_correction
@@ -377,16 +583,21 @@ class MessageHandlerService:
         data = json.loads(raw)
         if not isinstance(data, dict):
             data = {}
-        normalized = _normalize_gpt_preview_dict(data)
+        normalized = _normalize_preview_output(data, patch_kind)
         if custom_correction:
-            for k in ("questions", "exercises"):
+            for k in _preview_merge_list_keys(patch_kind):
                 if k in normalized:
                     continue
                 prev = pd_in.get(k)
                 if isinstance(prev, list) and prev:
-                    normalized[k] = [
-                        str(x).strip() for x in prev if str(x).strip()
-                    ][:25]
+                    if k == "grammar_patterns":
+                        normalized[k] = _coerce_grammar_patterns(prev)
+                    elif k == "vocabulary_items":
+                        normalized[k] = _coerce_vocabulary_items(prev)
+                    else:
+                        normalized[k] = [
+                            str(x).strip() for x in prev if str(x).strip()
+                        ][:25]
         return normalized
 
     def _guided_ready(self, chat_id: int) -> bool:
@@ -458,7 +669,7 @@ class MessageHandlerService:
                 chat_id,
                 prv,
                 anchor_message,
-                _format_preview_message(preview_data),
+                _format_preview_message(preview_data, prv.get("format")),
                 _PREVIEW_KB,
             )
 
@@ -573,6 +784,7 @@ class MessageHandlerService:
                     str(prv["transcript"]),
                     prv.get("preview_data") or {},
                     _PREVIEW_INSTR_EASY,
+                    preview_format=prv.get("format"),
                 )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.exception("Preview GPT failed: %s", exc)
@@ -599,6 +811,7 @@ class MessageHandlerService:
                     str(prv["transcript"]),
                     prv.get("preview_data") or {},
                     _PREVIEW_INSTR_DEEP,
+                    preview_format=prv.get("format"),
                 )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.exception("Preview GPT failed: %s", exc)
@@ -727,6 +940,7 @@ class MessageHandlerService:
                         pd_for_patch,
                         original_content,
                         custom_correction=True,
+                        preview_format=prv_early.get("format"),
                     )
                 except Exception as exc:  # noqa: BLE001
                     LOGGER.exception("Preview GPT failed (awaiting edit): %s", exc)
@@ -759,7 +973,10 @@ class MessageHandlerService:
                     return
                 preview_state[chat_id]["transcript"] = transcript
                 try:
-                    preview_data = await self._call_preview_gpt(transcript)
+                    preview_data = await self._call_preview_gpt(
+                        transcript,
+                        format_key=st.get("format"),
+                    )
                 except Exception as exc:  # noqa: BLE001
                     LOGGER.exception("Preview GPT failed: %s", exc)
                     preview_state.pop(chat_id, None)
@@ -769,7 +986,7 @@ class MessageHandlerService:
                     return
                 preview_state[chat_id]["preview_data"] = preview_data
                 sent = await message.reply_text(
-                    _format_preview_message(preview_data),
+                    _format_preview_message(preview_data, st.get("format")),
                     reply_markup=_PREVIEW_KB,
                 )
                 preview_state[chat_id]["preview_message_id"] = sent.message_id
