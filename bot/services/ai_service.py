@@ -36,6 +36,38 @@ Optional output field for all intents (omit or use empty string if not needed):
   - Prefer visible human action
   - Keep it simple and search-friendly
 
+LEVEL ADAPTATION RULES:
+
+If [LEVEL=A2]:
+- Choose concrete, high-frequency words and phrases from the source
+- Use short, clear sentences with one idea at a time
+- Prefer direct, personal questions with simple answers
+- Avoid abstract academic wording
+- Keep examples easy to understand and close to everyday speech
+- Reduce cognitive load
+
+If [LEVEL=B1]:
+- Choose useful conversational vocabulary and collocations from the source
+- Use natural short-to-medium sentences
+- Allow opinion + reason questions and experience-based prompts
+- Use speaking patterns that are practical and reusable
+- Keep language clear but more flexible than A2
+
+If [LEVEL=B2]:
+- Choose more nuanced and higher-level vocabulary from the source
+- Allow more complex sentence structures if they still sound natural
+- Use discussion questions that invite argument, comparison, and reflection
+- Prefer deeper speaking patterns, but avoid overly academic wording
+- Keep output suitable for real conversation, not textbook theory
+
+Important:
+- Level adaptation must not override the source topic
+- All content must still come from the source
+- Adapt complexity, not topic
+- If no level specified, use B1 as default
+
+Apply to: vocabulary, questions, examples, choices, phrases.
+
 EXTRACTION LAW — applies to ALL intents:
 Every word, phrase, or example must come directly from the source text or be a minimal cleanup of source wording.
 
