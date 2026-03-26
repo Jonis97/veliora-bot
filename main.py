@@ -1,8 +1,7 @@
 import logging
 
 from openai import AsyncOpenAI
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 from bot.handlers.message_handler import MessageHandlerService
 from bot.services.ai_service import AIContentService
@@ -21,17 +20,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
 )
 LOGGER = logging.getLogger(__name__)
-
-
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not update.message:
-        return
-    await update.message.reply_text(
-        "Надішли одне джерело: текст, голосове повідомлення або посилання YouTube — "
-        "це буде поточний матеріал, доки не надішлеш новий.\n\n"
-        "Потім напиши, наприклад: «зроби картку» — я зроблю одну сильну навчальну картку "
-        "(шаблон warm_paper_v2)."
-    )
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -55,7 +43,8 @@ def build_application() -> tuple[Application, str, int, str, str]:
     message_handler = MessageHandlerService(pipeline, deduplicator)
 
     app = Application.builder().token(settings.telegram_token).build()
-    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(CommandHandler("start", message_handler.start_command))
+    app.add_handler(CallbackQueryHandler(message_handler.handle_callback, pattern=r"^onb_"))
     accepted_inputs = (filters.TEXT | filters.VOICE | filters.CAPTION) & ~filters.COMMAND
     app.add_handler(MessageHandler(accepted_inputs, message_handler.handle_message))
     app.add_error_handler(error_handler)
