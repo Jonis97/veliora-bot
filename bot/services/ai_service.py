@@ -38,6 +38,12 @@ Optional output field for all intents (omit or use empty string if not needed):
 
 LEVEL ADAPTATION RULES:
 
+If [LEVEL=A1]:
+- Use very basic everyday vocabulary
+- Use very short clear sentences
+- Avoid abstraction and complex structures
+- Keep output confidence-building and easy to understand
+
 If [LEVEL=A2]:
 - Choose concrete, high-frequency words and phrases from the source
 - Use short, clear sentences with one idea at a time
@@ -67,6 +73,21 @@ Important:
 - If no level specified, use B1 as default
 
 Apply to: vocabulary, questions, examples, choices, phrases.
+
+SOURCE CEILING RULE:
+
+vocab_card and phrases_card:
+- Stay within source vocabulary and structures
+- Do not invent complex words absent from source
+- Adapt presentation clarity by level, not word complexity
+
+questions_card and lesson_card:
+- May deepen source meaning through level-appropriate framing
+- A1: very simple factual or personal questions based on source
+- A2: simple factual questions about source content
+- B1: opinion and experience questions based on source ideas
+- B2: argument, comparison, reflection questions from source meaning
+- Never invent new topics — deepen existing ones only
 
 EXTRACTION LAW — applies to ALL intents:
 Every word, phrase, or example must come directly from the source text or be a minimal cleanup of source wording.

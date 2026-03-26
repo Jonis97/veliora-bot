@@ -31,6 +31,7 @@ _ONB_FMT_STEP1_KB = InlineKeyboardMarkup(
 _ONB_LEVEL_KB = InlineKeyboardMarkup(
     [
         [
+            InlineKeyboardButton("A1", callback_data="onb_lvl_A1"),
             InlineKeyboardButton("A2", callback_data="onb_lvl_A2"),
             InlineKeyboardButton("B1", callback_data="onb_lvl_B1"),
             InlineKeyboardButton("B2", callback_data="onb_lvl_B2"),
@@ -64,6 +65,7 @@ _POST_CARD_FMT_KB = InlineKeyboardMarkup(
 _POST_CARD_LVL_KB = InlineKeyboardMarkup(
     [
         [
+            InlineKeyboardButton("A1", callback_data="onb_p_l_A1"),
             InlineKeyboardButton("A2", callback_data="onb_p_l_A2"),
             InlineKeyboardButton("B1", callback_data="onb_p_l_B1"),
             InlineKeyboardButton("B2", callback_data="onb_p_l_B2"),
