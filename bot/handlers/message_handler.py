@@ -39,7 +39,7 @@ _PREVIEW_SYSTEM_LESSON = (
     'Return ONLY these keys for a lesson preview:\n'
     '- "topic": one short line (teacher-friendly)\n'
     '- "warmup_questions": exactly 3 short warm-up questions for the lesson, grounded in the source\n'
-    '- "support_words": 0 to 3 optional simple English words or short chunks from the source (no key_ideas, no generic word list)\n'
+    '- "support_words": exactly 2 simple English words or short chunks from the source (no key_ideas, no generic word list)\n'
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
 )
 
@@ -48,7 +48,7 @@ _PREVIEW_SYSTEM_QUESTIONS = (
     "Use the transcript below ONLY as the source (no invented facts).\n"
     'Return ONLY these keys for a speaking / discussion preview:\n'
     '- "topic": one short line (teacher-friendly)\n'
-    '- "discussion_questions": 3 to 4 short discussion questions grounded in the source\n'
+    '- "discussion_questions": 3 to 5 short discussion questions grounded in the source\n'
     "Do not include key_ideas, words, warmup_questions, vocabulary_items, or grammar_patterns."
 )
 
@@ -84,34 +84,159 @@ _PREVIEW_INSTR_DEEP = (
 
 _PREVIEW_PATCH_SYSTEM = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
-    "The user message includes the full current preview as JSON — after your edit, output "
-    "the SAME keys and structure (format-specific). Do not add keys from other formats. "
-    "Ground facts in the original transcript only. PATCH only what the teacher targets; "
-    "copy unchanged fields exactly from the current preview JSON (same wording)."
+    "The user message includes Original transcript + Current preview (complete JSON). "
+    "You MUST PATCH that JSON: start from it, do NOT regenerate the preview from the transcript alone. "
+    "Output the SAME keys and structure as the current preview (format-specific). "
+    "Do not add keys from other formats. Ground new facts only in the transcript. "
+    "Preserve every block unless the teacher explicitly asks to change it; default = minimal edit. "
+    "For [Простіше]/[Глибше] the output MUST differ measurably from the current preview JSON "
+    "(simpler or richer wording), not a verbatim copy."
 )
 
-_PREVIEW_PATCH_RULES = """Rules:
-- Patch ONLY what teacher asked to change
-- Keep all other blocks exactly as they are
-- If teacher says 'більше слів' → extend only words
-- If teacher says 'ідеї простіші' → modify only key_ideas
-- If teacher says 'слова простіші' → modify only words
-- Do not rebuild entire preview unless explicitly requested"""
+_INTENT_BIAS_BY_KIND: dict[str, str] = {
+    "lesson": (
+        "VELIORA_ONBOARDING_INTENT_HINT: урок lesson warm up lead in розігрів розпочати навчання"
+    ),
+    "questions": (
+        "VELIORA_ONBOARDING_INTENT_HINT: питання discussion обговорення запитання speaking діалог"
+    ),
+    "vocabulary": (
+        "VELIORA_ONBOARDING_INTENT_HINT: слова vocabulary лексика переклад словниковий vocab лексичний"
+    ),
+    "phrases": (
+        "VELIORA_ONBOARDING_INTENT_HINT: граматика grammar фрази phrases sentence pattern структура морфологія"
+    ),
+}
 
-_PREVIEW_PATCH_RULES_CUSTOM = """Rules (custom teacher correction — PATCH only, not full regeneration):
-- Always expand or adjust on top of the "Current preview (complete JSON)" above; that JSON is the source of truth for what exists now.
-- Never return the same content unchanged: the output JSON must differ from the current preview in at least one meaningful way when you apply the teacher instruction.
-- Do not remove existing content unless the teacher explicitly asks to remove or replace it.
-- Modify only the section(s) the teacher instruction targets; keep all other sections unchanged.
-- This is PATCH editing: do not rebuild the whole preview from the transcript unless the teacher explicitly asks for a full redo.
 
-Common teacher commands (match meaning, not only exact spelling):
-- When the teacher says "більше слів" (or equivalent) → add 3 to 6 NEW words/phrases to `words`, grounded in the transcript; keep existing `words` entries; extend the list as needed.
-- When the teacher says "більше питань" (or equivalent) → add 2 to 4 NEW questions to `questions` (create the array if missing); keep existing `questions` entries.
-- When the teacher says "більше ідей" (or equivalent) → add 1 to 2 NEW ideas to `key_ideas`; keep existing idea strings unless the teacher asked to replace them.
-- When the teacher says "більше вправ" (or equivalent) → add 2 to 3 NEW short exercises to `exercises` (create the array if missing); keep existing `exercises` entries.
+def _patch_hard_constraints_block(kind: str) -> str:
+    if kind == "vocabulary":
+        return (
+            "HARD CONSTRAINTS (this format):\n"
+            "- vocabulary_items: MUST contain 8–10 items (never fewer than 8). Each item: english + note (meaning).\n"
+            '- Command "додай більше слів" / "більше слів": ADD new grounded items so the list reaches 9–10 entries; '
+            "keep existing pairs; do not replace the whole list unless asked.\n"
+        )
+    if kind == "questions":
+        return (
+            "HARD CONSTRAINTS (this format):\n"
+            "- discussion_questions: MUST contain 3–5 items.\n"
+            '- Command "додай більше питань" / "більше питань": ADD questions until there are 4–5 total; '
+            "keep existing questions unless asked to remove.\n"
+        )
+    if kind == "phrases":
+        return (
+            "HARD CONSTRAINTS (this format):\n"
+            "- grammar_patterns: MUST contain 2–3 objects (structure + formula each).\n"
+        )
+    if kind == "lesson":
+        return (
+            "HARD CONSTRAINTS (this format):\n"
+            "- warmup_questions: exactly 3 strings.\n"
+            "- support_words: exactly 2 strings (short chunks from source).\n"
+        )
+    return (
+        "HARD CONSTRAINTS (default format):\n"
+        "- key_ideas: exactly 3 strings; words: 3–15 strings as appropriate.\n"
+    )
 
-Output: one JSON object with `topic`, `key_ideas`, `words`, and include `questions` and/or `exercises` when they exist in the current preview or when the teacher asked to add them — copy those arrays forward from the current preview JSON and extend as above."""
+
+def _preview_patch_rules_easy(kind: str) -> str:
+    spec = {
+        "lesson": (
+            "Apply: зроби простіше — simplify wording of warmup_questions and support_words only; "
+            "keep exactly 3 questions and exactly 2 support words; same topics, simpler English.\n"
+        ),
+        "questions": (
+            "Apply: зроби простіше — simplify discussion_questions wording only; keep 3–5 questions.\n"
+        ),
+        "vocabulary": (
+            "Apply: зроби простіше — simplify `note` (meaning) text only; keep 8–10 vocabulary_items; "
+            "same english chunks unless simplification requires tiny edits.\n"
+        ),
+        "phrases": (
+            "Apply: зроби простіше — simplify structure/formula explanations; keep 2–3 patterns.\n"
+        ),
+        "default": "Apply: зроби простіше — simplify key_ideas and words; keep counts.\n",
+    }.get(kind, "Apply: зроби простіше — simplify key_ideas and words.\n")
+    return (
+        "Rules (button Простіше — PATCH only, NOT full regeneration):\n"
+        "- Current preview (complete JSON) is the stable base; copy it forward then edit.\n"
+        "- You MUST produce JSON that is not identical to the current preview (measurable simpler text).\n"
+        "- Do not rebuild from transcript alone; do not drop unrelated blocks.\n"
+        f"- {spec}"
+        + _patch_hard_constraints_block(kind)
+    )
+
+
+def _preview_patch_rules_deep(kind: str) -> str:
+    spec = {
+        "lesson": (
+            "Apply: зроби глибше — enrich warmup_questions and support_words slightly; stay in source; "
+            "keep exactly 3 + 2 items.\n"
+        ),
+        "questions": (
+            "Apply: зроби глибше — richer discussion_questions; stay in source; keep 3–5 items.\n"
+        ),
+        "vocabulary": (
+            "Apply: зроби глибше — richer `note` (meanings) or slightly more precise english; "
+            "keep 8–10 vocabulary_items.\n"
+        ),
+        "phrases": (
+            "Apply: зроби глибше — sharper structure names/formulas; stay in source; keep 2–3 patterns.\n"
+        ),
+        "default": "Apply: зроби глибше — enrich key_ideas and words; stay in source.\n",
+    }.get(kind, "Apply: зроби глибше — enrich key_ideas and words; stay in source.\n")
+    return (
+        "Rules (button Глибше — PATCH only, NOT full regeneration):\n"
+        "- Current preview (complete JSON) is the stable base; copy it forward then edit.\n"
+        "- You MUST produce JSON that is not identical to the current preview (measurable richer detail).\n"
+        "- Do not invent topics outside the transcript; do not drop unrelated blocks.\n"
+        f"- {spec}"
+        + _patch_hard_constraints_block(kind)
+    )
+
+
+def _preview_patch_rules_custom(kind: str) -> str:
+    common = (
+        "Rules (custom teacher text — PATCH only):\n"
+        "- Current preview (complete JSON) is the ONLY stable base; merge changes into it.\n"
+        "- Never return identical JSON when the teacher asked for a change.\n"
+        "- Preserve all blocks unless the teacher explicitly asks to remove or replace.\n"
+        "- Default: change only the minimal block the instruction targets.\n"
+        '- "зроби простіше" / simpler: simplify only the targeted block.\n'
+        '- "зроби глибше" / deeper: enrich only the targeted block; stay in source.\n'
+    )
+    if kind == "vocabulary":
+        return (
+            common
+            + _patch_hard_constraints_block(kind)
+            + (
+                '- "додай більше слів": extend vocabulary_items to 9–10 grounded entries (not a rewrite with the same count).\n'
+            )
+        )
+    if kind == "questions":
+        return (
+            common
+            + _patch_hard_constraints_block(kind)
+            + (
+                '- "додай більше питань": extend discussion_questions to 4–5 grounded questions.\n'
+            )
+        )
+    if kind == "lesson":
+        return common + _patch_hard_constraints_block(kind)
+    if kind == "phrases":
+        return common + _patch_hard_constraints_block(kind)
+    return (
+        common
+        + _patch_hard_constraints_block(kind)
+        + (
+            '- "більше слів": extend `words` with NEW items.\n'
+            '- "більше питань": extend `questions` if present, else adjust key_ideas.\n'
+            '- "більше ідей": extend or enrich `key_ideas`.\n'
+            '- "більше вправ": extend `exercises` if present.\n'
+        )
+    )
 
 _PREVIEW_LIMIT_TEXT = "Давай підтвердимо або почнемо з нового 👇"
 
@@ -318,14 +443,16 @@ def _normalize_preview_output(data: dict[str, Any], kind: str) -> dict[str, Any]
         sw = data.get("support_words")
         if not isinstance(sw, list):
             sw = []
-        sw = [str(x).strip() for x in sw if str(x).strip()][:3]
+        sw = [str(x).strip() for x in sw if str(x).strip()][:2]
+        while len(sw) < 2:
+            sw.append("—")
         return {"topic": topic, "warmup_questions": wq, "support_words": sw}
 
     if kind == "questions":
         dq = data.get("discussion_questions")
         if not isinstance(dq, list):
             dq = []
-        dq = [str(x).strip() for x in dq if str(x).strip()][:4]
+        dq = [str(x).strip() for x in dq if str(x).strip()][:5]
         while len(dq) < 3:
             dq.append("—")
         return {"topic": topic, "discussion_questions": dq}
@@ -370,6 +497,20 @@ def _normalize_gpt_preview_dict(data: dict[str, Any]) -> dict[str, Any]:
     return _normalize_preview_output(data, "default")
 
 
+def _enriched_onboarding_transcript_block(
+    fmt: Optional[str],
+    lvl: Optional[str],
+    transcript: str,
+) -> str:
+    kind = _preview_format_kind(fmt)
+    bias = _INTENT_BIAS_BY_KIND.get(kind, "")
+    parts = [f"[FORMAT={fmt}]", f"[LEVEL={lvl}]"]
+    if bias:
+        parts.append(bias)
+    parts.extend(["", f"USER CONTENT:\n{transcript}"])
+    return "\n".join(parts)
+
+
 def _preview_blocks_for_prompt(preview_data: dict[str, Any]) -> tuple[str, str, str]:
     topic = str(preview_data.get("topic") or "—").strip() or "—"
     ideas = preview_data.get("key_ideas")
@@ -393,17 +534,20 @@ def _build_preview_patch_user_content(
     preview_data: dict[str, Any],
     teacher_text: str,
     rules_block: str,
+    patch_kind: str,
 ) -> str:
     pd = preview_data if isinstance(preview_data, dict) else {}
     topic, ideas_str, words_str = _preview_blocks_for_prompt(pd)
     preview_json = json.dumps(pd, ensure_ascii=False, default=str)
     return (
-        f"Original transcript:\n{transcript_snippet}\n\n"
-        "Current preview (stable base):\n"
+        f"PATCH_FORMAT_KIND: {patch_kind}\n"
+        "You are editing the existing preview JSON below — do NOT rebuild preview from transcript only.\n\n"
+        f"Original transcript (source of truth for new facts):\n{transcript_snippet}\n\n"
+        "Current preview (human summary — JSON below is authoritative):\n"
         f"TOPIC: {topic}\n"
         f"IDEAS: {ideas_str}\n"
         f"WORDS: {words_str}\n\n"
-        f"Current preview (complete JSON, all fields):\n{preview_json}\n\n"
+        f"Current preview (complete JSON, all fields — stable base):\n{preview_json}\n\n"
         f"Teacher instruction: {teacher_text}\n\n"
         f"{rules_block}"
     )
@@ -426,9 +570,11 @@ def _format_preview_message(
         if not isinstance(sw, list):
             sw = []
         sw = [str(x).strip() for x in sw if str(x).strip()]
+        while len(sw) < 2:
+            sw.append("—")
+        sw = sw[:2]
         body = "🔥 Розминка:\n" + "\n".join(f"• {x}" for x in wq) + "\n\n"
-        if sw:
-            body += "📚 Слова: " + ", ".join(sw)
+        body += "📚 Слова: " + ", ".join(sw)
         return header + body
 
     if kind == "questions":
@@ -546,6 +692,7 @@ class MessageHandlerService:
         preview_data: dict[str, Any],
         teacher_text: str,
         *,
+        refine_mode: str = "easy",
         custom_correction: bool = False,
         preview_format: Optional[str] = None,
     ) -> dict[str, Any]:
@@ -554,13 +701,18 @@ class MessageHandlerService:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
         pd_in = preview_data if isinstance(preview_data, dict) else {}
         patch_kind = _preview_format_kind(preview_format)
-        rules_block = (
-            _PREVIEW_PATCH_RULES_CUSTOM
-            if custom_correction
-            else _PREVIEW_PATCH_RULES
-        )
+        if custom_correction:
+            rules_block = _preview_patch_rules_custom(patch_kind)
+        elif refine_mode == "deep":
+            rules_block = _preview_patch_rules_deep(patch_kind)
+        else:
+            rules_block = _preview_patch_rules_easy(patch_kind)
         LOGGER.info(
-            "preview_patch_gpt transcript_len=%s preview_data=%s teacher_instruction=%s",
+            "preview_patch_gpt kind=%s refine_mode=%s custom=%s transcript_len=%s "
+            "preview_data=%s teacher_instruction=%s",
+            patch_kind,
+            "custom" if custom_correction else refine_mode,
+            custom_correction,
             len(snippet),
             json.dumps(pd_in, ensure_ascii=False, default=str),
             teacher_text.strip()[:2000],
@@ -570,10 +722,12 @@ class MessageHandlerService:
             pd_in,
             teacher_text.strip(),
             rules_block,
+            patch_kind,
         )
         response = await self._openai_client.chat.completions.create(
             model=self._openai_model,
             response_format={"type": "json_object"},
+            temperature=0.75,
             messages=[
                 {"role": "system", "content": _PREVIEW_PATCH_SYSTEM},
                 {"role": "user", "content": user_content},
@@ -615,6 +769,7 @@ class MessageHandlerService:
             "awaiting_edit": False,
             "edit_rounds": 0,
             "limit_reached": False,
+            "confirmed": False,
         }
 
     async def _edit_or_reply_preview(
@@ -704,14 +859,12 @@ class MessageHandlerService:
             if prv.get("generating"):
                 return
             prv["generating"] = True
+            prv["confirmed"] = True
             st = user_state.get(chat_id)
             fmt = (st or {}).get("format") or prv.get("format")
             lvl = (st or {}).get("level") or prv.get("level")
             transcript = str(prv.get("transcript") or "").strip()
-            enriched = (
-                f"[FORMAT={fmt}]\n[LEVEL={lvl}]\n\n"
-                f"USER CONTENT:\n{transcript}"
-            )
+            enriched = _enriched_onboarding_transcript_block(fmt, lvl, transcript)
             proxy = _OnboardingEnrichedMessage(query.message, enriched)
             try:
                 prepare = await self._pipeline.prepare(context.bot, proxy, chat_id)
@@ -784,6 +937,7 @@ class MessageHandlerService:
                     str(prv["transcript"]),
                     prv.get("preview_data") or {},
                     _PREVIEW_INSTR_EASY,
+                    refine_mode="easy",
                     preview_format=prv.get("format"),
                 )
             except Exception as exc:  # noqa: BLE001
@@ -811,6 +965,7 @@ class MessageHandlerService:
                     str(prv["transcript"]),
                     prv.get("preview_data") or {},
                     _PREVIEW_INSTR_DEEP,
+                    refine_mode="deep",
                     preview_format=prv.get("format"),
                 )
             except Exception as exc:  # noqa: BLE001
@@ -1000,9 +1155,10 @@ class MessageHandlerService:
             and not message.voice
         ):
             if original_content:
-                enriched = (
-                    f"[FORMAT={st['format']}]\n[LEVEL={st['level']}]\n\n"
-                    f"USER CONTENT:\n{original_content}"
+                enriched = _enriched_onboarding_transcript_block(
+                    st.get("format"),
+                    st.get("level"),
+                    original_content,
                 )
                 pipeline_message = _OnboardingEnrichedMessage(message, enriched)
 
