@@ -158,7 +158,7 @@ class MessageHandlerService:
             return
 
         if prepare.preface:
-            await message.reply_text(prepare.preface)
+            await message.reply_text("Вже готую твій матеріал ✨")
         elif prepare.status_line:
             await message.reply_text(prepare.status_line)
 
