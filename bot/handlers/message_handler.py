@@ -43,6 +43,24 @@ _PREVIEW_INSTR_DEEP = (
     "Stay within source content only. Do not invent new topics."
 )
 
+_PREVIEW_PATCH_SYSTEM = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    'Keys: "topic" (string), "key_ideas" (exactly 3 short strings), '
+    '"words" (3 to 5 strings).\n'
+    "Ground facts in the original transcript only. You are PATCHING the current "
+    "preview: change only what the teacher instruction targets; for any part not "
+    "targeted, output that field exactly as given in the current preview "
+    "(same wording)."
+)
+
+_PREVIEW_PATCH_RULES = """Rules:
+- Patch ONLY what teacher asked to change
+- Keep all other blocks exactly as they are
+- If teacher says 'більше слів' → extend only words
+- If teacher says 'ідеї простіші' → modify only key_ideas
+- If teacher says 'слова простіші' → modify only words
+- Do not rebuild entire preview unless explicitly requested"""
+
 _PREVIEW_LIMIT_TEXT = "Давай підтвердимо або почнемо з нового 👇"
 
 _MAX_PREVIEW_EDIT_ROUNDS = 2
@@ -162,6 +180,60 @@ class _OnboardingEnrichedMessage:
         return getattr(self._base, name)
 
 
+def _normalize_gpt_preview_dict(data: dict[str, Any]) -> dict[str, Any]:
+    topic = str(data.get("topic", "") or "").strip()
+    key_ideas = data.get("key_ideas")
+    words = data.get("words")
+    if not isinstance(key_ideas, list):
+        key_ideas = []
+    if not isinstance(words, list):
+        words = []
+    ki = [str(x).strip() for x in key_ideas if str(x).strip()][:3]
+    while len(ki) < 3:
+        ki.append("—")
+    wd = [str(x).strip() for x in words if str(x).strip()][:5]
+    return {
+        "topic": topic or "—",
+        "key_ideas": ki,
+        "words": wd,
+    }
+
+
+def _preview_blocks_for_prompt(preview_data: dict[str, Any]) -> tuple[str, str, str]:
+    topic = str(preview_data.get("topic") or "—").strip() or "—"
+    ideas = preview_data.get("key_ideas")
+    if not isinstance(ideas, list):
+        ideas = []
+    ideas = [str(x).strip() for x in ideas if str(x).strip()]
+    while len(ideas) < 3:
+        ideas.append("—")
+    ideas = ideas[:3]
+    ideas_str = " | ".join(ideas)
+    words = preview_data.get("words")
+    if not isinstance(words, list):
+        words = []
+    words = [str(x).strip() for x in words if str(x).strip()]
+    words_str = ", ".join(words) if words else "—"
+    return topic, ideas_str, words_str
+
+
+def _build_preview_patch_user_content(
+    transcript_snippet: str,
+    preview_data: dict[str, Any],
+    teacher_text: str,
+) -> str:
+    topic, ideas_str, words_str = _preview_blocks_for_prompt(preview_data)
+    return (
+        f"Original transcript:\n{transcript_snippet}\n\n"
+        "Current preview (stable base):\n"
+        f"TOPIC: {topic}\n"
+        f"IDEAS: {ideas_str}\n"
+        f"WORDS: {words_str}\n\n"
+        f"Teacher instruction: {teacher_text}\n\n"
+        f"{_PREVIEW_PATCH_RULES}"
+    )
+
+
 def _format_preview_message(preview_data: dict[str, Any]) -> str:
     topic = str(preview_data.get("topic") or "—").strip() or "—"
     ideas = preview_data.get("key_ideas")
@@ -221,22 +293,37 @@ class MessageHandlerService:
         )
         raw = response.choices[0].message.content or "{}"
         data = json.loads(raw)
-        topic = str(data.get("topic", "") or "").strip()
-        key_ideas = data.get("key_ideas")
-        words = data.get("words")
-        if not isinstance(key_ideas, list):
-            key_ideas = []
-        if not isinstance(words, list):
-            words = []
-        ki = [str(x).strip() for x in key_ideas if str(x).strip()][:3]
-        while len(ki) < 3:
-            ki.append("—")
-        wd = [str(x).strip() for x in words if str(x).strip()][:5]
-        return {
-            "topic": topic or "—",
-            "key_ideas": ki,
-            "words": wd,
-        }
+        if not isinstance(data, dict):
+            data = {}
+        return _normalize_gpt_preview_dict(data)
+
+    async def _call_preview_patch_gpt(
+        self,
+        transcript: str,
+        preview_data: dict[str, Any],
+        teacher_text: str,
+    ) -> dict[str, Any]:
+        snippet = transcript.strip()
+        if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
+            snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
+        user_content = _build_preview_patch_user_content(
+            snippet,
+            preview_data if isinstance(preview_data, dict) else {},
+            teacher_text.strip(),
+        )
+        response = await self._openai_client.chat.completions.create(
+            model=self._openai_model,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": _PREVIEW_PATCH_SYSTEM},
+                {"role": "user", "content": user_content},
+            ],
+        )
+        raw = response.choices[0].message.content or "{}"
+        data = json.loads(raw)
+        if not isinstance(data, dict):
+            data = {}
+        return _normalize_gpt_preview_dict(data)
 
     def _guided_ready(self, chat_id: int) -> bool:
         st = user_state.get(chat_id)
@@ -418,9 +505,10 @@ class MessageHandlerService:
             if int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
                 return
             try:
-                pd = await self._call_preview_gpt(
+                pd = await self._call_preview_patch_gpt(
                     str(prv["transcript"]),
-                    extra_instruction=_PREVIEW_INSTR_EASY,
+                    prv.get("preview_data") or {},
+                    _PREVIEW_INSTR_EASY,
                 )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.exception("Preview GPT failed: %s", exc)
@@ -443,9 +531,10 @@ class MessageHandlerService:
             if int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
                 return
             try:
-                pd = await self._call_preview_gpt(
+                pd = await self._call_preview_patch_gpt(
                     str(prv["transcript"]),
-                    extra_instruction=_PREVIEW_INSTR_DEEP,
+                    prv.get("preview_data") or {},
+                    _PREVIEW_INSTR_DEEP,
                 )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.exception("Preview GPT failed: %s", exc)
@@ -558,9 +647,10 @@ class MessageHandlerService:
                     )
                     return
                 try:
-                    pd = await self._call_preview_gpt(
+                    pd = await self._call_preview_patch_gpt(
                         str(prv_early["transcript"]),
-                        extra_instruction=original_content,
+                        prv_early.get("preview_data") or {},
+                        original_content,
                     )
                 except Exception as exc:  # noqa: BLE001
                     LOGGER.exception("Preview GPT failed (awaiting edit): %s", exc)
