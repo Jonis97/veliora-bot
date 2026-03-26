@@ -61,6 +61,21 @@ _PREVIEW_PATCH_RULES = """Rules:
 - If teacher says 'слова простіші' → modify only words
 - Do not rebuild entire preview unless explicitly requested"""
 
+_PREVIEW_PATCH_RULES_CUSTOM = """Rules (custom teacher correction — PATCH only, not full regeneration):
+- Always expand or adjust on top of the "Current preview (complete JSON)" above; that JSON is the source of truth for what exists now.
+- Never return the same content unchanged: the output JSON must differ from the current preview in at least one meaningful way when you apply the teacher instruction.
+- Do not remove existing content unless the teacher explicitly asks to remove or replace it.
+- Modify only the section(s) the teacher instruction targets; keep all other sections unchanged.
+- This is PATCH editing: do not rebuild the whole preview from the transcript unless the teacher explicitly asks for a full redo.
+
+Common teacher commands (match meaning, not only exact spelling):
+- When the teacher says "більше слів" (or equivalent) → add 3 to 6 NEW words/phrases to `words`, grounded in the transcript; keep existing `words` entries; extend the list as needed.
+- When the teacher says "більше питань" (or equivalent) → add 2 to 4 NEW questions to `questions` (create the array if missing); keep existing `questions` entries.
+- When the teacher says "більше ідей" (or equivalent) → add 1 to 2 NEW ideas to `key_ideas`; keep existing idea strings unless the teacher asked to replace them.
+- When the teacher says "більше вправ" (or equivalent) → add 2 to 3 NEW short exercises to `exercises` (create the array if missing); keep existing `exercises` entries.
+
+Output: one JSON object with `topic`, `key_ideas`, `words`, and include `questions` and/or `exercises` when they exist in the current preview or when the teacher asked to add them — copy those arrays forward from the current preview JSON and extend as above."""
+
 _PREVIEW_LIMIT_TEXT = "Давай підтвердимо або почнемо з нового 👇"
 
 _MAX_PREVIEW_EDIT_ROUNDS = 5
@@ -188,15 +203,22 @@ def _normalize_gpt_preview_dict(data: dict[str, Any]) -> dict[str, Any]:
         key_ideas = []
     if not isinstance(words, list):
         words = []
-    ki = [str(x).strip() for x in key_ideas if str(x).strip()][:3]
+    ki = [str(x).strip() for x in key_ideas if str(x).strip()][:6]
     while len(ki) < 3:
         ki.append("—")
-    wd = [str(x).strip() for x in words if str(x).strip()][:5]
-    return {
+    wd = [str(x).strip() for x in words if str(x).strip()][:15]
+    out: dict[str, Any] = {
         "topic": topic or "—",
         "key_ideas": ki,
         "words": wd,
     }
+    for extra_key in ("questions", "exercises"):
+        extra_val = data.get(extra_key)
+        if isinstance(extra_val, list) and extra_val:
+            out[extra_key] = [
+                str(x).strip() for x in extra_val if str(x).strip()
+            ][:25]
+    return out
 
 
 def _preview_blocks_for_prompt(preview_data: dict[str, Any]) -> tuple[str, str, str]:
@@ -207,7 +229,7 @@ def _preview_blocks_for_prompt(preview_data: dict[str, Any]) -> tuple[str, str, 
     ideas = [str(x).strip() for x in ideas if str(x).strip()]
     while len(ideas) < 3:
         ideas.append("—")
-    ideas = ideas[:3]
+    ideas = ideas[:6]
     ideas_str = " | ".join(ideas)
     words = preview_data.get("words")
     if not isinstance(words, list):
@@ -221,6 +243,7 @@ def _build_preview_patch_user_content(
     transcript_snippet: str,
     preview_data: dict[str, Any],
     teacher_text: str,
+    rules_block: str,
 ) -> str:
     pd = preview_data if isinstance(preview_data, dict) else {}
     topic, ideas_str, words_str = _preview_blocks_for_prompt(pd)
@@ -233,7 +256,7 @@ def _build_preview_patch_user_content(
         f"WORDS: {words_str}\n\n"
         f"Current preview (complete JSON, all fields):\n{preview_json}\n\n"
         f"Teacher instruction: {teacher_text}\n\n"
-        f"{_PREVIEW_PATCH_RULES}"
+        f"{rules_block}"
     )
 
 
@@ -245,19 +268,32 @@ def _format_preview_message(preview_data: dict[str, Any]) -> str:
     ideas = [str(x).strip() for x in ideas if str(x).strip()]
     while len(ideas) < 3:
         ideas.append("—")
-    ideas = ideas[:3]
+    ideas = ideas[:6]
     words = preview_data.get("words")
     if not isinstance(words, list):
         words = []
-    words = [str(x).strip() for x in words if str(x).strip()][:8]
+    words = [str(x).strip() for x in words if str(x).strip()][:15]
     words_str = ", ".join(words) if words else "—"
-    return (
-        "📋 Ось що знайшов:\n\n"
-        f"📌 Тема: {topic}\n\n"
-        "💡 Ідеї:\n"
-        f"• {ideas[0]}\n• {ideas[1]}\n• {ideas[2]}\n\n"
-        f"📚 Слова:\n{words_str}"
-    )
+    lines = [
+        "📋 Ось що знайшов:\n\n",
+        f"📌 Тема: {topic}\n\n",
+        "💡 Ідеї:\n",
+        "\n".join(f"• {x}" for x in ideas) + "\n\n",
+        f"📚 Слова:\n{words_str}",
+    ]
+    qn = preview_data.get("questions")
+    if isinstance(qn, list) and qn:
+        lines.append(
+            "\n\n❓ Питання:\n"
+            + "\n".join(f"• {str(x).strip()}" for x in qn if str(x).strip())
+        )
+    ex = preview_data.get("exercises")
+    if isinstance(ex, list) and ex:
+        lines.append(
+            "\n\n🏋 Вправи:\n"
+            + "\n".join(f"• {str(x).strip()}" for x in ex if str(x).strip())
+        )
+    return "".join(lines)
 
 
 class MessageHandlerService:
@@ -305,11 +341,18 @@ class MessageHandlerService:
         transcript: str,
         preview_data: dict[str, Any],
         teacher_text: str,
+        *,
+        custom_correction: bool = False,
     ) -> dict[str, Any]:
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
         pd_in = preview_data if isinstance(preview_data, dict) else {}
+        rules_block = (
+            _PREVIEW_PATCH_RULES_CUSTOM
+            if custom_correction
+            else _PREVIEW_PATCH_RULES
+        )
         LOGGER.info(
             "preview_patch_gpt transcript_len=%s preview_data=%s teacher_instruction=%s",
             len(snippet),
@@ -320,6 +363,7 @@ class MessageHandlerService:
             snippet,
             pd_in,
             teacher_text.strip(),
+            rules_block,
         )
         response = await self._openai_client.chat.completions.create(
             model=self._openai_model,
@@ -333,7 +377,17 @@ class MessageHandlerService:
         data = json.loads(raw)
         if not isinstance(data, dict):
             data = {}
-        return _normalize_gpt_preview_dict(data)
+        normalized = _normalize_gpt_preview_dict(data)
+        if custom_correction:
+            for k in ("questions", "exercises"):
+                if k in normalized:
+                    continue
+                prev = pd_in.get(k)
+                if isinstance(prev, list) and prev:
+                    normalized[k] = [
+                        str(x).strip() for x in prev if str(x).strip()
+                    ][:25]
+        return normalized
 
     def _guided_ready(self, chat_id: int) -> bool:
         st = user_state.get(chat_id)
@@ -672,6 +726,7 @@ class MessageHandlerService:
                         tr,
                         pd_for_patch,
                         original_content,
+                        custom_correction=True,
                     )
                 except Exception as exc:  # noqa: BLE001
                     LOGGER.exception("Preview GPT failed (awaiting edit): %s", exc)
