@@ -63,7 +63,7 @@ _PREVIEW_PATCH_RULES = """Rules:
 
 _PREVIEW_LIMIT_TEXT = "Давай підтвердимо або почнемо з нового 👇"
 
-_MAX_PREVIEW_EDIT_ROUNDS = 2
+_MAX_PREVIEW_EDIT_ROUNDS = 5
 
 _ONB_FMT_STEP1_KB = InlineKeyboardMarkup(
     [
@@ -222,13 +222,16 @@ def _build_preview_patch_user_content(
     preview_data: dict[str, Any],
     teacher_text: str,
 ) -> str:
-    topic, ideas_str, words_str = _preview_blocks_for_prompt(preview_data)
+    pd = preview_data if isinstance(preview_data, dict) else {}
+    topic, ideas_str, words_str = _preview_blocks_for_prompt(pd)
+    preview_json = json.dumps(pd, ensure_ascii=False, default=str)
     return (
         f"Original transcript:\n{transcript_snippet}\n\n"
         "Current preview (stable base):\n"
         f"TOPIC: {topic}\n"
         f"IDEAS: {ideas_str}\n"
         f"WORDS: {words_str}\n\n"
+        f"Current preview (complete JSON, all fields):\n{preview_json}\n\n"
         f"Teacher instruction: {teacher_text}\n\n"
         f"{_PREVIEW_PATCH_RULES}"
     )
@@ -306,9 +309,16 @@ class MessageHandlerService:
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
+        pd_in = preview_data if isinstance(preview_data, dict) else {}
+        LOGGER.info(
+            "preview_patch_gpt transcript_len=%s preview_data=%s teacher_instruction=%s",
+            len(snippet),
+            json.dumps(pd_in, ensure_ascii=False, default=str),
+            teacher_text.strip()[:2000],
+        )
         user_content = _build_preview_patch_user_content(
             snippet,
-            preview_data if isinstance(preview_data, dict) else {},
+            pd_in,
             teacher_text.strip(),
         )
         response = await self._openai_client.chat.completions.create(
@@ -646,10 +656,21 @@ class MessageHandlerService:
                         "Не знайшов збережене джерело. Надішли посилання на YouTube ще раз."
                     )
                     return
+                raw_pd = prv_early.get("preview_data")
+                pd_for_patch = dict(raw_pd) if isinstance(raw_pd, dict) else {}
+                tr = str(prv_early["transcript"])
+                LOGGER.info(
+                    "handler=guided_preview.awaiting_edit chat_id=%s transcript_len=%s "
+                    "preview_data=%s teacher_instruction=%s",
+                    chat_id,
+                    len(tr),
+                    json.dumps(pd_for_patch, ensure_ascii=False, default=str),
+                    original_content[:2000],
+                )
                 try:
                     pd = await self._call_preview_patch_gpt(
-                        str(prv_early["transcript"]),
-                        prv_early.get("preview_data") or {},
+                        tr,
+                        pd_for_patch,
                         original_content,
                     )
                 except Exception as exc:  # noqa: BLE001
