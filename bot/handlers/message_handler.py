@@ -64,8 +64,14 @@ _PREVIEW_SYSTEM_LESSON_A1 = (
     "- No empty fields.\n"
     "- Do not regenerate existing content; only extend if asked (initial generation: fill all fields from source).\n"
     "- Follow exact counts strictly (no more, no less).\n\n"
+    "TOPIC LINE:\n"
+    "- The topic must always be concrete, personal, and easy to answer (everyday life).\n"
+    "- If the transcript suggests abstract, psychological, emotional, or conceptual themes, "
+    "express the topic as a simple daily-life situation, not an abstract label.\n"
+    "- Examples: self-talk → talking to yourself at home; motivation → things that help you every day; "
+    "stress → feeling bad at school or work.\n\n"
     'Return ONLY these keys for a lesson preview:\n'
-    '- "topic": one short line (teacher-friendly), same ONE topic as all items below\n'
+    '- "topic": one short line (teacher-friendly), one concrete daily-life situation, same ONE topic as all items below\n'
     '- "warmup_questions": exactly 5 questions\n'
     '- "core_questions": exactly 4 questions\n'
     '- "choices": exactly 4 items\n'
@@ -312,8 +318,12 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
 
 def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
     lesson_deep = (
-        "Apply: зроби глибше — enrich warmup_questions, core_questions, choices, support_words; stay in source and A1 rules; "
-        "keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines.\n"
+        "Apply: зроби глибше (CEFR A1 lesson) — warmup_questions and core_questions: do NOT repeat or paraphrase "
+        "the existing strings; write NEW questions only, each more specific to daily life, while keeping exactly "
+        "5 warm-ups and 4 core questions. Example: \"Do you talk to yourself?\" → "
+        "\"Do you talk to yourself at home or outside?\" "
+        "For choices and support_words: use NEW concrete daily-life wording where you change them; "
+        "keep exactly 4 choices and 6 support lines; stay in source and all A1 rules.\n"
         if _is_lesson_cefr_a1(level)
         else (
             "Apply: зроби глибше — enrich warmup_questions, choices, and support_words; stay in source; "
