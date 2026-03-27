@@ -38,8 +38,9 @@ _PREVIEW_SYSTEM_LESSON = (
     "Use the transcript below ONLY as the source (no invented facts).\n"
     'Return ONLY these keys for a lesson preview:\n'
     '- "topic": one short line (teacher-friendly)\n'
-    '- "warmup_questions": exactly 3 short warm-up questions for the lesson, grounded in the source\n'
-    '- "support_words": exactly 2 simple English words or short chunks from the source (no key_ideas, no generic word list)\n'
+    '- "warmup_questions": exactly 2 short warm-up questions grounded in source\n'
+    '- "choices": exactly 2 this-or-that choices grounded in source, format: "Option A or Option B?"\n'
+    '- "support_words": 2 to 3 simple English words or short chunks from source\n'
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
 )
 
@@ -872,6 +873,7 @@ class MessageHandlerService:
                     f"APPROVED PREVIEW:\n"
                     f"TOPIC: {preview_data.get('topic', '')}\n"
                     f"WARMUP QUESTIONS: {preview_data.get('warmup_questions', [])}\n"
+                    f"CHOICES: {preview_data.get('choices', [])}\n"
                     f"SUPPORT WORDS: {preview_data.get('support_words', [])}\n"
                 )
             elif kind == "vocabulary":
