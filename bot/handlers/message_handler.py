@@ -864,8 +864,49 @@ class MessageHandlerService:
             fmt = (st or {}).get("format") or prv.get("format")
             lvl = (st or {}).get("level") or prv.get("level")
             transcript = str(prv.get("transcript") or "").strip()
-            enriched = _enriched_onboarding_transcript_block(fmt, lvl, transcript)
-            proxy = _OnboardingEnrichedMessage(query.message, enriched)
+            preview_data = prv.get("preview_data") or {}
+            kind = _preview_format_kind(fmt)
+
+            if kind == "lesson":
+                approved_block = (
+                    f"APPROVED PREVIEW:\n"
+                    f"TOPIC: {preview_data.get('topic', '')}\n"
+                    f"WARMUP QUESTIONS: {preview_data.get('warmup_questions', [])}\n"
+                    f"SUPPORT WORDS: {preview_data.get('support_words', [])}\n"
+                )
+            elif kind == "vocabulary":
+                approved_block = (
+                    f"APPROVED PREVIEW:\n"
+                    f"TOPIC: {preview_data.get('topic', '')}\n"
+                    f"VOCABULARY: {preview_data.get('vocabulary_items', [])}\n"
+                )
+            elif kind == "phrases":
+                approved_block = (
+                    f"APPROVED PREVIEW:\n"
+                    f"TOPIC: {preview_data.get('topic', '')}\n"
+                    f"PATTERNS: {preview_data.get('grammar_patterns', [])}\n"
+                )
+            elif kind == "questions":
+                approved_block = (
+                    f"APPROVED PREVIEW:\n"
+                    f"TOPIC: {preview_data.get('topic', '')}\n"
+                    f"DISCUSSION QUESTIONS: {preview_data.get('discussion_questions', [])}\n"
+                )
+            else:
+                approved_block = (
+                    f"APPROVED PREVIEW:\n"
+                    f"TOPIC: {preview_data.get('topic', '')}\n"
+                    f"IDEAS: {preview_data.get('key_ideas', [])}\n"
+                    f"WORDS: {preview_data.get('words', [])}\n"
+                )
+
+            structured = (
+                f"[FORMAT={fmt}]\n[LEVEL={lvl}]\n\n"
+                f"{approved_block}\n"
+                f"SOURCE TRANSCRIPT (reference only):\n"
+                f"{transcript}"
+            )
+            proxy = _OnboardingEnrichedMessage(query.message, structured)
             try:
                 prepare = await self._pipeline.prepare(context.bot, proxy, chat_id)
                 if prepare.preface:
