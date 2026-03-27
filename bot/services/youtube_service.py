@@ -30,7 +30,7 @@ class YouTubeTranscriptService:
             async with httpx.AsyncClient(timeout=25.0) as client:
                 response = await client.get(
                     self._endpoint,
-                    params={"videoId": video_id},
+                    params={"videoId": video_id, "lang": "en"},
                     headers={"x-api-key": self._api_key},
                 )
                 response.raise_for_status()
