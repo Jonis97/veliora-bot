@@ -125,11 +125,8 @@ _INTENT_TIEBREAK_ORDER = (
 
 def _detect_user_intent(message: Message) -> str:
     full_text = (message.text or message.caption or "")
-
-    # Guided flow: if FORMAT tag exists, use it directly
     import re as _re
-
-    fmt_match = _re.search(r"\[FORMAT=(\w+)\]", full_text[:200])
+    fmt_match = _re.search(r'\[FORMAT=(\w+)\]', full_text[:200])
     if fmt_match:
         fmt = fmt_match.group(1).lower()
         fmt_map = {
@@ -140,8 +137,6 @@ def _detect_user_intent(message: Message) -> str:
         }
         if fmt in fmt_map:
             return fmt_map[fmt]
-
-    # Default: keyword scoring
     user_text = full_text[:500].lower()
     scores: dict[str, int] = {}
     for intent, keywords in _INTENT_KEYWORDS.items():
