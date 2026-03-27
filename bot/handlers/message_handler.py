@@ -51,7 +51,8 @@ _PREVIEW_SYSTEM_LESSON = (
 
 _PREVIEW_SYSTEM_LESSON_A1 = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
-    "Use the transcript below ONLY as the source (no invented facts).\n"
+    "Use the A1 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
+    "It is a filtered daily-life topic and scenes — not a raw transcript; do not use or assume any other text.\n"
     "This preview is for CEFR level A1 only. Follow ALL rules below.\n\n"
     "GENERAL:\n"
     "- Use only CEFR A1 vocabulary.\n"
@@ -66,7 +67,7 @@ _PREVIEW_SYSTEM_LESSON_A1 = (
     "- Follow exact counts strictly (no more, no less).\n\n"
     "TOPIC LINE:\n"
     "- The topic must always be concrete, personal, and easy to answer (everyday life).\n"
-    "- If the transcript suggests abstract, psychological, emotional, or conceptual themes, "
+    "- If the filtered source suggests abstract, psychological, emotional, or conceptual themes, "
     "express the topic as a simple daily-life situation, not an abstract label.\n"
     "- Examples: self-talk → talking to yourself at home; motivation → things that help you every day; "
     "stress → feeling bad at school or work.\n\n"
@@ -96,8 +97,45 @@ _PREVIEW_SYSTEM_LESSON_A1 = (
     "- Nouns or verbs only.\n"
     "- Directly related to topic.\n"
     "- Forbidden: rare or abstract words.\n\n"
-    "If the source has limited content, derive items from the topic while staying consistent with the transcript.\n"
+    "If the filtered source has limited detail, derive items from the topic and scenes while staying consistent with them.\n"
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
+)
+
+_PREVIEW_A1_FILTER_SYSTEM = (
+    "You follow the user instructions exactly. Output ONE JSON object only, no markdown."
+)
+
+_PREVIEW_A1_FILTER_USER = (
+    "Filter this content for A1 English students.\n\n"
+    "Output ONLY:\n"
+    "- 1 simplified daily-life topic (concrete situation)\n"
+    "- 3–5 daily-life scenes or actions from the source\n\n"
+    "Rules:\n"
+    "- No abstract or mental concepts\n"
+    "- Do not copy abstract or complex wording from the source\n"
+    "- No psychology, theory, or emotions explanations\n"
+    "- Use only: actions, places, times\n"
+    "  (talk, go, eat / home, school, work / morning, evening)\n"
+    "- Keep only concrete, visible, real-life situations\n"
+    "- Each scene must be a simple physical action or situation\n"
+    "- Output must be something an A1 student\n"
+    "  can imagine, answer, and talk about\n"
+    "- Scenes are better than ideas\n\n"
+    "If no usable daily-life scenes are found in the source:\n"
+    "- ignore the transcript completely\n"
+    "- use only the simplified topic\n"
+    "- generate 3–5 basic daily-life scenes that\n"
+    "  an A1 student can imagine and talk about\n\n"
+    "Example output:\n"
+    "Topic: talking to yourself at home\n"
+    "Scenes:\n"
+    "- you talk before sleep\n"
+    "- you say words in the mirror\n"
+    "- you repeat things you need to do\n\n"
+    "Output only the simplified topic and scenes.\n"
+    "Nothing else.\n\n"
+    'Return one JSON object with keys "topic" (string) and "scenes" (array of 3 to 5 strings). '
+    "Each scene is one short English line. No extra keys."
 )
 
 _PREVIEW_SYSTEM_QUESTIONS = (
@@ -590,6 +628,62 @@ def _lesson_nonempty_strings(items: Any, max_n: int) -> list[str]:
     return out[:max_n]
 
 
+_A1_FILTER_FALLBACK_TOPIC = "everyday life at home and school"
+_A1_FILTER_FALLBACK_SCENES: tuple[str, ...] = (
+    "you wake up in the morning",
+    "you eat at home",
+    "you go to school or work",
+    "you talk with family",
+    "you sleep at night",
+)
+
+
+def _coerce_a1_filter_output(data: dict[str, Any]) -> tuple[str, list[str]]:
+    topic = str(data.get("topic") or "").strip()
+    raw_scenes = data.get("scenes")
+    scenes: list[str] = []
+    if isinstance(raw_scenes, list):
+        for x in raw_scenes:
+            s = str(x).strip()
+            if s:
+                scenes.append(s)
+    return topic, scenes[:5]
+
+
+def _a1_filtered_source_user_block(topic: str, scenes: list[str]) -> str:
+    lines = [
+        "A1 FILTERED SOURCE — use ONLY this text as your source for the lesson preview.",
+        "Do not use or rely on any raw transcript.",
+        "",
+        f"Topic: {topic}",
+        "",
+        "Scenes:",
+    ]
+    for s in scenes:
+        lines.append(f"- {s}")
+    return "\n".join(lines)
+
+
+def _a1_resolved_filtered_block(topic: str, scenes: list[str]) -> str:
+    if not topic:
+        return _a1_filtered_source_user_block(
+            _A1_FILTER_FALLBACK_TOPIC, list(_A1_FILTER_FALLBACK_SCENES)
+        )
+    if len(scenes) < 3:
+        seen = {s.lower() for s in scenes}
+        for s in _A1_FILTER_FALLBACK_SCENES:
+            if len(scenes) >= 3:
+                break
+            if s.lower() not in seen:
+                scenes.append(s)
+                seen.add(s.lower())
+        if len(scenes) < 3:
+            return _a1_filtered_source_user_block(
+                _A1_FILTER_FALLBACK_TOPIC, list(_A1_FILTER_FALLBACK_SCENES)
+            )
+    return _a1_filtered_source_user_block(topic, scenes[:5])
+
+
 class _OnboardingEnrichedMessage:
     """Proxy so pipeline sees enriched text/caption without mutating the real Message."""
 
@@ -849,6 +943,28 @@ class MessageHandlerService:
         self._openai_client = openai_client
         self._openai_model = openai_model
 
+    async def _call_a1_filter_gpt(self, transcript_snippet: str) -> str:
+        user_content = (
+            f"{_PREVIEW_A1_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
+        )
+        response = await self._openai_client.chat.completions.create(
+            model=self._openai_model,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": _PREVIEW_A1_FILTER_SYSTEM},
+                {"role": "user", "content": user_content},
+            ],
+        )
+        raw = response.choices[0].message.content or "{}"
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        topic, scenes = _coerce_a1_filter_output(data)
+        return _a1_resolved_filtered_block(topic, scenes)
+
     async def _call_preview_gpt(
         self,
         transcript: str,
@@ -861,7 +977,10 @@ class MessageHandlerService:
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
-        user_block = f"Transcript:\n{snippet}"
+        if kind == "lesson" and _is_lesson_cefr_a1(level):
+            user_block = await self._call_a1_filter_gpt(snippet)
+        else:
+            user_block = f"Transcript:\n{snippet}"
         if extra_instruction and extra_instruction.strip():
             user_block += f"\n\nAdditional instruction:\n{extra_instruction.strip()}"
         response = await self._openai_client.chat.completions.create(
