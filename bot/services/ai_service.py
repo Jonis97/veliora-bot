@@ -89,6 +89,14 @@ questions_card and lesson_card:
 - B2: argument, comparison, reflection questions from source meaning
 - Never invent new topics — deepen existing ones only
 
+APPROVED PREVIEW RULE:
+If the source text contains a block starting with APPROVED PREVIEW:
+- treat it as the primary source of truth
+- use topic, ideas, words, questions, or patterns from it as base
+- do NOT reinvent or replace approved content
+- SOURCE TRANSCRIPT below is reference only
+- do NOT generate new topics from transcript if APPROVED PREVIEW exists
+
 EXTRACTION LAW — applies to ALL intents:
 Every word, phrase, or example must come directly from the source text or be a minimal cleanup of source wording.
 
