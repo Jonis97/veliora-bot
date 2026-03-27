@@ -94,6 +94,74 @@ _PREVIEW_PATCH_SYSTEM = (
     "(simpler or richer wording), not a verbatim copy."
 )
 
+_MEMORY_PATCH_RULES = """MEMORY RULES (never violate):
+1. Do not change topic unless explicitly asked
+2. Do not change level unless explicitly asked
+3. Do not change format unless explicitly asked
+4. Do not delete existing questions, words, or patterns
+5. If teacher asks to ADD, only add new content, never replace old content
+6. Always work on top of current preview
+7. Return full result = existing content + additions
+8. Do not rewrite, paraphrase, simplify, reorder, or modify existing items unless explicitly asked
+9. Never add duplicates or near-duplicates of existing questions, words, or patterns
+10. If teacher asks to simplify, keep the same topic and structure, but make the language easier
+11. If teacher asks to deepen, keep the same topic and structure, but expand with more depth and new content
+"""
+
+
+def _frozen_base_snapshot_for_patch(
+    patch_kind: str, pd: dict[str, Any]
+) -> tuple[Any, Any, Any, Any]:
+    topic = pd.get("topic", "")
+    if patch_kind == "lesson":
+        questions: Any = {
+            "warmup_questions": pd.get("warmup_questions", []),
+            "choices": pd.get("choices", []),
+        }
+        words = pd.get("support_words", [])
+        patterns: Any = []
+    elif patch_kind == "questions":
+        questions = pd.get("discussion_questions", [])
+        words = []
+        patterns = []
+    elif patch_kind == "vocabulary":
+        questions = []
+        words = pd.get("vocabulary_items", [])
+        patterns = []
+    elif patch_kind == "phrases":
+        questions = []
+        words = []
+        patterns = pd.get("grammar_patterns", [])
+    else:
+        q_raw = pd.get("questions")
+        if isinstance(q_raw, list) and q_raw:
+            questions = q_raw
+        else:
+            questions = pd.get("key_ideas", [])
+        words = pd.get("words", [])
+        patterns = pd.get("exercises", [])
+    return topic, questions, words, patterns
+
+
+def _memory_frozen_teacher_section(
+    patch_kind: str,
+    preview_data: dict[str, Any],
+    instruction: str,
+) -> str:
+    topic, questions, words, patterns = _frozen_base_snapshot_for_patch(
+        patch_kind, preview_data
+    )
+    return (
+        f"{_MEMORY_PATCH_RULES}\n"
+        "Current preview (FROZEN BASE):\n"
+        f"topic: {topic}\n"
+        f"questions: {json.dumps(questions, ensure_ascii=False, default=str)}\n"
+        f"words: {json.dumps(words, ensure_ascii=False, default=str)}\n"
+        f"patterns: {json.dumps(patterns, ensure_ascii=False, default=str)}\n\n"
+        f"Teacher instruction: {instruction}\n"
+    )
+
+
 _INTENT_BIAS_BY_KIND: dict[str, str] = {
     "lesson": (
         "VELIORA_ONBOARDING_INTENT_HINT: урок lesson warm up lead in розігрів розпочати навчання"
@@ -540,6 +608,9 @@ def _build_preview_patch_user_content(
     pd = preview_data if isinstance(preview_data, dict) else {}
     topic, ideas_str, words_str = _preview_blocks_for_prompt(pd)
     preview_json = json.dumps(pd, ensure_ascii=False, default=str)
+    memory_frozen = _memory_frozen_teacher_section(
+        patch_kind, pd, teacher_text.strip()
+    )
     return (
         f"PATCH_FORMAT_KIND: {patch_kind}\n"
         "You are editing the existing preview JSON below — do NOT rebuild preview from transcript only.\n\n"
@@ -549,7 +620,7 @@ def _build_preview_patch_user_content(
         f"IDEAS: {ideas_str}\n"
         f"WORDS: {words_str}\n\n"
         f"Current preview (complete JSON, all fields — stable base):\n{preview_json}\n\n"
-        f"Teacher instruction: {teacher_text}\n\n"
+        f"{memory_frozen}\n"
         f"{rules_block}"
     )
 
