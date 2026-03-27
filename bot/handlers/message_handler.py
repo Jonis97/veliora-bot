@@ -49,6 +49,51 @@ _PREVIEW_SYSTEM_LESSON = (
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
 )
 
+_PREVIEW_SYSTEM_LESSON_A1 = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the transcript below ONLY as the source (no invented facts).\n"
+    "This preview is for CEFR level A1 only. Follow ALL rules below.\n\n"
+    "GENERAL:\n"
+    "- Use only CEFR A1 vocabulary.\n"
+    "- Use ONLY Present Simple.\n"
+    "- Max sentence length: 6 words (for every English sentence you output, including topic line if possible).\n"
+    '- No abstract words (e.g. "freedom", "success").\n'
+    "- No idioms or phrasal verbs.\n"
+    "- All content must relate to ONE topic.\n"
+    '- No placeholders like "—".\n'
+    "- No empty fields.\n"
+    "- Do not regenerate existing content; only extend if asked (initial generation: fill all fields from source).\n"
+    "- Follow exact counts strictly (no more, no less).\n\n"
+    'Return ONLY these keys for a lesson preview:\n'
+    '- "topic": one short line (teacher-friendly), same ONE topic as all items below\n'
+    '- "warmup_questions": exactly 5 questions\n'
+    '- "core_questions": exactly 4 questions\n'
+    '- "choices": exactly 4 items\n'
+    '- "support_words": exactly 6 items\n\n'
+    "WARM-UP (warmup_questions): exactly 5 questions\n"
+    "- Each max 6 words.\n"
+    '- Patterns: "Do you...?" / "Is it...?" / "Can you...?"\n'
+    "- Personal, about daily life.\n"
+    '- Forbidden: "Why" questions, abstract topics.\n\n'
+    "CORE QUESTIONS (core_questions): exactly 4 questions\n"
+    "- Each max 7 words.\n"
+    '- Patterns: "What do you...?" / "Where do you...?" / "When do you...?"\n'
+    "- Directly related to topic.\n"
+    "- Forbidden: hypothetical questions, complex grammar.\n\n"
+    "THIS OR THAT (choices): exactly 4 items\n"
+    '- Format ONLY: "X or Y?" (question mark at end).\n'
+    "- X and Y: single words or max 2-word phrases.\n"
+    '- Concrete only (e.g. "coffee or tea?").\n'
+    "- Forbidden: abstract choices, long phrases.\n\n"
+    "VOCABULARY (support_words): exactly 6 items\n"
+    '- Format each string: "English — Ukrainian" (em dash between English and Ukrainian).\n'
+    "- Nouns or verbs only.\n"
+    "- Directly related to topic.\n"
+    "- Forbidden: rare or abstract words.\n\n"
+    "If the source has limited content, derive items from the topic while staying consistent with the transcript.\n"
+    "Do not include key_ideas, discussion_questions, or vocabulary_items."
+)
+
 _PREVIEW_SYSTEM_QUESTIONS = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "Use the transcript below ONLY as the source (no invented facts).\n"
@@ -121,6 +166,7 @@ def _frozen_base_snapshot_for_patch(
     if patch_kind == "lesson":
         questions: Any = {
             "warmup_questions": pd.get("warmup_questions", []),
+            "core_questions": pd.get("core_questions", []),
             "choices": pd.get("choices", []),
         }
         words = pd.get("support_words", [])
@@ -183,7 +229,9 @@ _INTENT_BIAS_BY_KIND: dict[str, str] = {
 }
 
 
-def _patch_hard_constraints_block(kind: str) -> str:
+def _patch_hard_constraints_block(
+    kind: str, level: Optional[str] = None
+) -> str:
     if kind == "vocabulary":
         return (
             "HARD CONSTRAINTS (this format):\n"
@@ -204,6 +252,17 @@ def _patch_hard_constraints_block(kind: str) -> str:
             "- grammar_patterns: MUST contain 2–3 objects (structure + formula each).\n"
         )
     if kind == "lesson":
+        if _is_lesson_cefr_a1(level):
+            return (
+                "HARD CONSTRAINTS (CEFR A1 lesson):\n"
+                "- GENERAL: CEFR A1 vocabulary only; Present Simple only; max 6 words per sentence; "
+                "one topic; no \"—\" or empty fields; do not regenerate existing blocks—only extend when asked; "
+                "exact counts only.\n"
+                "- warmup_questions: exactly 5 (each max 6 words; Do you / Is it / Can you; no Why).\n"
+                "- core_questions: exactly 4 (each max 7 words; What/Where/When do you; no hypotheticals).\n"
+                '- choices: exactly 4, format only "X or Y?" (concrete; X/Y one word or max 2-word phrase).\n'
+                '- support_words: exactly 6, each "English — Ukrainian", nouns/verbs only, topic-related.\n'
+            )
         return (
             "HARD CONSTRAINTS (this format):\n"
             "- warmup_questions: exactly 5 real strings (never \"—\" or empty).\n"
@@ -216,12 +275,19 @@ def _patch_hard_constraints_block(kind: str) -> str:
     )
 
 
-def _preview_patch_rules_easy(kind: str) -> str:
-    spec = {
-        "lesson": (
+def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
+    lesson_easy = (
+        "Apply: зроби простіше — simplify wording of warmup_questions, core_questions, choices, "
+        "and support_words only; keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines; "
+        "same topic, simpler A1 English and Ukrainian glosses.\n"
+        if _is_lesson_cefr_a1(level)
+        else (
             "Apply: зроби простіше — simplify wording of warmup_questions, choices, and support_words only; "
             "keep exactly 5 warm-up questions, 3–4 choices, and at least 5 support words; same topics, simpler English.\n"
-        ),
+        )
+    )
+    spec = {
+        "lesson": lesson_easy,
         "questions": (
             "Apply: зроби простіше — simplify discussion_questions wording only; keep 3–5 questions.\n"
         ),
@@ -240,16 +306,22 @@ def _preview_patch_rules_easy(kind: str) -> str:
         "- You MUST produce JSON that is not identical to the current preview (measurable simpler text).\n"
         "- Do not rebuild from transcript alone; do not drop unrelated blocks.\n"
         f"- {spec}"
-        + _patch_hard_constraints_block(kind)
+        + _patch_hard_constraints_block(kind, level)
     )
 
 
-def _preview_patch_rules_deep(kind: str) -> str:
-    spec = {
-        "lesson": (
+def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
+    lesson_deep = (
+        "Apply: зроби глибше — enrich warmup_questions, core_questions, choices, support_words; stay in source and A1 rules; "
+        "keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines.\n"
+        if _is_lesson_cefr_a1(level)
+        else (
             "Apply: зроби глибше — enrich warmup_questions, choices, and support_words; stay in source; "
             "keep 5 warm-ups, 3–4 choices, at least 5 support words.\n"
-        ),
+        )
+    )
+    spec = {
+        "lesson": lesson_deep,
         "questions": (
             "Apply: зроби глибше — richer discussion_questions; stay in source; keep 3–5 items.\n"
         ),
@@ -268,11 +340,11 @@ def _preview_patch_rules_deep(kind: str) -> str:
         "- You MUST produce JSON that is not identical to the current preview (measurable richer detail).\n"
         "- Do not invent topics outside the transcript; do not drop unrelated blocks.\n"
         f"- {spec}"
-        + _patch_hard_constraints_block(kind)
+        + _patch_hard_constraints_block(kind, level)
     )
 
 
-def _preview_patch_rules_custom(kind: str) -> str:
+def _preview_patch_rules_custom(kind: str, level: Optional[str] = None) -> str:
     common = (
         "Rules (custom teacher text — PATCH only):\n"
         "- Current preview (complete JSON) is the ONLY stable base; merge changes into it.\n"
@@ -285,7 +357,7 @@ def _preview_patch_rules_custom(kind: str) -> str:
     if kind == "vocabulary":
         return (
             common
-            + _patch_hard_constraints_block(kind)
+            + _patch_hard_constraints_block(kind, level)
             + (
                 '- "додай більше слів": extend vocabulary_items to 9–10 grounded entries (not a rewrite with the same count).\n'
             )
@@ -293,18 +365,18 @@ def _preview_patch_rules_custom(kind: str) -> str:
     if kind == "questions":
         return (
             common
-            + _patch_hard_constraints_block(kind)
+            + _patch_hard_constraints_block(kind, level)
             + (
                 '- "додай більше питань": extend discussion_questions to 4–5 grounded questions.\n'
             )
         )
     if kind == "lesson":
-        return common + _patch_hard_constraints_block(kind)
+        return common + _patch_hard_constraints_block(kind, level)
     if kind == "phrases":
-        return common + _patch_hard_constraints_block(kind)
+        return common + _patch_hard_constraints_block(kind, level)
     return (
         common
-        + _patch_hard_constraints_block(kind)
+        + _patch_hard_constraints_block(kind, level)
         + (
             '- "більше слів": extend `words` with NEW items.\n'
             '- "більше питань": extend `questions` if present, else adjust key_ideas.\n'
@@ -411,6 +483,12 @@ _FMT_CHANGE_LABELS = {
 }
 
 
+def _is_lesson_cefr_a1(level: Optional[str]) -> bool:
+    if level is None:
+        return False
+    return str(level).strip().upper() == "A1"
+
+
 def _preview_format_kind(fmt: Optional[str]) -> str:
     if not fmt:
         return "default"
@@ -426,7 +504,9 @@ def _preview_format_kind(fmt: Optional[str]) -> str:
     return "default"
 
 
-def _preview_system_for_initial(kind: str) -> str:
+def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
+    if kind == "lesson" and _is_lesson_cefr_a1(level):
+        return _PREVIEW_SYSTEM_LESSON_A1
     return {
         "lesson": _PREVIEW_SYSTEM_LESSON,
         "questions": _PREVIEW_SYSTEM_QUESTIONS,
@@ -436,9 +516,14 @@ def _preview_system_for_initial(kind: str) -> str:
     }.get(kind, _PREVIEW_SYSTEM_DEFAULT)
 
 
-def _preview_merge_list_keys(kind: str) -> tuple[str, ...]:
+def _preview_merge_list_keys(
+    kind: str, level: Optional[str] = None
+) -> tuple[str, ...]:
+    if kind == "lesson" and _is_lesson_cefr_a1(level):
+        return ("warmup_questions", "core_questions", "support_words", "choices")
+    if kind == "lesson":
+        return ("warmup_questions", "support_words", "choices")
     return {
-        "lesson": ("warmup_questions", "support_words", "choices"),
         "questions": ("discussion_questions",),
         "vocabulary": ("vocabulary_items",),
         "phrases": ("grammar_patterns",),
@@ -516,10 +601,24 @@ class _OnboardingEnrichedMessage:
         return getattr(self._base, name)
 
 
-def _normalize_preview_output(data: dict[str, Any], kind: str) -> dict[str, Any]:
+def _normalize_preview_output(
+    data: dict[str, Any], kind: str, level: Optional[str] = None
+) -> dict[str, Any]:
     topic = str(data.get("topic", "") or "").strip() or "—"
 
     if kind == "lesson":
+        if _is_lesson_cefr_a1(level):
+            wq = _lesson_nonempty_strings(data.get("warmup_questions"), 5)
+            cq = _lesson_nonempty_strings(data.get("core_questions"), 4)
+            ch = _lesson_nonempty_strings(data.get("choices"), 4)
+            sw = _lesson_nonempty_strings(data.get("support_words"), 6)
+            return {
+                "topic": topic,
+                "warmup_questions": wq,
+                "core_questions": cq,
+                "choices": ch,
+                "support_words": sw,
+            }
         wq = _lesson_nonempty_strings(data.get("warmup_questions"), 5)
         ch = _lesson_nonempty_strings(data.get("choices"), 4)
         sw = _lesson_nonempty_strings(data.get("support_words"), 15)
@@ -648,9 +747,12 @@ def _format_preview_message(
 
     if kind == "lesson":
         wq = _lesson_nonempty_strings(preview_data.get("warmup_questions"), 10)
+        cq = _lesson_nonempty_strings(preview_data.get("core_questions"), 10)
         ch = _lesson_nonempty_strings(preview_data.get("choices"), 10)
         sw = _lesson_nonempty_strings(preview_data.get("support_words"), 20)
         body = "🔥 Розминка:\n" + "\n".join(f"• {x}" for x in wq) + "\n\n"
+        if cq:
+            body += "❓ Основні питання:\n" + "\n".join(f"• {x}" for x in cq) + "\n\n"
         if ch:
             body += "⚖️ This or that:\n" + "\n".join(f"• {x}" for x in ch) + "\n\n"
         body += "📚 Слова: " + (", ".join(sw) if sw else "—")
@@ -742,9 +844,10 @@ class MessageHandlerService:
         transcript: str,
         format_key: Optional[str] = None,
         extra_instruction: Optional[str] = None,
+        level: Optional[str] = None,
     ) -> dict[str, Any]:
         kind = _preview_format_kind(format_key)
-        system = _preview_system_for_initial(kind)
+        system = _preview_system_for_initial(kind, level)
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
@@ -763,7 +866,7 @@ class MessageHandlerService:
         data = json.loads(raw)
         if not isinstance(data, dict):
             data = {}
-        return _normalize_preview_output(data, kind)
+        return _normalize_preview_output(data, kind, level)
 
     async def _call_preview_patch_gpt(
         self,
@@ -774,6 +877,7 @@ class MessageHandlerService:
         refine_mode: str = "easy",
         custom_correction: bool = False,
         preview_format: Optional[str] = None,
+        preview_level: Optional[str] = None,
     ) -> dict[str, Any]:
         snippet = transcript.strip()
         if len(snippet) > _PREVIEW_TRANSCRIPT_MAX:
@@ -781,11 +885,11 @@ class MessageHandlerService:
         pd_in = preview_data if isinstance(preview_data, dict) else {}
         patch_kind = _preview_format_kind(preview_format)
         if custom_correction:
-            rules_block = _preview_patch_rules_custom(patch_kind)
+            rules_block = _preview_patch_rules_custom(patch_kind, preview_level)
         elif refine_mode == "deep":
-            rules_block = _preview_patch_rules_deep(patch_kind)
+            rules_block = _preview_patch_rules_deep(patch_kind, preview_level)
         else:
-            rules_block = _preview_patch_rules_easy(patch_kind)
+            rules_block = _preview_patch_rules_easy(patch_kind, preview_level)
         LOGGER.info(
             "preview_patch_gpt kind=%s refine_mode=%s custom=%s transcript_len=%s "
             "preview_data=%s teacher_instruction=%s",
@@ -816,9 +920,9 @@ class MessageHandlerService:
         data = json.loads(raw)
         if not isinstance(data, dict):
             data = {}
-        normalized = _normalize_preview_output(data, patch_kind)
+        normalized = _normalize_preview_output(data, patch_kind, preview_level)
         if custom_correction:
-            for k in _preview_merge_list_keys(patch_kind):
+            for k in _preview_merge_list_keys(patch_kind, preview_level):
                 if k in normalized:
                     continue
                 prev = pd_in.get(k)
@@ -949,10 +1053,17 @@ class MessageHandlerService:
             kind = _preview_format_kind(fmt)
 
             if kind == "lesson":
+                cq = preview_data.get("core_questions")
                 approved_block = (
                     f"APPROVED PREVIEW:\n"
                     f"TOPIC: {preview_data.get('topic', '')}\n"
                     f"WARMUP QUESTIONS: {preview_data.get('warmup_questions', [])}\n"
+                )
+                if isinstance(cq, list) and any(
+                    str(x).strip() and str(x).strip() != "—" for x in cq
+                ):
+                    approved_block += f"CORE QUESTIONS: {cq}\n"
+                approved_block += (
                     f"CHOICES: {preview_data.get('choices', [])}\n"
                     f"SUPPORT WORDS: {preview_data.get('support_words', [])}\n"
                 )
@@ -1062,6 +1173,7 @@ class MessageHandlerService:
                     _PREVIEW_INSTR_EASY,
                     refine_mode="easy",
                     preview_format=prv.get("format"),
+                    preview_level=prv.get("level"),
                 )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.exception("Preview GPT failed: %s", exc)
@@ -1090,6 +1202,7 @@ class MessageHandlerService:
                     _PREVIEW_INSTR_DEEP,
                     refine_mode="deep",
                     preview_format=prv.get("format"),
+                    preview_level=prv.get("level"),
                 )
             except Exception as exc:  # noqa: BLE001
                 LOGGER.exception("Preview GPT failed: %s", exc)
@@ -1219,6 +1332,7 @@ class MessageHandlerService:
                         original_content,
                         custom_correction=True,
                         preview_format=prv_early.get("format"),
+                        preview_level=prv_early.get("level"),
                     )
                 except Exception as exc:  # noqa: BLE001
                     LOGGER.exception("Preview GPT failed (awaiting edit): %s", exc)
@@ -1254,6 +1368,7 @@ class MessageHandlerService:
                     preview_data = await self._call_preview_gpt(
                         transcript,
                         format_key=st.get("format"),
+                        level=st.get("level"),
                     )
                 except Exception as exc:  # noqa: BLE001
                     LOGGER.exception("Preview GPT failed: %s", exc)
