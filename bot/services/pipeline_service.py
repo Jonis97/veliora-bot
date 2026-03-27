@@ -56,6 +56,28 @@ def _lesson_visual_keyword_from_card_fields(card_json: dict[str, Any]) -> Option
     return _first_meaningful_topic_word(raw)
 
 
+def _approved_preview_topic_for_unsplash(source_text: str) -> Optional[str]:
+    """Topic line from guided APPROVED PREVIEW block (matches preview_data topic)."""
+    if "APPROVED PREVIEW:" not in source_text:
+        return None
+    start = source_text.find("APPROVED PREVIEW:")
+    window = source_text[start : start + 6000]
+    m = re.search(r"(?m)^TOPIC:\s*(.+)$", window)
+    if not m:
+        return None
+    line = m.group(1).strip()
+    return line or None
+
+
+_LESSON_CARD_V1_EXTRA_RULES = """
+LESSON CARD (lesson_card_v1) — HARD RULES:
+- choices: exactly 3–4 real \"this or that\" / \"Option A or Option B?\" items for speaking practice.
+- Never use \"—\", placeholders, or empty strings in choices.
+- Ground every choice in the approved topic and source; if the transcript is thin, derive options from the topic.
+- lead_in_questions: only real questions — never \"—\" or empty strings.
+"""
+
+
 async def _fetch_unsplash_regular_image_url(keyword: str, access_key: str) -> Optional[str]:
     if not access_key or not keyword:
         return None
@@ -294,6 +316,9 @@ class ContentPipelineService:
         else:
             eff_template = DEFAULT_TEMPLATE
 
+        if eff_template == "lesson_card_v1":
+            grounded = grounded + _LESSON_CARD_V1_EXTRA_RULES
+
         try:
             card_json = await self._ai_service.generate_card_content(
                 grounded,
@@ -320,8 +345,19 @@ class ContentPipelineService:
 
         if eff_template == "lesson_card_v1":
             unsplash_url: Optional[str] = None
+            preview_topic_line = _approved_preview_topic_for_unsplash(raw_ai)
+            preview_kw = (
+                _first_meaningful_topic_word(preview_topic_line)
+                if preview_topic_line
+                else None
+            )
             iq = str(card_json.get("image_query") or "").strip()
-            query = iq if iq else (_lesson_visual_keyword_from_card_fields(card_json) or "")
+            if preview_kw:
+                query = preview_kw
+            elif iq:
+                query = iq
+            else:
+                query = _lesson_visual_keyword_from_card_fields(card_json) or ""
             if query and self._unsplash_access_key:
                 unsplash_url = await _fetch_unsplash_regular_image_url(
                     query, self._unsplash_access_key

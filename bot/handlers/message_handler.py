@@ -38,9 +38,14 @@ _PREVIEW_SYSTEM_LESSON = (
     "Use the transcript below ONLY as the source (no invented facts).\n"
     'Return ONLY these keys for a lesson preview:\n'
     '- "topic": one short line (teacher-friendly)\n'
-    '- "warmup_questions": exactly 2 short warm-up questions grounded in source\n'
-    '- "choices": exactly 2 this-or-that choices grounded in source, format: "Option A or Option B?"\n'
-    '- "support_words": 2 to 3 simple English words or short chunks from source\n'
+    '- "warmup_questions": exactly 5 short warm-up questions grounded in source\n'
+    '- "choices": 3 to 4 this-or-that choices grounded in source, format: "Option A or Option B?"\n'
+    '- "support_words": at least 5 simple English words or short chunks from source\n'
+    "HARD RULES:\n"
+    "- Never return '—' or an empty string as a question or choice.\n"
+    "- warmup_questions must be exactly 5 real questions.\n"
+    "- support_words must have at least 5 real items (words or chunks).\n"
+    "- If the source has limited content, derive questions, choices, and words from the topic while staying consistent with the transcript.\n"
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
 )
 
@@ -201,8 +206,9 @@ def _patch_hard_constraints_block(kind: str) -> str:
     if kind == "lesson":
         return (
             "HARD CONSTRAINTS (this format):\n"
-            "- warmup_questions: exactly 3 strings.\n"
-            "- support_words: exactly 2 strings (short chunks from source).\n"
+            "- warmup_questions: exactly 5 real strings (never \"—\" or empty).\n"
+            "- choices: 3–4 real \"this or that\" strings (never \"—\" or empty).\n"
+            "- support_words: at least 5 real strings from source or topic.\n"
         )
     return (
         "HARD CONSTRAINTS (default format):\n"
@@ -213,8 +219,8 @@ def _patch_hard_constraints_block(kind: str) -> str:
 def _preview_patch_rules_easy(kind: str) -> str:
     spec = {
         "lesson": (
-            "Apply: зроби простіше — simplify wording of warmup_questions and support_words only; "
-            "keep exactly 3 questions and exactly 2 support words; same topics, simpler English.\n"
+            "Apply: зроби простіше — simplify wording of warmup_questions, choices, and support_words only; "
+            "keep exactly 5 warm-up questions, 3–4 choices, and at least 5 support words; same topics, simpler English.\n"
         ),
         "questions": (
             "Apply: зроби простіше — simplify discussion_questions wording only; keep 3–5 questions.\n"
@@ -241,8 +247,8 @@ def _preview_patch_rules_easy(kind: str) -> str:
 def _preview_patch_rules_deep(kind: str) -> str:
     spec = {
         "lesson": (
-            "Apply: зроби глибше — enrich warmup_questions and support_words slightly; stay in source; "
-            "keep exactly 3 + 2 items.\n"
+            "Apply: зроби глибше — enrich warmup_questions, choices, and support_words; stay in source; "
+            "keep 5 warm-ups, 3–4 choices, at least 5 support words.\n"
         ),
         "questions": (
             "Apply: зроби глибше — richer discussion_questions; stay in source; keep 3–5 items.\n"
@@ -432,7 +438,7 @@ def _preview_system_for_initial(kind: str) -> str:
 
 def _preview_merge_list_keys(kind: str) -> tuple[str, ...]:
     return {
-        "lesson": ("warmup_questions", "support_words"),
+        "lesson": ("warmup_questions", "support_words", "choices"),
         "questions": ("discussion_questions",),
         "vocabulary": ("vocabulary_items",),
         "phrases": ("grammar_patterns",),
@@ -478,6 +484,17 @@ def _coerce_grammar_patterns(raw: Any) -> list[dict[str, str]]:
     return out[:3]
 
 
+def _lesson_nonempty_strings(items: Any, max_n: int) -> list[str]:
+    if not isinstance(items, list):
+        return []
+    out: list[str] = []
+    for x in items:
+        s = str(x).strip()
+        if s and s != "—":
+            out.append(s)
+    return out[:max_n]
+
+
 class _OnboardingEnrichedMessage:
     """Proxy so pipeline sees enriched text/caption without mutating the real Message."""
 
@@ -503,19 +520,15 @@ def _normalize_preview_output(data: dict[str, Any], kind: str) -> dict[str, Any]
     topic = str(data.get("topic", "") or "").strip() or "—"
 
     if kind == "lesson":
-        wq = data.get("warmup_questions")
-        if not isinstance(wq, list):
-            wq = []
-        wq = [str(x).strip() for x in wq if str(x).strip()][:3]
-        while len(wq) < 3:
-            wq.append("—")
-        sw = data.get("support_words")
-        if not isinstance(sw, list):
-            sw = []
-        sw = [str(x).strip() for x in sw if str(x).strip()][:2]
-        while len(sw) < 2:
-            sw.append("—")
-        return {"topic": topic, "warmup_questions": wq, "support_words": sw}
+        wq = _lesson_nonempty_strings(data.get("warmup_questions"), 5)
+        ch = _lesson_nonempty_strings(data.get("choices"), 4)
+        sw = _lesson_nonempty_strings(data.get("support_words"), 15)
+        return {
+            "topic": topic,
+            "warmup_questions": wq,
+            "choices": ch,
+            "support_words": sw,
+        }
 
     if kind == "questions":
         dq = data.get("discussion_questions")
@@ -634,19 +647,13 @@ def _format_preview_message(
     header = "📋 Ось що знайшов:\n\n" + f"📌 Тема: {topic}\n\n"
 
     if kind == "lesson":
-        wq = preview_data.get("warmup_questions")
-        if not isinstance(wq, list):
-            wq = []
-        wq = [str(x).strip() for x in wq if str(x).strip()]
-        sw = preview_data.get("support_words")
-        if not isinstance(sw, list):
-            sw = []
-        sw = [str(x).strip() for x in sw if str(x).strip()]
-        while len(sw) < 2:
-            sw.append("—")
-        sw = sw[:2]
+        wq = _lesson_nonempty_strings(preview_data.get("warmup_questions"), 10)
+        ch = _lesson_nonempty_strings(preview_data.get("choices"), 10)
+        sw = _lesson_nonempty_strings(preview_data.get("support_words"), 20)
         body = "🔥 Розминка:\n" + "\n".join(f"• {x}" for x in wq) + "\n\n"
-        body += "📚 Слова: " + ", ".join(sw)
+        if ch:
+            body += "⚖️ This or that:\n" + "\n".join(f"• {x}" for x in ch) + "\n\n"
+        body += "📚 Слова: " + (", ".join(sw) if sw else "—")
         return header + body
 
     if kind == "questions":
@@ -822,7 +829,9 @@ class MessageHandlerService:
                         normalized[k] = _coerce_vocabulary_items(prev)
                     else:
                         normalized[k] = [
-                            str(x).strip() for x in prev if str(x).strip()
+                            str(x).strip()
+                            for x in prev
+                            if str(x).strip() and str(x).strip() != "—"
                         ][:25]
         return normalized
 
