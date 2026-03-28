@@ -1295,10 +1295,28 @@ _VOCABULARY_HARD_FILTER_BLOCK = (
     "The goal is useful words for students, not exact words from source.\n\n"
 )
 
+_VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK = (
+    "CRITICAL: Each level must produce CLEARLY DIFFERENT vocabulary.\n"
+    "If A1 and B2 give similar words, the output is wrong.\n\n"
+    "LEVEL DIFFERENTIATION RULE (applies to ANY topic):\n\n"
+    "A1:\n"
+    "Think in the simplest possible everyday language.\n"
+    "Choose words a beginner can understand and say immediately.\n\n"
+    "A2:\n"
+    "Choose simple everyday words that help describe personal actions, feelings, and situations.\n\n"
+    "B1:\n"
+    "Choose conversational words that help the student discuss the topic naturally in daily spoken English.\n\n"
+    "B2:\n"
+    "Choose more nuanced but still practical words that help the student express ideas clearly and flexibly in discussion.\n\n"
+    "Before finalizing:\n"
+    "check that A1 words are clearly simpler than A2, A2 simpler than B1, and B1 simpler than B2.\n"
+    "If not, adjust until the levels are clearly different.\n\n"
+)
+
 
 def _preview_system_vocabulary(level: Optional[str]) -> str:
     if _is_lesson_cefr_a1(level):
-        level_adapt = (
+        level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR A1):\n\n"
             "A1 VOCABULARY RULES:\n"
             "- ALLOWED: basic everyday words, body parts, simple actions, basic feelings\n"
@@ -1307,7 +1325,7 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
             "- GOAL: student recognizes and uses basic words in simple speech\n\n"
         )
     elif _is_lesson_cefr_a2(level):
-        level_adapt = (
+        level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR A2):\n\n"
             "A2 VOCABULARY RULES:\n"
             "- ALLOWED: simple everyday vocabulary, common verbs/nouns/adjectives, daily situation words\n"
@@ -1316,7 +1334,7 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
             "- GOAL: student describes simple actions and experiences\n\n"
         )
     elif _is_lesson_cefr_b1(level):
-        level_adapt = (
+        level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR B1):\n\n"
             "B1 VOCABULARY RULES:\n"
             "- ALLOWED: conversational vocabulary, common phrasal verbs, real spoken English words\n"
@@ -1325,7 +1343,7 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
             "- GOAL: student talks about everyday topics naturally\n\n"
         )
     elif _is_lesson_cefr_b2(level):
-        level_adapt = (
+        level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR B2):\n\n"
             "B2 VOCABULARY RULES:\n"
             "- ALLOWED: nuanced but practical vocabulary, expressive and flexible language\n"
@@ -1334,7 +1352,7 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
             "- GOAL: student expresses ideas clearly in discussion\n\n"
         )
     else:
-        level_adapt = (
+        level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR unknown — default to B1-style):\n\n"
             "- Conversational, practical words from the source; natural varied example sentences; not academic\n\n"
         )
