@@ -1254,6 +1254,26 @@ _VOCABULARY_PROMPT_BODY = (
     "Apply to ALL vocabulary outputs regardless of topic.\n\n"
 )
 
+_VOCABULARY_HARD_FILTER_BLOCK = (
+    "HARD FILTER (MANDATORY):\n\n"
+    "Before finalizing vocabulary list, for each word ask:\n"
+    '"Can a student naturally say this in a simple \n'
+    'real-life conversation?"\n\n'
+    "If NO → REMOVE and REPLACE with simpler alternative.\n\n"
+    "STRICT BAN (all levels, all topics):\n"
+    "- words that describe biological processes\n"
+    "- words that explain how something works\n"
+    "- words used mainly in explanations, not conversation\n\n"
+    "REPLACEMENT EXAMPLES:\n"
+    "nutrition → food\n"
+    "repair → rest\n"
+    "growth → get bigger / get stronger\n"
+    "tension → effort / pull\n"
+    "damage → hurt / sore\n"
+    "recovery → rest\n"
+    "protein → food for muscles (A1/A2 only)\n\n"
+)
+
 
 def _preview_system_vocabulary(level: Optional[str]) -> str:
     if _is_lesson_cefr_a1(level):
@@ -1293,6 +1313,7 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
     return (
         _VOCABULARY_PROMPT_BODY
         + level_adapt
+        + _VOCABULARY_HARD_FILTER_BLOCK
         + 'Return ONLY these keys:\n'
         '- "topic": one short line (teacher-friendly; from source)\n'
         '- "vocabulary_items": 6 to 8 objects. Each object MUST have exactly:\n'
