@@ -1272,6 +1272,13 @@ _VOCABULARY_HARD_FILTER_BLOCK = (
     "damage → hurt / sore\n"
     "recovery → rest\n"
     "protein → food for muscles (A1/A2 only)\n\n"
+    "IMPORTANT EXCEPTION FOR VOCABULARY:\n"
+    "Unlike other formats, vocabulary CAN use simpler synonyms that are NOT in the source.\n\n"
+    "If source word is too complex:\n"
+    "- Find the simplest everyday word with same meaning\n"
+    "- Use that simpler word instead\n"
+    "- Example sentence must still relate to topic\n\n"
+    "The goal is useful words for students, not exact words from source.\n\n"
 )
 
 
