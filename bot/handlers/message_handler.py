@@ -115,6 +115,8 @@ _PREVIEW_SYSTEM_LESSON_A1 = (
     "REMOVE: breakfast, toast, cereal, coffee\n"
     "(unless they directly appear in the source)\n\n"
     "QUALITY CONTROL:\n"
+    "- Every question must make logical sense — forbidden: nonsense where a word repeats in a silly way "
+    '(e.g. "find hair in your hair").\n'
     "- Every single element — each question, each choice, each vocabulary word — must directly relate to "
     "the simplified topic AND the core problem.\n"
     "- Test before including any element:\n"
@@ -181,7 +183,9 @@ _PREVIEW_SYSTEM_LESSON_A2 = (
     "- Right: 'Do you know someone who worries about hair loss?'\n\n"
     "THIS OR THAT (choices): exactly 4 items\n"
     '- Format ONLY: "X or Y?" (question mark at end).\n'
-    "- May reflect simple contrast from the source.\n\n"
+    "- May reflect simple contrast from the source.\n"
+    "FORBIDDEN in This or That:\n"
+    "- scientific hair phases (e.g. naming growth-cycle phases as science)\n\n"
     "VOCABULARY (support_words): exactly 6 items\n"
     '- Format each string: "English — Ukrainian".\n'
     "- Slightly wider than A1 but still practical.\n"
@@ -191,7 +195,8 @@ _PREVIEW_SYSTEM_LESSON_A2 = (
     "- All English vocabulary words must be lowercase.\n"
     "FORBIDDEN vocabulary for A2:\n"
     "- scientific terms (genetics, cycle, pattern, hormone)\n"
-    "- academic words (intelligence, mechanism, process)\n"
+    "- academic words (mechanism, process)\n"
+    '- "intelligence" — forbidden unless that word is directly in the topic from the source\n'
     "- medical terms\n\n"
     "ALLOWED vocabulary for A2:\n"
     "- words a student can use in real conversation\n"
@@ -239,6 +244,8 @@ _PREVIEW_SYSTEM_LESSON_B1 = (
     "- No empty fields.\n"
     "- Simplify the language, but allow deeper meaning.\n"
     "- Do NOT turn the lesson into an essay or discussion club.\n\n"
+    "TOPIC LINE:\n"
+    '- The topic must not use "causes" or academic framing — everyday, human phrasing only.\n\n'
     'Return ONLY these keys for a lesson preview:\n'
     '- "topic": one short line (teacher-friendly), same situation as the source (simplified, not replaced)\n'
     '- "warmup_questions": exactly 5 questions\n'
@@ -261,6 +268,7 @@ _PREVIEW_SYSTEM_LESSON_B1 = (
     "- Do NOT move into abstract debate.\n"
     "FORBIDDEN phrases in questions:\n"
     "- genetic factors, biological mechanism, hormonal process\n"
+    '- "in society" as an abstract phrase\n'
     "- any phrase that sounds like a textbook or lecture\n"
     "Replace with personal versions:\n"
     "- Wrong: 'How do genetic factors affect hair loss?'\n"
@@ -460,6 +468,7 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     "- \"scientific solutions\"\n"
     "- \"society views\" (and similar phrasing)\n"
     "- \"how men and women in general\" (and similar broad gender generalizations)\n"
+    '- "in your culture" as a broad, abstract topic (not tied to the student\'s own life)\n'
     "- Any phrase requiring expert knowledge\n"
     "Replace with personal, real-life versions.\n"
     "FORBIDDEN in core questions and in This or That:\n"
@@ -480,6 +489,8 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     "FORBIDDEN in This or That:\n"
     "- medical pattern names (e.g. male pattern baldness)\n"
     "- scientific comparisons\n"
+    '- "professional advice"\n'
+    '- "home solutions" in a medical or treatment context\n'
     "- natural remedies\n"
     "- genetics\n"
     "- hormones\n"
