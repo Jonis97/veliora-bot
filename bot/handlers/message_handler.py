@@ -1199,6 +1199,20 @@ def _preview_system_speaking(level: Optional[str]) -> str:
 
 
 _VOCABULARY_PROMPT_BODY = (
+    "TEACHER MINDSET (mandatory):\n"
+    "You are an experienced English teacher preparing vocabulary for a lesson.\n\n"
+    "Your job is NOT to extract words from the source.\n"
+    "Your job is to answer this question:\n"
+    '"What vocabulary does a student at THIS level need to discuss THIS topic in real life?"\n\n'
+    "PROCESS:\n"
+    "1. Read the source -> understand the main human topic\n"
+    "2. Think like a teacher -> what words does MY student need?\n"
+    "3. Choose words that student will actually USE in conversation\n"
+    "4. Ignore complex source words -> find simpler alternatives\n\n"
+    "CORE PRINCIPLE:\n"
+    "Source = topic inspiration only\n"
+    "Words = chosen by teacher for student level\n\n"
+    "This applies to ANY video, ANY topic, ANY level.\n\n"
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "INPUT: The teacher provides a YouTube transcript or text below — that is your ONLY source.\n\n"
     "OUTPUT STRUCTURE:\n"
