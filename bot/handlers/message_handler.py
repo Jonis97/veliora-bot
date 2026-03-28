@@ -337,6 +337,111 @@ _PREVIEW_B1_FILTER_USER = (
     "Each line is one short English scene, cause-effect point, or reasoning note. No extra keys."
 )
 
+_PREVIEW_SYSTEM_LESSON_B2 = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the B2 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
+    "It is a filtered topic and scenes — not a raw transcript; do not use or assume any other text.\n"
+    "This preview is for CEFR level B2 only. Apply ONLY these rules for lesson + B2.\n\n"
+    "GLOBAL:\n"
+    "- Every element must reflect the main situation and core meaning from the filtered source.\n"
+    "- Do NOT introduce unrelated elements.\n"
+    "- Do NOT add generic filler.\n"
+    "- Follow exact counts strictly (no more, no less).\n"
+    "- Do not regenerate existing content; only extend if asked (initial generation: fill all fields from source).\n"
+    '- No placeholders like "—".\n'
+    "- No empty fields.\n"
+    "- Allow deeper discussion, but keep lesson structure.\n"
+    "- Do NOT turn the lesson into a university seminar.\n\n"
+    'Return ONLY these keys for a lesson preview:\n'
+    '- "topic": one short line (teacher-friendly), same situation as the source (simplified, not replaced)\n'
+    '- "warmup_questions": exactly 5 questions\n'
+    '- "core_questions": exactly 4 questions\n'
+    '- "choices": exactly 4 items\n'
+    '- "support_words": exactly 6 items (each English word — Ukrainian translation, "word — переклад")\n\n'
+    "WARM-UP (warmup_questions): exactly 5 questions\n"
+    '- Patterns: "Do you...?" / "Is it...?" / "Can you...?" / "Have you...?"\n'
+    "- Personal, relatable, real-life.\n"
+    "- May include past, present, or future experience.\n"
+    "- May include light opinion or preference.\n"
+    "- No academic phrasing.\n\n"
+    "CORE QUESTIONS (core_questions): exactly 4 questions\n"
+    "- Must include opinions, reasons, arguments, or explanations.\n"
+    "- Allow: Why / How questions with explanations.\n"
+    "- Allow: present, past, future.\n"
+    "- Focus on: personal experience, opinion, realistic human situations.\n"
+    "- Allowed: because, so, I think, I believe, it seems, probably.\n"
+    "- FORBIDDEN: academic essays, scientific debates, theoretical frameworks.\n"
+    "- Do NOT move into abstract philosophy debate.\n"
+    "FORBIDDEN phrases in questions:\n"
+    "- genetic factors, biological mechanisms, hormonal processes\n"
+    "- any phrase that sounds like a textbook, lecture, or research paper\n"
+    "Replace with personal versions:\n"
+    "- Wrong: 'How do genetic factors influence hair loss patterns?'\n"
+    "- Right: 'Do you think hair problems can run in families?'\n"
+    "CRITICAL CHECK before finalizing core questions:\n"
+    "Questions must focus on:\n"
+    "- the student\n"
+    "- people in real life\n"
+    "- personal opinion, experience, or realistic situations\n"
+    "If a question is about researchers, scientists, studies, systems, mechanisms, or general scientific facts → REMOVE IT.\n"
+    "Replace it with a personal or real-life version.\n"
+    "- Wrong: 'Why is it important for researchers to understand...'\n"
+    "- Right: 'Would you try something new if you worried about your hair?'\n\n"
+    "THIS OR THAT (choices): exactly 4 items\n"
+    '- Format ONLY: "X or Y?" (question mark at end).\n'
+    "- May reflect contrast, preference, opinion, or lifestyle choice.\n"
+    "- Must stay relevant to topic.\n"
+    "CRITICAL CHECK for This or That:\n"
+    "Both options must be things a regular person can choose, prefer, or relate to in real life.\n"
+    "No medical procedures, expert-only solutions, or research-style choices.\n"
+    "- Wrong: 'clinical trial or home remedy'\n"
+    "- Right: 'expensive products or simple habits'\n\n"
+    "VOCABULARY (support_words): exactly 6 items\n"
+    "- Everyday conversational English.\n"
+    "- Allowed: common abstract words (problem, reason, choice, result, opinion, habit).\n"
+    "- FORBIDDEN: scientific, academic, technical jargon.\n"
+    "FORBIDDEN vocabulary for B2:\n"
+    "- research, study, clinical, trial, phase, mechanism, hormone, genetic, biological, "
+    "treatment, diagnosis, symptom, patient, therapy, dosage, molecule, cell, protein, enzyme, "
+    "receptor, pathway, inflammation, metabolism, immune system, nervous system, cardiovascular, "
+    "dermatology, trichology, alopecia, androgen, follicle, miniaturization, stem cell, regeneration, "
+    "nanotechnology, biotechnology, pharmaceutical, FDA-approved, peer-reviewed, hypothesis, "
+    "correlation, causation, longitudinal study, double-blind, placebo, control group, "
+    "statistical significance, p-value, abstract, methodology, results section, conclusion, "
+    "limitations, future research\n\n"
+    "ALLOWED vocabulary for B2:\n"
+    "- words people use when talking to friends\n"
+    "- words describing feelings, habits, choices, problems, worries, hopes\n"
+    "- simple explanations in everyday English\n\n"
+    "Test: Can a B2 student use this word when talking to a friend about this topic?\n"
+    "If NO → remove it.\n"
+    "- All English words must be lowercase.\n"
+    '- Format each string: English word — Ukrainian translation.\n\n'
+    "If the filtered source has limited detail, derive items from the topic and scenes while staying consistent with them.\n"
+    "Do not include key_ideas, discussion_questions, or vocabulary_items."
+)
+
+_PREVIEW_B2_FILTER_SYSTEM = (
+    "You follow the user instructions exactly. Output ONE JSON object only, no markdown."
+)
+
+_PREVIEW_B2_FILTER_USER = (
+    "Filter this content for B2 English students.\n\n"
+    "Output ONLY:\n"
+    "- 1 simplified topic (same situation as source, not replaced)\n"
+    "- 3–5 scenes, cause-effect points, reasoning, or simple ideas from source\n\n"
+    "Rules:\n"
+    "- Stay semantically close to the original source\n"
+    "- Do NOT replace topic with generic scenario\n"
+    "- Do NOT invent context that does not exist in source\n"
+    "- Topic may include abstract ideas, simple arguments, or cause-effect\n"
+    "- Language must remain clear and natural\n"
+    "- If topic cannot be simplified → keep closest real-life version\n"
+    "- NEVER switch to unrelated topics\n\n"
+    'Return one JSON object with keys "topic" (string) and "scenes" (array of 3 to 5 strings). '
+    "Each line is one short English scene, cause-effect point, reasoning note, or simple idea. No extra keys."
+)
+
 _PREVIEW_A1_FILTER_SYSTEM = (
     "You follow the user instructions exactly. Output ONE JSON object only, no markdown."
 )
@@ -599,6 +704,19 @@ def _patch_hard_constraints_block(
                 "- support_words: exactly 6, everyday practical English — Ukrainian, "
                 "all English words lowercase; no scientific/academic/technical terms.\n"
             )
+        if _is_lesson_cefr_b2(level):
+            return (
+                "HARD CONSTRAINTS (CEFR B2 lesson):\n"
+                "- GENERAL: natural English; no \"—\" or empty fields; "
+                "do not regenerate existing blocks—only extend when asked; exact counts only; "
+                "main situation and core meaning; deeper discussion OK but not a university seminar.\n"
+                "- warmup_questions: exactly 5; Do you / Is it / Can you / Have you; relatable, no academic phrasing.\n"
+                "- core_questions: exactly 4; opinions, reasons, arguments, explanations; "
+                "no academic essays, scientific debates, theoretical frameworks, or philosophy debate.\n"
+                '- choices: exactly 4, format only "X or Y?", topic-relevant.\n'
+                "- support_words: exactly 6, conversational English — Ukrainian, "
+                "all English words lowercase; no scientific/academic/technical jargon.\n"
+            )
         return (
             "HARD CONSTRAINTS (this format):\n"
             "- warmup_questions: exactly 5 real strings (never \"—\" or empty).\n"
@@ -631,6 +749,13 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
             "and support_words only; keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines; "
             "same topic and core meaning, clearer B1 English and Ukrainian glosses; stay personal and relatable; "
             "no academic or essay-style phrasing.\n"
+        )
+    elif _is_lesson_cefr_b2(level):
+        lesson_easy = (
+            "Apply: зроби простіше — simplify wording of warmup_questions, core_questions, choices, "
+            "and support_words only; keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines; "
+            "same topic and core meaning, clearer B2 English and Ukrainian glosses; stay conversational; "
+            "not a seminar or academic essay.\n"
         )
     else:
         lesson_easy = (
@@ -684,6 +809,13 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
             "stay in the same source situation and core meaning; keep exactly 5 warm-ups, 4 core questions, "
             "4 choices, 6 support lines; add opinion, reasons, and realistic detail without becoming academic; "
             "do NOT repeat or lightly paraphrase—make wording meaningfully new; not an essay or debate; all B1 rules.\n"
+        )
+    elif _is_lesson_cefr_b2(level):
+        lesson_deep = (
+            "Apply: зроби глибше (CEFR B2 lesson) — enrich warmup_questions, core_questions, choices, support_words; "
+            "stay in the same source situation and core meaning; keep exactly 5 warm-ups, 4 core questions, "
+            "4 choices, 6 support lines; allow richer opinion and explanation without seminar-style or scientific debate; "
+            "do NOT repeat or lightly paraphrase—make wording meaningfully new; all B2 rules.\n"
         )
     else:
         lesson_deep = (
@@ -871,6 +1003,12 @@ def _is_lesson_cefr_b1(level: Optional[str]) -> bool:
     return str(level).strip().upper() == "B1"
 
 
+def _is_lesson_cefr_b2(level: Optional[str]) -> bool:
+    if level is None:
+        return False
+    return str(level).strip().upper() == "B2"
+
+
 def _preview_format_kind(fmt: Optional[str]) -> str:
     if not fmt:
         return "default"
@@ -893,6 +1031,8 @@ def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
         return _PREVIEW_SYSTEM_LESSON_A2
     if kind == "lesson" and _is_lesson_cefr_b1(level):
         return _PREVIEW_SYSTEM_LESSON_B1
+    if kind == "lesson" and _is_lesson_cefr_b2(level):
+        return _PREVIEW_SYSTEM_LESSON_B2
     return {
         "lesson": _PREVIEW_SYSTEM_LESSON,
         "questions": _PREVIEW_SYSTEM_QUESTIONS,
@@ -909,6 +1049,7 @@ def _preview_merge_list_keys(
         _is_lesson_cefr_a1(level)
         or _is_lesson_cefr_a2(level)
         or _is_lesson_cefr_b1(level)
+        or _is_lesson_cefr_b2(level)
     ):
         return ("warmup_questions", "core_questions", "support_words", "choices")
     if kind == "lesson":
@@ -1106,6 +1247,46 @@ def _b1_resolved_filtered_block(topic: str, scenes: list[str]) -> str:
     return _b1_filtered_source_user_block(topic, scenes[:5])
 
 
+_B2_FILTER_FALLBACK_TOPIC = _A1_FILTER_FALLBACK_TOPIC
+_B2_FILTER_FALLBACK_SCENES = _A1_FILTER_FALLBACK_SCENES
+
+_coerce_b2_filter_output = _coerce_a1_filter_output
+
+
+def _b2_filtered_source_user_block(topic: str, scenes: list[str]) -> str:
+    lines = [
+        "B2 FILTERED SOURCE — use ONLY this text as your source for the lesson preview.",
+        "Do not use or rely on any raw transcript.",
+        "",
+        f"Topic: {topic}",
+        "",
+        "Scenes:",
+    ]
+    for s in scenes:
+        lines.append(f"- {s}")
+    return "\n".join(lines)
+
+
+def _b2_resolved_filtered_block(topic: str, scenes: list[str]) -> str:
+    if not topic:
+        return _b2_filtered_source_user_block(
+            _B2_FILTER_FALLBACK_TOPIC, list(_B2_FILTER_FALLBACK_SCENES)
+        )
+    if len(scenes) < 3:
+        seen = {s.lower() for s in scenes}
+        for s in _B2_FILTER_FALLBACK_SCENES:
+            if len(scenes) >= 3:
+                break
+            if s.lower() not in seen:
+                scenes.append(s)
+                seen.add(s.lower())
+        if len(scenes) < 3:
+            return _b2_filtered_source_user_block(
+                _B2_FILTER_FALLBACK_TOPIC, list(_B2_FILTER_FALLBACK_SCENES)
+            )
+    return _b2_filtered_source_user_block(topic, scenes[:5])
+
+
 class _OnboardingEnrichedMessage:
     """Proxy so pipeline sees enriched text/caption without mutating the real Message."""
 
@@ -1137,6 +1318,7 @@ def _normalize_preview_output(
             _is_lesson_cefr_a1(level)
             or _is_lesson_cefr_a2(level)
             or _is_lesson_cefr_b1(level)
+            or _is_lesson_cefr_b2(level)
         ):
             wq = _lesson_nonempty_strings(data.get("warmup_questions"), 5)
             cq = _lesson_nonempty_strings(data.get("core_questions"), 4)
@@ -1435,6 +1617,28 @@ class MessageHandlerService:
         topic, scenes = _coerce_b1_filter_output(data)
         return _b1_resolved_filtered_block(topic, scenes)
 
+    async def _call_b2_filter_gpt(self, transcript_snippet: str) -> str:
+        user_content = (
+            f"{_PREVIEW_B2_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
+        )
+        response = await self._openai_client.chat.completions.create(
+            model=self._openai_model,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": _PREVIEW_B2_FILTER_SYSTEM},
+                {"role": "user", "content": user_content},
+            ],
+        )
+        raw = response.choices[0].message.content or "{}"
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        topic, scenes = _coerce_b2_filter_output(data)
+        return _b2_resolved_filtered_block(topic, scenes)
+
     async def _call_preview_gpt(
         self,
         transcript: str,
@@ -1453,6 +1657,8 @@ class MessageHandlerService:
             user_block = await self._call_a2_filter_gpt(snippet)
         elif kind == "lesson" and _is_lesson_cefr_b1(level):
             user_block = await self._call_b1_filter_gpt(snippet)
+        elif kind == "lesson" and _is_lesson_cefr_b2(level):
+            user_block = await self._call_b2_filter_gpt(snippet)
         else:
             user_block = f"Transcript:\n{snippet}"
         if extra_instruction and extra_instruction.strip():
