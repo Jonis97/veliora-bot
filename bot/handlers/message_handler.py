@@ -889,12 +889,92 @@ _PREVIEW_SYSTEM_SPEAKING_A2 = (
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
 )
 
+_PREVIEW_SYSTEM_SPEAKING_B1 = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the SPEAKING FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
+    "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
+    "This preview is CEFR B1 speaking only. Apply ONLY these rules.\n\n"
+    + _SPEAKING_GLOBAL_FORBIDDEN_RULES
+    + "STRUCTURE:\n\n"
+    "- Topic (max 5 words, natural, from source)\n"
+    "- Discussion questions: exactly 6\n"
+    "- Speaking task: exactly 1\n\n"
+    "B1 = EXTENSION OF A2:\n\n"
+    "- Keep ALL CEFR A2 speaking rules as the base\n"
+    "- Add:\n"
+    "  - opinions\n"
+    "  - reasons (because, so)\n"
+    "  - simple arguments\n"
+    "  - comparison\n\n"
+    "B1 STUDENT CAN:\n\n"
+    "- express opinions with reasons\n"
+    "- talk about experiences in detail\n"
+    "- compare situations\n"
+    "- describe feelings and reactions\n"
+    "- speak 3–5 sentences\n\n"
+    "QUESTIONS RULES:\n\n"
+    "- Allowed forms:\n"
+    '  - "Why do you think...?"\n'
+    '  - "How do you feel about...?"\n'
+    '  - "Do you agree that...?"\n'
+    '  - "What would you do if...?"\n'
+    '  - "Which do you prefer... and why?"\n'
+    '  - "Do you think...?"\n\n'
+    "- Max 12 words per question\n"
+    "- Must be:\n"
+    "  - personal OR relatable\n"
+    "  - connected to real-life situations\n"
+    "  - based on source meaning\n\n"
+    "- Must require:\n"
+    "  - opinion\n"
+    "  - reason (explicit or implied)\n\n"
+    "CRITICAL CONTROL (IMPORTANT):\n\n"
+    "- Questions MAY include general ideas BUT must stay within everyday understanding\n"
+    "- Question must be answerable by:\n"
+    "  - opinion\n"
+    "  - personal experience\n"
+    "  - simple reasoning\n"
+    "- If question requires specialist knowledge → reject (rewrite)\n"
+    '- If question requires explanation like a teacher → reject (rewrite)\n'
+    '- If student can answer using "I think / I feel / because" → accept\n\n'
+    "FORBIDDEN IN QUESTIONS:\n\n"
+    "- ALL A1 + A2 speaking forbidden rules\n"
+    '- knowledge-style: "What do you know about..."\n'
+    "- expert or scientific explanations\n"
+    "- abstract theory or philosophy\n"
+    "- questions that sound like essays\n"
+    "- questions not connected to topic\n\n"
+    "TOPIC RULES:\n\n"
+    "- Max 5 words\n"
+    "- Must be clear, natural, from source\n"
+    "- Forbidden: academic framing, complex terminology\n\n"
+    "SPEAKING TASK RULES:\n\n"
+    "- Must be specific and connected to topic\n"
+    "- Must require:\n"
+    "  - opinion + explanation OR\n"
+    "  - experience + reflection\n"
+    "- Must allow 4–6 sentences\n\n"
+    "FORBIDDEN TASKS:\n\n"
+    "- generic tasks\n"
+    "- abstract or theoretical tasks\n"
+    "- tasks requiring expert knowledge\n\n"
+    "CORE PRINCIPLE:\n"
+    'B1 = A2 + opinion + "because"\n\n'
+    'Return ONLY these keys:\n'
+    '- "topic": one short line (max 5 English words; natural; from source)\n'
+    '- "discussion_questions": exactly 6 strings (allowed forms; max 12 words each; opinion + reason; on-topic; source-based)\n'
+    '- "speaking_task": exactly 1 string (specific; on-topic; opinion+explanation OR experience+reflection; 4–6 sentences)\n'
+    "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
+)
+
 
 def _preview_system_speaking(level: Optional[str]) -> str:
     if _is_lesson_cefr_a1(level):
         return _PREVIEW_SYSTEM_SPEAKING_A1
     if _is_lesson_cefr_a2(level):
         return _PREVIEW_SYSTEM_SPEAKING_A2
+    if _is_lesson_cefr_b1(level):
+        return _PREVIEW_SYSTEM_SPEAKING_B1
     if _is_lesson_cefr_b2(level):
         level_block = (
             "LEVEL ADAPTATION (B2):\n"
@@ -904,18 +984,9 @@ def _preview_system_speaking(level: Optional[str]) -> str:
             '  - "What would happen if...?"\n'
             '  - "Do you think this is a good idea? Why?"\n\n'
         )
-    elif _is_lesson_cefr_b1(level):
-        level_block = (
-            "LEVEL ADAPTATION (B1):\n"
-            "- Add reasons and simple explanations.\n"
-            "- Use:\n"
-            '  - "Why do you think...?"\n'
-            '  - "How do you feel about...?"\n'
-            '  - "What would you do if...?"\n\n'
-        )
     else:
         level_block = (
-            "LEVEL ADAPTATION (fallback — non-B1/B2):\n"
+            "LEVEL ADAPTATION (fallback — not B2):\n"
             "- Simple structure; personal and concrete.\n"
             "- Must still avoid pure yes/no.\n\n"
         )
@@ -1161,8 +1232,23 @@ def _patch_hard_constraints_block(
                 "- CORE: A2 = A1 + simple reasons + simple experiences.\n"
                 '- Command "додай більше питань": refine or replace; keep exactly 6; all A2 rules.\n'
             )
+        if _is_lesson_cefr_b1(level):
+            return (
+                "HARD CONSTRAINTS (CEFR B1 speaking):\n"
+                + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
+                + "- topic: max 5 English words; clear, natural; from source; no academic framing or complex terminology.\n"
+                "- discussion_questions: exactly 6; keep ALL A1+A2 speaking bases; max 12 words each; "
+                "allowed forms include Why/How do you feel/Do you agree/What would you do if/Which do you prefer and why/Do you think; "
+                "must require opinion + reason (explicit or implied); personal or relatable; source meaning; "
+                "everyday understanding only; answerable by opinion, experience, or simple reasoning — not specialist or teacher-style; "
+                "FORBIDDEN: What do you know about...; expert/scientific; abstract theory; essay-like; off-topic.\n"
+                "- speaking_task: exactly 1; specific; on-topic; opinion+explanation OR experience+reflection; 4–6 sentences; "
+                "not generic, abstract, or expert-level.\n"
+                "- CORE: B1 = A2 + opinion + because.\n"
+                '- Command "додай більше питань": refine or replace; keep exactly 6; all B1 speaking rules.\n'
+            )
         return (
-            "HARD CONSTRAINTS (this format — B1/B2 speaking):\n"
+            "HARD CONSTRAINTS (this format — B2 speaking):\n"
             + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
             + "- discussion_questions: MUST contain exactly 6 items (open-ended; not yes/no).\n"
             "- speaking_task: MUST be exactly 1 non-empty string (real speaking scenario, 30–60 seconds).\n"
@@ -1287,6 +1373,13 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
             "no meta-questions; no abstract/societal/expert prompts; "
             "1 speaking_task: specific, on-topic, ~3–5 sentence answer; not generic; all CEFR A2 speaking rules.\n"
         )
+    elif _is_lesson_cefr_b1(level):
+        speaking_patch_easy = (
+            "Apply: зроби простіше — simplify topic (max 5 words), discussion_questions, and speaking_task; "
+            "keep exactly 6 questions (allowed B1 forms; max 12 words each); opinion + reason; on-topic; source-based; "
+            "not essay-like or expert; 1 speaking_task: specific, on-topic, opinion+explanation or experience+reflection; "
+            "4–6 sentences; all CEFR B1 speaking rules.\n"
+        )
     else:
         speaking_patch_easy = (
             "Apply: зроби простіше — simplify discussion_questions and speaking_task wording only; "
@@ -1368,6 +1461,13 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
             "richer simple reasons (because), past experience, short explanations; stay on-topic and personal; "
             "allowed question forms only; max 10 words per question; no meta; no abstract/societal/expert; "
             "speaking_task stays specific and on-topic (~3–5 sentence answer); measurable change; all A2 rules.\n"
+        )
+    elif _is_lesson_cefr_b1(level):
+        speaking_patch_deep = (
+            "Apply: зроби глибше (CEFR B1 speaking) — NEW wording only; keep exactly 6 questions and 1 speaking_task; "
+            "richer opinions, reasons (because/so), simple arguments, comparison; stay on-topic and source-based; "
+            "allowed B1 forms only; max 12 words per question; not essay-like or expert; "
+            "speaking_task: opinion+explanation or experience+reflection; 4–6 sentences; measurable change; all B1 rules.\n"
         )
     else:
         speaking_patch_deep = (
