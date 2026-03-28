@@ -17,6 +17,29 @@ LOGGER = logging.getLogger(__name__)
 
 _PREVIEW_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 
+_CLAUDE_JSON_ONLY_SYSTEM_PREFIX = (
+    "You must respond with ONLY a valid JSON object.\n"
+    "No markdown, no backticks, no explanation.\n"
+    "Just raw JSON starting with { and ending with }\n\n"
+)
+
+
+def _parse_json_from_claude_raw(raw: str) -> dict[str, Any]:
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    raw = raw.strip()
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    return data
+
+
 # Onboarding only — separate from active_source / pipeline memory.
 user_state: dict[int, dict[str, Optional[str]]] = {}
 
@@ -2697,7 +2720,7 @@ class MessageHandlerService:
         kwargs: dict[str, Any] = {
             "model": _PREVIEW_CLAUDE_MODEL,
             "max_tokens": 8192,
-            "system": system,
+            "system": _CLAUDE_JSON_ONLY_SYSTEM_PREFIX + system,
             "messages": [{"role": "user", "content": user}],
         }
         if temperature is not None:
@@ -2714,12 +2737,7 @@ class MessageHandlerService:
             system=_PREVIEW_A1_FILTER_SYSTEM,
             user=user_content,
         )
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            data = {}
-        if not isinstance(data, dict):
-            data = {}
+        data = _parse_json_from_claude_raw(raw)
         topic, scenes = _coerce_a1_filter_output(data)
         return _a1_resolved_filtered_block(topic, scenes)
 
@@ -2731,12 +2749,7 @@ class MessageHandlerService:
             system=_PREVIEW_A2_FILTER_SYSTEM,
             user=user_content,
         )
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            data = {}
-        if not isinstance(data, dict):
-            data = {}
+        data = _parse_json_from_claude_raw(raw)
         topic, scenes = _coerce_a2_filter_output(data)
         return _a2_resolved_filtered_block(topic, scenes)
 
@@ -2748,12 +2761,7 @@ class MessageHandlerService:
             system=_PREVIEW_B1_FILTER_SYSTEM,
             user=user_content,
         )
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            data = {}
-        if not isinstance(data, dict):
-            data = {}
+        data = _parse_json_from_claude_raw(raw)
         topic, scenes = _coerce_b1_filter_output(data)
         return _b1_resolved_filtered_block(topic, scenes)
 
@@ -2765,12 +2773,7 @@ class MessageHandlerService:
             system=_PREVIEW_B2_FILTER_SYSTEM,
             user=user_content,
         )
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            data = {}
-        if not isinstance(data, dict):
-            data = {}
+        data = _parse_json_from_claude_raw(raw)
         topic, scenes = _coerce_b2_filter_output(data)
         return _b2_resolved_filtered_block(topic, scenes)
 
@@ -2782,12 +2785,7 @@ class MessageHandlerService:
             system=_PREVIEW_SPEAKING_FILTER_SYSTEM,
             user=user_content,
         )
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            data = {}
-        if not isinstance(data, dict):
-            data = {}
+        data = _parse_json_from_claude_raw(raw)
         topic, scenes = _coerce_speaking_filter_output(data)
         return _speaking_resolved_filtered_block(topic, scenes)
 
@@ -2818,9 +2816,7 @@ class MessageHandlerService:
         if extra_instruction and extra_instruction.strip():
             user_block += f"\n\nAdditional instruction:\n{extra_instruction.strip()}"
         raw = await self._claude_preview_complete(system=system, user=user_block)
-        data = json.loads(raw)
-        if not isinstance(data, dict):
-            data = {}
+        data = _parse_json_from_claude_raw(raw)
         return _normalize_preview_output(data, kind, level)
 
     async def _call_preview_patch_gpt(
@@ -2867,9 +2863,7 @@ class MessageHandlerService:
             user=user_content,
             temperature=0.75,
         )
-        data = json.loads(raw)
-        if not isinstance(data, dict):
-            data = {}
+        data = _parse_json_from_claude_raw(raw)
         normalized = _normalize_preview_output(data, patch_kind, preview_level)
         if patch_kind == "speaking":
             st = str(normalized.get("speaking_task") or "").strip()
