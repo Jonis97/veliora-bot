@@ -838,6 +838,22 @@ _PREVIEW_SYSTEM_SPEAKING_A2 = (
     "- Must be personal, real-life, concrete\n"
     "- Must require more than yes/no\n"
     "- Must allow a 1–3 sentence answer\n\n"
+    "FORBIDDEN QUESTION PATTERNS FOR A2 (these push into B1 territory):\n\n"
+    '- "What do you know about..."\n'
+    '- "What do you think about people..."\n'
+    '- "Why do you think people..."\n\n'
+    "A2 questions must be ONLY about:\n\n"
+    "- the student themselves\n"
+    "- their personal experience\n"
+    "- their direct observations\n\n"
+    "EXAMPLES:\n\n"
+    'Wrong: "What do you know about hair growth?"\n'
+    'Right: "Have you noticed your hair changing?"\n\n'
+    'Wrong: "What causes you stress in life?"\n'
+    'Right: "Does hair loss worry you?"\n\n'
+    "SEMANTIC DRIFT RULE:\n\n"
+    "- Every question must stay connected to the source topic.\n"
+    "- Do NOT introduce general life topics unless directly connected to the source.\n\n"
     "CRITICAL CONTROL:\n\n"
     "- Question must be answerable from:\n"
     "  - personal experience OR\n"
@@ -867,7 +883,8 @@ _PREVIEW_SYSTEM_SPEAKING_A2 = (
     "A2 = A1 + simple reasons + simple experiences\n\n"
     'Return ONLY these keys:\n'
     '- "topic": one short line (max 5 English words; simple, natural; from source; daily-life)\n'
-    '- "discussion_questions": exactly 6 strings (allowed forms; max 10 words each; personal; on-topic)\n'
+    '- "discussion_questions": exactly 6 strings (allowed forms; max 10 words each; ONLY about the student / '
+    "their experience / direct observations; on source topic — no semantic drift; no A2-forbidden patterns)\n"
     '- "speaking_task": exactly 1 string (specific; on-topic; real situation or personal experience; ~3–5 sentence answer)\n'
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
 )
@@ -1132,6 +1149,9 @@ def _patch_hard_constraints_block(
                 + "- topic: max 5 English words; simple, natural; from source; daily-life; no academic framing.\n"
                 "- discussion_questions: exactly 6; keep ALL A1 speaking bases (on-topic; no meta "
                 '"Can you talk/share/describe about..."; no trivial/obvious meaningless); '
+                "A2-only: forbid \"What do you know about...\", \"What do you think about people...\", "
+                '"Why do you think people..."; questions ONLY about the student, their experience, direct observations; '
+                "no semantic drift — stay on source topic; "
                 "allowed forms include What/Why/How do you feel/What do you usually do when; "
                 "max 10 words each; personal experience or daily habits only — reject specialist knowledge; "
                 "more than yes/no; 1–3 sentence answers.\n"
