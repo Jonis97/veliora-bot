@@ -1198,15 +1198,82 @@ def _preview_system_speaking(level: Optional[str]) -> str:
     )
 
 
-_PREVIEW_SYSTEM_VOCABULARY = (
+_VOCABULARY_PROMPT_BODY = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
-    "Use the transcript below ONLY as the source (no invented facts).\n"
-    'Return ONLY these keys for a vocabulary preview:\n'
-    '- "topic": one short line (teacher-friendly)\n'
-    '- "vocabulary_items": 8 to 10 items. Each item is an object with:\n'
-    '  "english": word or short chunk from the source, and "note": short Ukrainian or English meaning/gloss\n'
-    "Do not include key_ideas, warmup_questions, discussion_questions, or grammar_patterns."
+    "INPUT: The teacher provides a YouTube transcript or text below — that is your ONLY source.\n\n"
+    "OUTPUT STRUCTURE:\n"
+    "1. Topic — clear, short, based on the source\n"
+    "2. Vocabulary list — 6 to 8 items\n\n"
+    "FOR EACH ITEM:\n"
+    "- English word or phrase — Ukrainian translation only (no definitions, no extra gloss)\n"
+    "- One example sentence in English: natural, relevant to the topic, sounds like spoken English\n\n"
+    "GENERAL RULES:\n"
+    "- All target words/phrases must come directly from the source — do NOT invent words not present in the input\n"
+    "- Use only high-frequency, useful vocabulary\n"
+    "- Avoid academic, medical, or scientific terminology\n"
+    "- Avoid rare, abstract, or low-utility words\n"
+    "- Words must be useful for speaking, not theory\n"
+    "- Do NOT include definitions beyond the Ukrainian translation line\n"
+    "- Do NOT include explanations or grammar notes\n"
+    "- Do NOT include synonyms or extra examples beyond the single example sentence\n"
+    "- Do NOT use a full sentence as the vocabulary headword — headword = word or short chunk only\n"
+    "- Do NOT include multi-word phrases unless they function as a single common unit from the source\n"
+    "- Each example must reflect real-life usage and be directly connected to the topic\n"
+    "- Vary sentence structures across examples — do not repeat the same pattern every time\n"
+    "- No placeholders or generic filler sentences\n\n"
+    "STYLE:\n"
+    "- Natural, everyday spoken English; clear and classroom-ready\n"
+    "- Sound like a real teacher preparing material — not a textbook or formal essay\n"
+    "- Prioritize usability over precision\n\n"
 )
+
+
+def _preview_system_vocabulary(level: Optional[str]) -> str:
+    if _is_lesson_cefr_a1(level):
+        level_adapt = (
+            "LEVEL ADAPTATION (CEFR A1):\n\n"
+            "- Very common, basic words only\n"
+            "- Example sentences: short and simple (max 6–8 words each)\n"
+            "- Present Simple only in examples\n"
+            "- No complex structures in examples\n\n"
+        )
+    elif _is_lesson_cefr_a2(level):
+        level_adapt = (
+            "LEVEL ADAPTATION (CEFR A2):\n\n"
+            "- Common everyday words\n"
+            "- Simple example sentences; past or future allowed if natural\n"
+            "- Basic connectors allowed in examples (and, but, because)\n\n"
+        )
+    elif _is_lesson_cefr_b1(level):
+        level_adapt = (
+            "LEVEL ADAPTATION (CEFR B1):\n\n"
+            "- Conversational vocabulary\n"
+            "- Natural example sentences with some variation\n"
+            "- Opinions or simple context in examples allowed\n\n"
+        )
+    elif _is_lesson_cefr_b2(level):
+        level_adapt = (
+            "LEVEL ADAPTATION (CEFR B2):\n\n"
+            "- More nuanced but still practical words from the source\n"
+            "- Richer, more expressive example sentences\n"
+            "- Still conversational — not academic\n\n"
+        )
+    else:
+        level_adapt = (
+            "LEVEL ADAPTATION (CEFR unknown — default to B1-style):\n\n"
+            "- Conversational, practical words from the source; natural varied example sentences; not academic\n\n"
+        )
+    return (
+        _VOCABULARY_PROMPT_BODY
+        + level_adapt
+        + 'Return ONLY these keys:\n'
+        '- "topic": one short line (teacher-friendly; from source)\n'
+        '- "vocabulary_items": 6 to 8 objects. Each object MUST have exactly:\n'
+        '  - "english": string — the word or short chunk from the source (not a full sentence)\n'
+        '  - "ukrainian": string — Ukrainian translation only\n'
+        '  - "example": string — one natural English sentence using the word/phrase, topic-linked\n'
+        "Do not include key_ideas, words, warmup_questions, discussion_questions, or grammar_patterns."
+    )
 
 _PREVIEW_SYSTEM_PHRASES = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
@@ -1340,9 +1407,10 @@ def _patch_hard_constraints_block(
     if kind == "vocabulary":
         return (
             "HARD CONSTRAINTS (this format):\n"
-            "- vocabulary_items: MUST contain 8–10 items (never fewer than 8). Each item: english + note (meaning).\n"
-            '- Command "додай більше слів" / "більше слів": ADD new grounded items so the list reaches 9–10 entries; '
-            "keep existing pairs; do not replace the whole list unless asked.\n"
+            "- vocabulary_items: MUST contain 6–8 items. Each item: english (headword from source) + ukrainian "
+            "(translation only) + example (one natural English sentence, topic-linked).\n"
+            '- Command "додай більше слів" / "більше слів": ADD new grounded items until the list reaches 7–8 entries '
+            "(stay within 6–8 total); keep existing items unless asked to remove.\n"
         )
     if kind == "questions":
         return (
@@ -1589,8 +1657,8 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
         ),
         "speaking": speaking_patch_easy,
         "vocabulary": (
-            "Apply: зроби простіше — simplify `note` (meaning) text only; keep 8–10 vocabulary_items; "
-            "same english chunks unless simplification requires tiny edits.\n"
+            "Apply: зроби простіше — simplify ukrainian gloss and example sentences only; "
+            "keep 6–8 vocabulary_items; same english headwords unless simplification requires tiny edits.\n"
         ),
         "phrases": (
             "Apply: зроби простіше — simplify structure/formula explanations; keep 2–3 patterns.\n"
@@ -1686,8 +1754,8 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
         ),
         "speaking": speaking_patch_deep,
         "vocabulary": (
-            "Apply: зроби глибше — richer `note` (meanings) or slightly more precise english; "
-            "keep 8–10 vocabulary_items.\n"
+            "Apply: зроби глибше — richer example sentences or slightly more precise english headwords; "
+            "keep 6–8 vocabulary_items; stay source-grounded.\n"
         ),
         "phrases": (
             "Apply: зроби глибше — sharper structure names/formulas; stay in source; keep 2–3 patterns.\n"
@@ -1719,7 +1787,7 @@ def _preview_patch_rules_custom(kind: str, level: Optional[str] = None) -> str:
             common
             + _patch_hard_constraints_block(kind, level)
             + (
-                '- "додай більше слів": extend vocabulary_items to 9–10 grounded entries (not a rewrite with the same count).\n'
+                '- "додай більше слів": extend vocabulary_items toward 7–8 grounded entries (max 8; not a rewrite with the same count).\n'
             )
         )
     if kind == "questions":
@@ -1904,10 +1972,11 @@ def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
         return _PREVIEW_SYSTEM_LESSON_B2
     if kind == "speaking":
         return _preview_system_speaking(level)
+    if kind == "vocabulary":
+        return _preview_system_vocabulary(level)
     return {
         "lesson": _PREVIEW_SYSTEM_LESSON,
         "questions": _PREVIEW_SYSTEM_QUESTIONS,
-        "vocabulary": _PREVIEW_SYSTEM_VOCABULARY,
         "phrases": _PREVIEW_SYSTEM_PHRASES,
         "default": _PREVIEW_SYSTEM_DEFAULT,
     }.get(kind, _PREVIEW_SYSTEM_DEFAULT)
@@ -1934,23 +2003,39 @@ def _preview_merge_list_keys(
     }.get(kind, ("questions", "exercises"))
 
 
-def _coerce_vocabulary_items(raw: Any) -> list[str]:
-    out: list[str] = []
+def _coerce_vocabulary_items(raw: Any) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
     if not isinstance(raw, list):
         return []
     for x in raw:
         if isinstance(x, dict):
             en = str(x.get("english") or x.get("en") or "").strip()
-            note = str(
-                x.get("note") or x.get("ua") or x.get("meaning") or x.get("gloss") or ""
+            uk = str(
+                x.get("ukrainian")
+                or x.get("note")
+                or x.get("ua")
+                or x.get("meaning")
+                or x.get("gloss")
+                or ""
             ).strip()
+            ex = str(x.get("example") or x.get("sentence") or "").strip()
             if en:
-                out.append(f"{en} — {note}" if note else en)
+                out.append({"english": en, "ukrainian": uk, "example": ex})
         else:
             s = str(x).strip()
             if s:
-                out.append(s)
-    return out[:10]
+                if " — " in s:
+                    parts = s.split(" — ", 1)
+                    out.append(
+                        {
+                            "english": parts[0].strip(),
+                            "ukrainian": parts[1].strip() if len(parts) > 1 else "",
+                            "example": "",
+                        }
+                    )
+                else:
+                    out.append({"english": s, "ukrainian": "", "example": ""})
+    return out[:8]
 
 
 def _coerce_grammar_patterns(raw: Any) -> list[dict[str, str]]:
@@ -2278,9 +2363,9 @@ def _normalize_preview_output(
 
     if kind == "vocabulary":
         items = _coerce_vocabulary_items(data.get("vocabulary_items"))
-        while len(items) < 8:
-            items.append("—")
-        return {"topic": topic, "vocabulary_items": items[:10]}
+        while len(items) < 6:
+            items.append({"english": "—", "ukrainian": "", "example": ""})
+        return {"topic": topic, "vocabulary_items": items[:8]}
 
     if kind == "phrases":
         gp = _coerce_grammar_patterns(data.get("grammar_patterns"))
@@ -2422,8 +2507,25 @@ def _format_preview_message(
         items = preview_data.get("vocabulary_items")
         if not isinstance(items, list):
             items = []
-        lines = [str(x).strip() for x in items if str(x).strip()]
-        body = "📖 Ключові слова:\n" + "\n".join(f"• {x}" for x in lines)
+        parts: list[str] = []
+        for x in items:
+            if isinstance(x, dict):
+                en = str(x.get("english") or "").strip()
+                uk = str(
+                    x.get("ukrainian") or x.get("note") or ""
+                ).strip()
+                ex = str(x.get("example") or "").strip()
+                if not en:
+                    continue
+                line = f"• {en} — {uk}" if uk else f"• {en}"
+                if ex:
+                    line += f"\n  {ex}"
+                parts.append(line)
+            else:
+                s = str(x).strip()
+                if s:
+                    parts.append(f"• {s}")
+        body = "📖 Ключові слова:\n" + ("\n".join(parts) if parts else "• —")
         return header + body
 
     if kind == "phrases":
