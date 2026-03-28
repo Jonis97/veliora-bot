@@ -1036,6 +1036,16 @@ _PREVIEW_SYSTEM_SPEAKING_B2 = (
     "- questions about people in general (abstract)\n"
     '- "What factors cause..." (scientific)\n'
     '- "To what extent do you agree that [scientific fact]..."\n\n'
+    "FORBIDDEN phrases in B2 questions:\n\n"
+    '- "societal views"\n'
+    '- "genetic factors"\n'
+    '- "society\'s perception"\n'
+    "- any academic compound nouns\n\n"
+    "Replace with natural language:\n\n"
+    'Wrong: "How do you feel about societal views on baldness?"\n'
+    'Right: "Do you think people judge others for being bald?"\n\n'
+    'Wrong: "Do you think genetic factors matter?"\n'
+    'Right: "Do you think baldness runs in families?"\n\n'
     "- Must require:\n"
     "  - argument (not just opinion)\n"
     "  - explanation with reasoning\n"
@@ -1079,7 +1089,9 @@ _PREVIEW_SYSTEM_SPEAKING_B2 = (
     '- "discussion_questions": exactly 6 strings (focus: you/your, someone they know, people around them; '
     "ALLOWED: Do you think / Would you / Do you know someone who / Have people around you ever; "
     "max 14 words; argument + reasoning; FORBIDDEN: society in general, abstract people in general, "
-    "What factors cause..., To what extent agree [scientific fact])\n"
+    "What factors cause..., To what extent agree [scientific fact]; "
+    "FORBIDDEN phrases: societal views, genetic factors, society's perception, academic compound nouns — "
+    "replace with natural language (see Wrong/Right examples in QUESTIONS RULES)\n"
     '- "speaking_task": exactly 1 string (specific instruction; argument+reasoning OR experience+reflection+comparison; '
     "NOT sample answer; ~5–7 sentences of student speech)\n"
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
@@ -1371,6 +1383,12 @@ def _patch_hard_constraints_block(
                 "ALLOWED patterns: Do you think...? / Would you...? / Do you know someone who...? / Have people around you ever...?; "
                 "FORBIDDEN: society in general; people in general (abstract); What factors cause... (scientific); "
                 "To what extent do you agree that [scientific fact]...; "
+                "FORBIDDEN phrases in questions: societal views; genetic factors; society's perception; "
+                "academic compound nouns — replace with natural language "
+                '(e.g. Wrong: "How do you feel about societal views on baldness?" → '
+                'Right: "Do you think people judge others for being bald?"; '
+                'Wrong: "Do you think genetic factors matter?" → '
+                'Right: "Do you think baldness runs in families?"); '
                 "must require argument (not just opinion), reasoning, comparison or perspective; real-life grounded — "
                 "NOT abstract, philosophical, academic, or theory-like; "
                 "answerable from experience, observation, reasoning — not factual knowledge; essay-style forbidden.\n"
