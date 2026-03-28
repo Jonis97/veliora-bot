@@ -1019,18 +1019,23 @@ _PREVIEW_SYSTEM_SPEAKING_B2 = (
     "- reflect on experiences and changes in opinion\n"
     "- speak 5–7 sentences\n\n"
     "QUESTIONS RULES:\n\n"
-    "- Allowed forms:\n"
-    '  - "To what extent do you agree...?"\n'
-    '  - "What would happen if...?"\n'
-    '  - "Do you think this is fair? Why?"\n'
-    '  - "How has your opinion changed about...?"\n'
-    '  - "Can something be both good and bad?"\n'
-    '  - "Why might different people see this differently?"\n\n'
     "- Max 14 words per question\n"
-    "- Must be:\n"
-    "  - personal OR relatable\n"
-    "  - based on real-life situations\n"
-    "  - understandable without expert knowledge\n\n"
+    "- Must be based on real-life situations\n"
+    "- Understandable without expert knowledge\n\n"
+    "Questions must focus on:\n\n"
+    "- the student personally (you, your)\n"
+    "- someone they know personally\n"
+    "- people around them\n\n"
+    "ALLOWED:\n\n"
+    '- "Do you think...?"\n'
+    '- "Would you...?"\n'
+    '- "Do you know someone who...?"\n'
+    '- "Have people around you ever...?"\n\n'
+    "FORBIDDEN:\n\n"
+    "- questions about society in general\n"
+    "- questions about people in general (abstract)\n"
+    '- "What factors cause..." (scientific)\n'
+    '- "To what extent do you agree that [scientific fact]..."\n\n'
     "- Must require:\n"
     "  - argument (not just opinion)\n"
     "  - explanation with reasoning\n"
@@ -1050,7 +1055,6 @@ _PREVIEW_SYSTEM_SPEAKING_B2 = (
     "- academic or scientific framing\n"
     "- expert-level explanation\n"
     "- questions requiring factual knowledge\n"
-    "- questions about society in general\n"
     "- essay-style questions\n\n"
     "TOPIC RULES:\n\n"
     "- Max 5 words\n"
@@ -1072,8 +1076,10 @@ _PREVIEW_SYSTEM_SPEAKING_B2 = (
     "B2 = B1 + argument + nuance (NOT theory)\n\n"
     'Return ONLY these keys:\n'
     '- "topic": one short line (max 5 English words; natural; from source; no academic framing)\n'
-    '- "discussion_questions": exactly 6 strings (allowed forms; max 14 words each; argument + reasoning; '
-    "real-life grounded; not abstract/theory; not society-in-general)\n"
+    '- "discussion_questions": exactly 6 strings (focus: you/your, someone they know, people around them; '
+    "ALLOWED: Do you think / Would you / Do you know someone who / Have people around you ever; "
+    "max 14 words; argument + reasoning; FORBIDDEN: society in general, abstract people in general, "
+    "What factors cause..., To what extent agree [scientific fact])\n"
     '- "speaking_task": exactly 1 string (specific instruction; argument+reasoning OR experience+reflection+comparison; '
     "NOT sample answer; ~5–7 sentences of student speech)\n"
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
@@ -1361,10 +1367,12 @@ def _patch_hard_constraints_block(
                 + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
                 + "- topic: max 5 English words; clear, natural; from source; no academic framing or complex terminology.\n"
                 "- discussion_questions: exactly 6; keep ALL A1+A2+B1 speaking bases; max 14 words each; "
-                "allowed forms include To what extent do you agree / What would happen if / Do you think this is fair Why / "
-                "How has your opinion changed / Can something be both good and bad / Why might different people see this differently; "
+                "focus on student (you/your), someone they know personally, people around them; "
+                "ALLOWED patterns: Do you think...? / Would you...? / Do you know someone who...? / Have people around you ever...?; "
+                "FORBIDDEN: society in general; people in general (abstract); What factors cause... (scientific); "
+                "To what extent do you agree that [scientific fact]...; "
                 "must require argument (not just opinion), reasoning, comparison or perspective; real-life grounded — "
-                "NOT abstract, philosophical, academic, or theory-like; NOT society in general; "
+                "NOT abstract, philosophical, academic, or theory-like; "
                 "answerable from experience, observation, reasoning — not factual knowledge; essay-style forbidden.\n"
                 "- speaking_task: exactly 1; instruction for what student must DO (NOT sample answer); specific; on-topic; "
                 "argument+reasoning OR experience+reflection+comparison; ~5–7 sentences of student speech; "
