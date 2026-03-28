@@ -2230,6 +2230,29 @@ def _is_lesson_cefr_b2(level: Optional[str]) -> bool:
     return str(level).strip().upper() == "B2"
 
 
+def _grammar_preview_level_prefix(level: Optional[str]) -> str:
+    if _is_lesson_cefr_a1(level):
+        return (
+            "YOU ARE TEACHING LEVEL A1. USE ONLY: present simple, can/can't, am/is/are. "
+            "FORBIDDEN: passive voice, conditionals, perfect tenses.\n\n"
+        )
+    if _is_lesson_cefr_a2(level):
+        return (
+            "YOU ARE TEACHING LEVEL A2. USE ONLY: past simple, will/going to, comparatives. "
+            "FORBIDDEN: passive voice, present perfect, conditionals.\n\n"
+        )
+    if _is_lesson_cefr_b1(level):
+        return (
+            "YOU ARE TEACHING LEVEL B1. USE ONLY: present perfect, first conditional, modals. "
+            "FORBIDDEN: passive voice, second conditional.\n\n"
+        )
+    if _is_lesson_cefr_b2(level):
+        return (
+            "YOU ARE TEACHING LEVEL B2. USE ONLY: passive voice, second conditional, reported speech.\n\n"
+        )
+    return ""
+
+
 def _preview_format_kind(fmt: Optional[str]) -> str:
     if not fmt:
         return "default"
@@ -2260,10 +2283,11 @@ def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
         return _preview_system_speaking(level)
     if kind == "vocabulary":
         return _preview_system_vocabulary(level)
+    if kind == "phrases":
+        return _grammar_preview_level_prefix(level) + _PREVIEW_SYSTEM_PHRASES
     return {
         "lesson": _PREVIEW_SYSTEM_LESSON,
         "questions": _PREVIEW_SYSTEM_QUESTIONS,
-        "phrases": _PREVIEW_SYSTEM_PHRASES,
         "default": _PREVIEW_SYSTEM_DEFAULT,
     }.get(kind, _PREVIEW_SYSTEM_DEFAULT)
 
