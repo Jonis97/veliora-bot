@@ -628,7 +628,12 @@ _PREVIEW_SPEAKING_FILTER_USER = (
 _SPEAKING_GLOBAL_FORBIDDEN_RULES = (
     "GLOBAL FORBIDDEN (applies to ALL speaking levels: A1, A2, B1, B2 — individual level rules still apply on top):\n\n"
     "FORBIDDEN vocabulary:\n"
-    "- treatments, treatment\n"
+    "- treatments, treatment — must not appear in topic, discussion_questions, or speaking_task "
+    "(all speaking levels A1, A2, B1, B2, including B2).\n"
+    "  Replace with phrasing such as:\n"
+    '  - "things people do about..."\n'
+    '  - "ways to deal with..."\n'
+    '  - "solutions people try..."\n'
     "- medical, medicine, medication\n"
     "- remedy, remedies\n"
     "- genetics, genetic\n"
@@ -1001,6 +1006,9 @@ _PREVIEW_SYSTEM_SPEAKING_B2 = (
     "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
     "This preview is CEFR B2 speaking only. Apply ONLY these rules.\n\n"
     + _SPEAKING_GLOBAL_FORBIDDEN_RULES
+    + "B2 explicit — treatment / treatments:\n\n"
+    "- Forbidden in topic, discussion_questions, and speaking_task (same GLOBAL rule above; reinforced for B2).\n"
+    '- Replace with: "things people do about..." / "ways to deal with..." / "solutions people try..."\n\n'
     + "STRUCTURE:\n\n"
     "- Topic (max 5 words, natural, from source)\n"
     "- Discussion questions: exactly 6\n"
@@ -1378,6 +1386,8 @@ def _patch_hard_constraints_block(
                 "HARD CONSTRAINTS (CEFR B2 speaking):\n"
                 + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
                 + "- topic: max 5 English words; clear, natural; from source; no academic framing or complex terminology.\n"
+                "- treatment, treatments: forbidden in topic, discussion_questions, speaking_task (GLOBAL); "
+                'replace with "things people do about..." / "ways to deal with..." / "solutions people try...".\n'
                 "- discussion_questions: exactly 6; keep ALL A1+A2+B1 speaking bases; max 14 words each; "
                 "focus on student (you/your), someone they know personally, people around them; "
                 "ALLOWED patterns: Do you think...? / Would you...? / Do you know someone who...? / Have people around you ever...?; "
