@@ -80,6 +80,16 @@ _LESSON_FORBIDDEN_WORDS_ANY_OUTPUT_BLOCK = (
     "- drugs (in medical context)\n"
     "- solutions (when meaning medical fix)\n"
     "- health issues\n\n"
+    "LEVEL-APPROPRIATE LANGUAGE RULE:\n"
+    "All example sentences, practice tasks, and questions\n"
+    "must use vocabulary appropriate for the selected level.\n\n"
+    "For A1 and A2:\n"
+    "- Use only simple everyday words\n"
+    "- Max 6-8 words per sentence\n"
+    "- No scientific, medical, or academic vocabulary\n"
+    "- Student must understand every word immediately\n"
+    "- If source vocabulary is too difficult, replace it with a simpler everyday alternative\n\n"
+    "This applies regardless of source complexity.\n\n"
 )
 
 _PREVIEW_SYSTEM_LESSON_A1 = (
@@ -708,6 +718,16 @@ _SPEAKING_GLOBAL_FORBIDDEN_RULES = (
     '- "causes" allowed ONLY in simple everyday context '
     '(e.g. "What causes you stress?") NOT in scientific/explanatory form\n'
     '- "temporary" / "permanent" allowed ONLY in everyday context NOT in medical/scientific meaning\n\n'
+    "LEVEL-APPROPRIATE LANGUAGE RULE:\n"
+    "All example sentences, practice tasks, and questions\n"
+    "must use vocabulary appropriate for the selected level.\n\n"
+    "For A1 and A2:\n"
+    "- Use only simple everyday words\n"
+    "- Max 6-8 words per sentence\n"
+    "- No scientific, medical, or academic vocabulary\n"
+    "- Student must understand every word immediately\n"
+    "- If source vocabulary is too difficult, replace it with a simpler everyday alternative\n\n"
+    "This applies regardless of source complexity.\n\n"
 )
 
 _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE = (
