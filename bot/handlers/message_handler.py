@@ -625,8 +625,73 @@ _PREVIEW_SPEAKING_FILTER_USER = (
     "Each line is one short English situation or angle. No extra keys."
 )
 
+_PREVIEW_SYSTEM_SPEAKING_A1 = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the SPEAKING FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
+    "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
+    "This preview is CEFR A1 speaking only. Apply ONLY these STRICT rules.\n\n"
+    "A1 SPEAKING STRUCTURE:\n\n"
+    "- Topic (very simple, daily-life)\n"
+    "- Discussion questions: exactly 6\n"
+    "- Speaking task: exactly 1\n\n"
+    "TOPIC RULES:\n"
+    "- Must be very simple and clear\n"
+    "- Must describe a daily-life situation\n"
+    "- Max 4 words\n"
+    "- No abstract or complex phrasing\n\n"
+    "DISCUSSION QUESTIONS RULES:\n\n"
+    "- Exactly 6 questions\n"
+    "- Use ONLY simple patterns:\n"
+    "  - Do you...?\n"
+    "  - Have you...?\n"
+    "  - Can you...?\n"
+    "  - Do you like...?\n\n"
+    "- Max 7 words per question\n"
+    "- Must be instantly understandable\n"
+    "- Must be about:\n"
+    "  - personal life\n"
+    "  - daily actions\n"
+    "  - simple feelings\n\n"
+    "FORBIDDEN:\n"
+    "- why / how questions\n"
+    "- abstract ideas\n"
+    "- scientific or medical terms\n"
+    "- complex grammar structures\n"
+    "- questions requiring explanation\n\n"
+    "ANSWER EXPECTATION:\n"
+    "- Questions must allow short simple answers (A1 level)\n"
+    "- Student should NOT need to think long\n\n"
+    "SPEAKING TASK RULES:\n\n"
+    "- Exactly 1 task\n"
+    "- Must be extremely simple\n"
+    "- Format examples:\n"
+    '  - "Talk about your hair."\n'
+    '  - "Talk about your day."\n'
+    '  - "Describe your friend."\n\n'
+    "- Must be doable with basic vocabulary\n"
+    "- Must not require past complex structures\n\n"
+    "GLOBAL RULES:\n\n"
+    "- Everything must be simple, clear, and real-life\n"
+    "- No academic or abstract language\n"
+    "- No complex vocabulary\n"
+    "- No multi-step thinking\n\n"
+    "CRITICAL CHECK:\n\n"
+    "- If a question is longer than 7 words → shorten\n"
+    "- If a beginner cannot understand instantly → rewrite\n"
+    "- If it sounds like a textbook → simplify\n\n"
+    "GOAL:\n"
+    "Student understands immediately and answers without hesitation\n\n"
+    'Return ONLY these keys:\n'
+    '- "topic": one short line (max 4 English words; daily-life only)\n'
+    '- "discussion_questions": exactly 6 strings (only the allowed patterns; max 7 words each)\n'
+    '- "speaking_task": exactly 1 string (extremely simple)\n'
+    "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
+)
+
 
 def _preview_system_speaking(level: Optional[str]) -> str:
+    if _is_lesson_cefr_a1(level):
+        return _PREVIEW_SYSTEM_SPEAKING_A1
     if _is_lesson_cefr_b2(level):
         level_block = (
             "LEVEL ADAPTATION (B2):\n"
@@ -645,9 +710,19 @@ def _preview_system_speaking(level: Optional[str]) -> str:
             '  - "How do you feel about...?"\n'
             '  - "What would you do if...?"\n\n'
         )
+    elif _is_lesson_cefr_a2(level):
+        level_block = (
+            "LEVEL ADAPTATION (A2):\n"
+            "- Simple structure.\n"
+            "- Use patterns like:\n"
+            '  - "Do you usually...? Why?"\n'
+            '  - "Tell me about..."\n'
+            '  - "What do you like about...?"\n'
+            "- Must still avoid pure yes/no.\n\n"
+        )
     else:
         level_block = (
-            "LEVEL ADAPTATION (A1/A2):\n"
+            "LEVEL ADAPTATION (A2):\n"
             "- Simple structure.\n"
             "- Use patterns like:\n"
             '  - "Do you usually...? Why?"\n'
@@ -858,6 +933,15 @@ def _patch_hard_constraints_block(
             "keep existing questions unless asked to remove.\n"
         )
     if kind == "speaking":
+        if _is_lesson_cefr_a1(level):
+            return (
+                "HARD CONSTRAINTS (CEFR A1 speaking):\n"
+                "- topic: max 4 English words; daily-life only; very simple; no abstract phrasing.\n"
+                "- discussion_questions: exactly 6; ONLY patterns: Do you...? / Have you...? / Can you...? / Do you like...?; "
+                "max 7 words per question; no why/how; no abstract, scientific, medical, or explanation-demanding questions.\n"
+                "- speaking_task: exactly 1; extremely simple; basic vocabulary; no complex past structures.\n"
+                '- Command "додай більше питань": refine or replace entries; keep exactly 6; all A1 rules.\n'
+            )
         return (
             "HARD CONSTRAINTS (this format):\n"
             "- discussion_questions: MUST contain exactly 6 items (open-ended; not yes/no).\n"
@@ -967,15 +1051,23 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
             "Apply: зроби простіше — simplify wording of warmup_questions, choices, and support_words only; "
             "keep exactly 5 warm-up questions, 3–4 choices, and at least 5 support words; same topics, simpler English.\n"
         )
+    if _is_lesson_cefr_a1(level):
+        speaking_patch_easy = (
+            "Apply: зроби простіше — simplify topic (max 4 words), discussion_questions, and speaking_task; "
+            "keep exactly 6 questions using ONLY Do you / Have you / Can you / Do you like (max 7 words each) "
+            "and 1 extremely simple speaking_task; all CEFR A1 speaking STRICT rules.\n"
+        )
+    else:
+        speaking_patch_easy = (
+            "Apply: зроби простіше — simplify discussion_questions and speaking_task wording only; "
+            "keep exactly 6 questions and 1 speaking_task; stay open-ended and conversational.\n"
+        )
     spec = {
         "lesson": lesson_easy,
         "questions": (
             "Apply: зроби простіше — simplify discussion_questions wording only; keep 3–5 questions.\n"
         ),
-        "speaking": (
-            "Apply: зроби простіше — simplify discussion_questions and speaking_task wording only; "
-            "keep exactly 6 questions and 1 speaking_task; stay open-ended and conversational.\n"
-        ),
+        "speaking": speaking_patch_easy,
         "vocabulary": (
             "Apply: зроби простіше — simplify `note` (meaning) text only; keep 8–10 vocabulary_items; "
             "same english chunks unless simplification requires tiny edits.\n"
@@ -1031,15 +1123,23 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
             "Apply: зроби глибше — enrich warmup_questions, choices, and support_words; stay in source; "
             "keep 5 warm-ups, 3–4 choices, at least 5 support words.\n"
         )
+    if _is_lesson_cefr_a1(level):
+        speaking_patch_deep = (
+            "Apply: зроби глибше (CEFR A1 speaking) — NEW wording only; keep exactly 6 questions and 1 speaking_task; "
+            "more concrete daily-life detail from source; still ONLY Do you / Have you / Can you / Do you like; "
+            "max 7 words per question; topic max 4 words; no why/how; measurable change; all A1 STRICT rules.\n"
+        )
+    else:
+        speaking_patch_deep = (
+            "Apply: зроби глибше — richer discussion_questions and speaking_task; stay in source; "
+            "keep exactly 6 questions and 1 speaking_task; remain open-ended.\n"
+        )
     spec = {
         "lesson": lesson_deep,
         "questions": (
             "Apply: зроби глибше — richer discussion_questions; stay in source; keep 3–5 items.\n"
         ),
-        "speaking": (
-            "Apply: зроби глибше — richer discussion_questions and speaking_task; stay in source; "
-            "keep exactly 6 questions and 1 speaking_task; remain open-ended.\n"
-        ),
+        "speaking": speaking_patch_deep,
         "vocabulary": (
             "Apply: зроби глибше — richer `note` (meanings) or slightly more precise english; "
             "keep 8–10 vocabulary_items.\n"
