@@ -358,6 +358,11 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     '- "core_questions": exactly 4 questions\n'
     '- "choices": exactly 4 items\n'
     '- "support_words": exactly 6 items (each "word — переклад": English — Ukrainian)\n\n'
+    "TOPIC (topic line):\n"
+    "FORBIDDEN in topic name:\n"
+    '- "The Science of..." (or similar)\n'
+    "- Any topic starting with academic framing\n"
+    "Replace with personal, real-life wording.\n\n"
     "WARM-UP (warmup_questions): exactly 5 questions\n"
     '- Patterns: "Do you...?" / "Is it...?" / "Can you...?" / "Have you...?"\n'
     "- Personal, relatable, real-life.\n"
@@ -374,18 +379,29 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     "- May include comparison of ideas or choices.\n"
     "- Questions must stay connected to the student's life or realistic human situations.\n"
     "- Do NOT move into abstract theory, academic analysis, or lecture style.\n"
-    "- Do NOT require scientific or specialized knowledge.\n\n"
+    "- Do NOT require scientific or specialized knowledge.\n"
+    "FORBIDDEN in core questions:\n"
+    "- \"advancements in science\"\n"
+    "- \"scientific solutions\"\n"
+    "- Any phrase requiring expert knowledge\n"
+    "Replace with personal, real-life versions.\n\n"
     "THIS OR THAT (choices): exactly 4 items\n"
     '- Format ONLY: "X or Y?" (question mark at end).\n'
     "- May reflect contrast, preference, or opinion.\n"
     "- May include more nuanced or complex choices.\n"
     "- Both options must be realistic and relatable.\n"
-    "- No academic, medical, or expert-only concepts.\n\n"
+    "- No academic, medical, or expert-only concepts.\n"
+    "FORBIDDEN in This or That:\n"
+    "- medical pattern names (e.g. male pattern baldness)\n"
+    "- scientific comparisons\n\n"
     "VOCABULARY (support_words): exactly 6 items\n"
     "- Everyday, practical, usable in conversation.\n"
     "- May include simple abstract words (choice, result, opinion, reason, effect, change).\n"
     "- Must be directly related to topic.\n"
     "- FORBIDDEN: scientific, academic, technical terms.\n"
+    "FORBIDDEN in vocabulary:\n"
+    "- genetics, research, advancement, pattern, hormone\n"
+    "Replace with personal, real-life wording where needed.\n"
     "- All English words must be lowercase.\n"
     '- Format each string: English word — Ukrainian translation ("word — переклад").\n\n'
     "If the filtered source has limited detail, derive items from the topic and scenes while staying consistent with them.\n"
