@@ -49,12 +49,21 @@ _PREVIEW_SYSTEM_LESSON = (
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
 )
 
+_LESSON_FORBIDDEN_WORDS_ANY_OUTPUT_BLOCK = (
+    "FORBIDDEN words in any output block:\n\n"
+    "- genetics, genetic\n"
+    "- drugs (in medical context)\n"
+    "- solutions (when meaning medical fix)\n"
+    "- health issues\n\n"
+)
+
 _PREVIEW_SYSTEM_LESSON_A1 = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "Use the A1 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
     "It is a filtered daily-life topic and scenes — not a raw transcript; do not use or assume any other text.\n"
     "This preview is for CEFR level A1 only. Follow ALL rules below.\n\n"
-    "GENERAL:\n"
+    + _LESSON_FORBIDDEN_WORDS_ANY_OUTPUT_BLOCK
+    + "GENERAL:\n"
     "- Use only CEFR A1 vocabulary.\n"
     "- Use ONLY Present Simple.\n"
     "- Max sentence length: 6 words (for every English sentence you output, including topic line if possible).\n"
@@ -133,7 +142,8 @@ _PREVIEW_SYSTEM_LESSON_A2 = (
     "Use the A2 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
     "It is a filtered topic and scenes — not a raw transcript; do not use or assume any other text.\n"
     "This preview is for CEFR level A2 only. Apply ONLY these rules for lesson + A2.\n\n"
-    "GLOBAL:\n"
+    + _LESSON_FORBIDDEN_WORDS_ANY_OUTPUT_BLOCK
+    + "GLOBAL:\n"
     "- Every element must reflect the main situation and core meaning from the filtered source.\n"
     "- Do NOT introduce unrelated elements.\n"
     "- Do NOT add generic filler.\n"
@@ -234,7 +244,8 @@ _PREVIEW_SYSTEM_LESSON_B1 = (
     "Use the B1 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
     "It is a filtered topic and scenes — not a raw transcript; do not use or assume any other text.\n"
     "This preview is for CEFR level B1 only. Apply ONLY these rules for lesson + B1.\n\n"
-    "GLOBAL:\n"
+    + _LESSON_FORBIDDEN_WORDS_ANY_OUTPUT_BLOCK
+    + "GLOBAL:\n"
     "- Every element must reflect the main situation and core meaning from the filtered source.\n"
     "- Do NOT introduce unrelated elements.\n"
     "- Do NOT add generic filler.\n"
@@ -409,7 +420,8 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     "Use the B2 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
     "It is a filtered topic and scenes — not a raw transcript; do not use or assume any other text.\n"
     "This preview is for CEFR level B2 only. Apply ONLY these rules for lesson + B2.\n\n"
-    "GLOBAL:\n"
+    + _LESSON_FORBIDDEN_WORDS_ANY_OUTPUT_BLOCK
+    + "GLOBAL:\n"
     "- Every element must reflect the main situation and core meaning from the filtered source.\n"
     "- Do NOT introduce unrelated elements.\n"
     "- Do NOT add generic filler.\n"
