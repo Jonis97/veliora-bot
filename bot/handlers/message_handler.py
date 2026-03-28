@@ -947,7 +947,12 @@ _PREVIEW_SYSTEM_SPEAKING_B1 = (
     "FORBIDDEN QUESTION PATTERNS (B1):\n\n"
     '- "How do people..."\n'
     '- "Why do people..."\n'
-    "- any questions about society or groups in general\n\n"
+    "- any questions about society or groups in general\n"
+    '- "Do you agree that [scientific fact]...?"\n'
+    "- questions that require confirming scientific claims\n\n"
+    "EXAMPLES (scientific-agree pattern):\n\n"
+    'Wrong: "Do you agree that stress can cause hair loss?"\n'
+    'Right: "Do you think stress affects how you feel about your hair?"\n\n'
     "B1 questions must focus on:\n\n"
     "- the student personally\n"
     "- people they know\n"
@@ -968,18 +973,25 @@ _PREVIEW_SYSTEM_SPEAKING_B1 = (
     "  - opinion + explanation OR\n"
     "  - experience + reflection\n"
     "- Student output: about 4–6 sentences when they speak (the task tells them what to do, not what to say word-for-word)\n\n"
+    "Speaking task must be specific, not generic:\n\n"
+    'Wrong: "Share your personal experience or opinion about..."\n'
+    "Right must include a specific situation or angle (instructions only — not a model answer), e.g.:\n"
+    '"Talk about someone you know who lost hair. How did they feel about it? '
+    'Do you think it changed how they saw themselves?"\n\n'
     "FORBIDDEN TASKS:\n\n"
     "- generic tasks\n"
     "- abstract or theoretical tasks\n"
-    "- tasks requiring expert knowledge\n\n"
+    "- tasks requiring expert knowledge\n"
+    '- vague openers like "Share your personal experience or opinion about..." without a concrete angle\n\n'
     "CORE PRINCIPLE:\n"
     'B1 = A2 + opinion + "because"\n\n'
     'Return ONLY these keys:\n'
     '- "topic": one short line (max 5 English words; natural; from source; no academic framing — e.g. not like a lecture title)\n'
     '- "discussion_questions": exactly 6 strings (allowed forms; max 12 words each; opinion + reason; on-topic; source-based; '
-    "student/people-they-know/real situations only — not How do people / Why do people / society in general)\n"
-    '- "speaking_task": exactly 1 string (imperative instruction: what the student must DO in the speaking activity; '
-    "NOT a sample answer; on-topic; expects ~4–6 sentences of student speech)\n"
+    "student/people-they-know/real situations only — not How do people / Why do people / society in general; "
+    "not Do you agree that [scientific fact] / confirming scientific claims)\n"
+    '- "speaking_task": exactly 1 string (imperative instruction: specific situation or angle — not generic; '
+    "what the student must DO; NOT a sample answer; on-topic; expects ~4–6 sentences of student speech)\n"
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
 )
 
@@ -1258,9 +1270,11 @@ def _patch_hard_constraints_block(
                 "allowed forms include Why/How do you feel/Do you agree/What would you do if/Which do you prefer and why/Do you think; "
                 "must require opinion + reason (explicit or implied); focus on student personally, people they know, situations they saw — "
                 "NOT general world/society; FORBIDDEN: How do people...; Why do people...; society/groups in general; "
+                'Do you agree that [scientific fact]...; questions forcing confirmation of scientific claims; '
                 "What do you know about...; expert/scientific; abstract theory; essay-like; off-topic.\n"
                 "- speaking_task: exactly 1; must be an instruction for what the student must DO (not sample answer or model text); "
-                "specific; on-topic; opinion+explanation OR experience+reflection; expects ~4–6 sentences of student speech; "
+                "specific situation or angle — NOT generic (e.g. not \"Share your personal experience or opinion about...\"); "
+                "on-topic; opinion+explanation OR experience+reflection; expects ~4–6 sentences of student speech; "
                 "not generic, abstract, or expert-level.\n"
                 "- CORE: B1 = A2 + opinion + because.\n"
                 '- Command "додай більше питань": refine or replace; keep exactly 6; all B1 speaking rules.\n'
