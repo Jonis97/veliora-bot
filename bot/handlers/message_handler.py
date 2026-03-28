@@ -350,73 +350,44 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     "- Do not regenerate existing content; only extend if asked (initial generation: fill all fields from source).\n"
     '- No placeholders like "—".\n'
     "- No empty fields.\n"
-    "- Allow deeper discussion, but keep lesson structure.\n"
-    "- Do NOT turn the lesson into a university seminar.\n\n"
+    "- Simplify the language, but allow deeper meaning.\n"
+    "- Do NOT turn the lesson into an essay or lecture.\n\n"
     'Return ONLY these keys for a lesson preview:\n'
-    '- "topic": one short line (teacher-friendly), same situation as the source (simplified, not replaced)\n'
+    '- "topic": one short line (teacher-friendly), same situation as the source (not replaced)\n'
     '- "warmup_questions": exactly 5 questions\n'
     '- "core_questions": exactly 4 questions\n'
     '- "choices": exactly 4 items\n'
-    '- "support_words": exactly 6 items (each English word — Ukrainian translation, "word — переклад")\n\n'
+    '- "support_words": exactly 6 items (each "word — переклад": English — Ukrainian)\n\n'
     "WARM-UP (warmup_questions): exactly 5 questions\n"
     '- Patterns: "Do you...?" / "Is it...?" / "Can you...?" / "Have you...?"\n'
     "- Personal, relatable, real-life.\n"
     "- May include past, present, or future experience.\n"
-    "- May include light opinion or preference.\n"
-    "- No academic phrasing.\n\n"
+    "- May include simple opinions.\n"
+    "- No academic or theoretical phrasing.\n\n"
     "CORE QUESTIONS (core_questions): exactly 4 questions\n"
-    "- Must include opinions, reasons, arguments, or explanations.\n"
-    "- Allow: Why / How questions with explanations.\n"
-    "- Allow: present, past, future.\n"
-    "- Focus on: personal experience, opinion, realistic human situations.\n"
-    "- Allowed: because, so, I think, I believe, it seems, probably.\n"
-    "- FORBIDDEN: academic essays, scientific debates, theoretical frameworks.\n"
-    "- Do NOT move into abstract philosophy debate.\n"
-    "FORBIDDEN phrases in questions:\n"
-    "- genetic factors, biological mechanisms, hormonal processes\n"
-    "- any phrase that sounds like a textbook, lecture, or research paper\n"
-    "Replace with personal versions:\n"
-    "- Wrong: 'How do genetic factors influence hair loss patterns?'\n"
-    "- Right: 'Do you think hair problems can run in families?'\n"
-    "CRITICAL CHECK before finalizing core questions:\n"
-    "Questions must focus on:\n"
-    "- the student\n"
-    "- people in real life\n"
-    "- personal opinion, experience, or realistic situations\n"
-    "If a question is about researchers, scientists, studies, systems, mechanisms, or general scientific facts → REMOVE IT.\n"
-    "Replace it with a personal or real-life version.\n"
-    "- Wrong: 'Why is it important for researchers to understand...'\n"
-    "- Right: 'Would you try something new if you worried about your hair?'\n\n"
+    "- Must include opinions, reasons, and simple arguments.\n"
+    "- Must allow defending a point of view.\n"
+    "- Allow: Why / How questions with explanation and comparison.\n"
+    "- Allow: present, past, future references.\n"
+    "- Focus on: personal experience, opinion, real-life situations, and critical thinking.\n"
+    "- Allow: because, so, I think, I believe, I agree, I disagree.\n"
+    "- May include comparison of ideas or choices.\n"
+    "- Questions must stay connected to the student's life or realistic human situations.\n"
+    "- Do NOT move into abstract theory, academic analysis, or lecture style.\n"
+    "- Do NOT require scientific or specialized knowledge.\n\n"
     "THIS OR THAT (choices): exactly 4 items\n"
     '- Format ONLY: "X or Y?" (question mark at end).\n'
-    "- May reflect contrast, preference, opinion, or lifestyle choice.\n"
-    "- Must stay relevant to topic.\n"
-    "CRITICAL CHECK for This or That:\n"
-    "Both options must be things a regular person can choose, prefer, or relate to in real life.\n"
-    "No medical procedures, expert-only solutions, or research-style choices.\n"
-    "- Wrong: 'clinical trial or home remedy'\n"
-    "- Right: 'expensive products or simple habits'\n\n"
+    "- May reflect contrast, preference, or opinion.\n"
+    "- May include more nuanced or complex choices.\n"
+    "- Both options must be realistic and relatable.\n"
+    "- No academic, medical, or expert-only concepts.\n\n"
     "VOCABULARY (support_words): exactly 6 items\n"
-    "- Everyday conversational English.\n"
-    "- Allowed: common abstract words (problem, reason, choice, result, opinion, habit).\n"
-    "- FORBIDDEN: scientific, academic, technical jargon.\n"
-    "FORBIDDEN vocabulary for B2:\n"
-    "- research, study, clinical, trial, phase, mechanism, hormone, genetic, biological, "
-    "treatment, diagnosis, symptom, patient, therapy, dosage, molecule, cell, protein, enzyme, "
-    "receptor, pathway, inflammation, metabolism, immune system, nervous system, cardiovascular, "
-    "dermatology, trichology, alopecia, androgen, follicle, miniaturization, stem cell, regeneration, "
-    "nanotechnology, biotechnology, pharmaceutical, FDA-approved, peer-reviewed, hypothesis, "
-    "correlation, causation, longitudinal study, double-blind, placebo, control group, "
-    "statistical significance, p-value, abstract, methodology, results section, conclusion, "
-    "limitations, future research\n\n"
-    "ALLOWED vocabulary for B2:\n"
-    "- words people use when talking to friends\n"
-    "- words describing feelings, habits, choices, problems, worries, hopes\n"
-    "- simple explanations in everyday English\n\n"
-    "Test: Can a B2 student use this word when talking to a friend about this topic?\n"
-    "If NO → remove it.\n"
+    "- Everyday, practical, usable in conversation.\n"
+    "- May include simple abstract words (choice, result, opinion, reason, effect, change).\n"
+    "- Must be directly related to topic.\n"
+    "- FORBIDDEN: scientific, academic, technical terms.\n"
     "- All English words must be lowercase.\n"
-    '- Format each string: English word — Ukrainian translation.\n\n'
+    '- Format each string: English word — Ukrainian translation ("word — переклад").\n\n'
     "If the filtered source has limited detail, derive items from the topic and scenes while staying consistent with them.\n"
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
 )
@@ -428,18 +399,18 @@ _PREVIEW_B2_FILTER_SYSTEM = (
 _PREVIEW_B2_FILTER_USER = (
     "Filter this content for B2 English students.\n\n"
     "Output ONLY:\n"
-    "- 1 simplified topic (same situation as source, not replaced)\n"
-    "- 3–5 scenes, cause-effect points, reasoning, or simple ideas from source\n\n"
+    "- 1 topic (same situation as source, not replaced)\n"
+    "- 3–5 scenes, cause-effect points, or nuanced reasoning from source\n\n"
     "Rules:\n"
     "- Stay semantically close to the original source\n"
     "- Do NOT replace topic with generic scenario\n"
     "- Do NOT invent context that does not exist in source\n"
-    "- Topic may include abstract ideas, simple arguments, or cause-effect\n"
-    "- Language must remain clear and natural\n"
+    "- Topic may include nuanced ideas, perspectives, and real-life complexity\n"
+    "- Language must remain clear and understandable\n"
     "- If topic cannot be simplified → keep closest real-life version\n"
     "- NEVER switch to unrelated topics\n\n"
     'Return one JSON object with keys "topic" (string) and "scenes" (array of 3 to 5 strings). '
-    "Each line is one short English scene, cause-effect point, reasoning note, or simple idea. No extra keys."
+    "Each line is one short English scene, cause-effect point, or nuanced reasoning note. No extra keys."
 )
 
 _PREVIEW_A1_FILTER_SYSTEM = (
@@ -709,13 +680,15 @@ def _patch_hard_constraints_block(
                 "HARD CONSTRAINTS (CEFR B2 lesson):\n"
                 "- GENERAL: natural English; no \"—\" or empty fields; "
                 "do not regenerate existing blocks—only extend when asked; exact counts only; "
-                "main situation and core meaning; deeper discussion OK but not a university seminar.\n"
-                "- warmup_questions: exactly 5; Do you / Is it / Can you / Have you; relatable, no academic phrasing.\n"
-                "- core_questions: exactly 4; opinions, reasons, arguments, explanations; "
-                "no academic essays, scientific debates, theoretical frameworks, or philosophy debate.\n"
-                '- choices: exactly 4, format only "X or Y?", topic-relevant.\n'
-                "- support_words: exactly 6, conversational English — Ukrainian, "
-                "all English words lowercase; no scientific/academic/technical jargon.\n"
+                "main situation and core meaning; deeper meaning OK but not an essay or lecture.\n"
+                "- warmup_questions: exactly 5; Do you / Is it / Can you / Have you; relatable; "
+                "no academic or theoretical phrasing.\n"
+                "- core_questions: exactly 4; opinions, reasons, simple arguments; defend a point of view; "
+                "comparison allowed; no abstract theory, academic analysis, lecture style, or specialized knowledge.\n"
+                '- choices: exactly 4, format only "X or Y?"; realistic and relatable; '
+                "no academic, medical, or expert-only concepts.\n"
+                "- support_words: exactly 6, everyday practical English — Ukrainian, topic-related; "
+                "all English words lowercase; no scientific/academic/technical terms.\n"
             )
         return (
             "HARD CONSTRAINTS (this format):\n"
@@ -755,7 +728,7 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
             "Apply: зроби простіше — simplify wording of warmup_questions, core_questions, choices, "
             "and support_words only; keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines; "
             "same topic and core meaning, clearer B2 English and Ukrainian glosses; stay conversational; "
-            "not a seminar or academic essay.\n"
+            "not an essay or lecture.\n"
         )
     else:
         lesson_easy = (
@@ -814,7 +787,7 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
         lesson_deep = (
             "Apply: зроби глибше (CEFR B2 lesson) — enrich warmup_questions, core_questions, choices, support_words; "
             "stay in the same source situation and core meaning; keep exactly 5 warm-ups, 4 core questions, "
-            "4 choices, 6 support lines; allow richer opinion and explanation without seminar-style or scientific debate; "
+            "4 choices, 6 support lines; allow richer opinion, comparison, and argument without essay or lecture style; "
             "do NOT repeat or lightly paraphrase—make wording meaningfully new; all B2 rules.\n"
         )
     else:
