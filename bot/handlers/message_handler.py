@@ -337,6 +337,62 @@ _PREVIEW_B1_FILTER_USER = (
     "Each line is one short English scene, cause-effect point, or reasoning note. No extra keys."
 )
 
+_B2_VOCABULARY_FORBIDDEN_TERMS = (
+    "research, study, clinical, trial, phase, mechanism, hormone, genetic, genetics, "
+    "biological, treatment, treatments, diagnosis, symptom, symptoms, patient, therapy, therapies, "
+    "dosage, dose, molecule, molecules, cell, cells, protein, proteins, enzyme, enzymes, "
+    "receptor, receptors, pathway, pathways, inflammation, metabolism, immune system, nervous system, "
+    "cardiovascular, dermatology, trichology, alopecia, androgen, androgens, follicle, follicles, "
+    "miniaturization, stem cell, stem cells, regeneration, nanotechnology, biotechnology, "
+    "pharmaceutical, pharmaceuticals, FDA-approved, peer-reviewed, hypothesis, hypotheses, "
+    "correlation, causation, longitudinal study, double-blind, placebo, placebos, control group, "
+    "statistical significance, p-value, abstract, methodology, results section, conclusion, "
+    "limitations, future research, advancement, advancements, scientific breakthrough, clinical study, "
+    "medical study, research paper, peer review, evidence-based, empirical, quantitative, qualitative, "
+    "longitudinal, cross-sectional, meta-analysis, systematic review, hypothesis testing, "
+    "control variable, dependent variable, independent variable, placebo effect, double-blind trial, "
+    "randomized controlled trial, RCT, phase I, phase II, phase III, phase IV, FDA approval, "
+    "off-label, contraindication, side effect profile, pharmacokinetics, pharmacodynamics, "
+    "bioavailability, half-life, dosage form, titration, tapering, withdrawal, remission, "
+    "exacerbation, prognosis, pathophysiology, etiology, idiopathic, congenital, hereditary, "
+    "heritability, polygenic, multifactorial, gene expression, transcription, translation, mutation, "
+    "allele, chromosome, karyotype, genotype, phenotype, epigenetics, DNA methylation, "
+    "histone modification, RNA interference, CRISPR, gene therapy, stem cell therapy, "
+    "regenerative medicine, tissue engineering, scaffold, biomaterial, biocompatibility, "
+    "xenograft, allograft, autograft, micrograft, follicular unit extraction, FUE, "
+    "follicular unit transplantation, FUT, strip surgery, scalp reduction, flap surgery, "
+    "tissue expansion, laser therapy, LLLT, photobiomodulation, PRP, platelet-rich plasma, "
+    "mesotherapy, microneedling, derma roller, stem cell serum, growth factor, cytokine, chemokine, "
+    "interleukin, tumor necrosis factor, vascular endothelial growth factor, VEGF, "
+    "fibroblast growth factor, FGF, insulin-like growth factor, IGF, transforming growth factor beta, "
+    "TGF-beta, Wnt signaling, Hedgehog signaling, Notch signaling, Sonic hedgehog, Shh pathway, "
+    "beta-catenin, DKK1, BMP, bone morphogenetic protein, DHT, dihydrotestosterone, "
+    "5-alpha reductase, finasteride, dutasteride, minoxidil, ketoconazole, spironolactone, "
+    "cyproterone acetate, flutamide, bicalutamide, oral contraceptives, anti-androgens, "
+    "estrogen therapy, progesterone, testosterone, cortisol, corticosteroids, "
+    "topical corticosteroids, intralesional corticosteroids, anthralin, tretinoin, adapalene, "
+    "benzoyl peroxide, salicylic acid, glycolic acid, lactic acid, mandelic acid, kojic acid, "
+    "hydroquinone, arbutin, niacinamide, panthenol, biotin, collagen, keratin, elastin, ceramide, "
+    "hyaluronic acid, peptides, amino acids, vitamins, minerals, supplements, nutraceuticals, "
+    "cosmeceuticals, functional foods, superfoods, adaptogens, nootropics, smart drugs, "
+    "cognitive enhancers, mood stabilizers, antidepressants, anxiolytics, antipsychotics, "
+    "benzodiazepines, SSRIs, SNRIs, MAOIs, tricyclics, lithium, valproate, carbamazepine, "
+    "lamotrigine, gabapentin, pregabalin, topiramate, opioid, opioid analgesic, NSAID, "
+    "acetaminophen, aspirin, ibuprofen, naproxen, celecoxib, meloxicam, diclofenac, indomethacin, "
+    "ketorolac, tramadol, codeine, morphine, fentanyl, oxycodone, hydrocodone, hydromorphone, "
+    "oxymorphone, methadone, buprenorphine, naloxone, naltrexone, acamprosate, disulfiram, "
+    "modafinil, armodafinil, methylphenidate, amphetamine, dextroamphetamine, lisdexamfetamine, "
+    "atomoxetine, guanfacine, clonidine, propranolol, atenolol, metoprolol, carvedilol, labetalol, "
+    "nicardipine, nifedipine, amlodipine, diltiazem, verapamil, hydralazine, minoxidil (oral), "
+    "spironolactone (hair), cyproterone, flutamide, bicalutamide, nilutamide, enzalutamide, "
+    "apalutamide, darolutamide, abiraterone, prednisone, dexamethasone, hydrocortisone, "
+    "methylprednisolone, triamcinolone, betamethasone, clobetasol, mometasone, fluticasone, "
+    "budesonide, beclomethasone, ciclesonide, halobetasol, halcinonide, amcinonide, desonide, "
+    "desoximetasone, diflorasone, fluocinolone, fluocinonide, flurandrenolide, halcinonide, "
+    "hydrocortisone butyrate, hydrocortisone probutate, hydrocortisone valerate, mometasone furoate, "
+    "prednicarbate, ulobetasol"
+)
+
 _PREVIEW_SYSTEM_LESSON_B2 = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "Use the B2 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
@@ -420,19 +476,26 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     "- medical pattern names (e.g. male pattern baldness)\n"
     "- scientific comparisons\n"
     "- natural remedies\n"
-    "- genetics\n\n"
+    "- genetics\n"
+    "- hormones\n"
+    "- medications\n\n"
     "VOCABULARY (support_words): exactly 6 items\n"
     "- Everyday, practical, usable in conversation.\n"
     "- May include simple abstract words (choice, result, opinion, reason, effect, change).\n"
     "- Must be directly related to topic.\n"
-    "- FORBIDDEN: scientific, academic, technical terms.\n"
-    "FORBIDDEN in vocabulary:\n"
-    "- genetics, research, advancement, pattern, hormone\n"
-    "Replace with personal, real-life wording where needed.\n"
-    "- All English words must be lowercase.\n"
-    '- Format each string: English word — Ukrainian translation ("word — переклад").\n\n'
-    "If the filtered source has limited detail, derive items from the topic and scenes while staying consistent with them.\n"
-    "Do not include key_ideas, discussion_questions, or vocabulary_items."
+    + (
+        "- FORBIDDEN: scientific, academic, technical terms.\n"
+        "FORBIDDEN in vocabulary:\n- "
+        + _B2_VOCABULARY_FORBIDDEN_TERMS
+        + "\n\nALLOWED vocabulary for B2:\n"
+        "- words about feelings, thoughts, habits, daily life, choices, problems, worries, hopes, opinions, comparisons, simple explanations\n\n"
+        "Test: Can a B2 student use this word when talking to a friend about this topic?\n"
+        "If NO → remove it.\n"
+        "- All English words must be lowercase.\n"
+        '- Format each string: English word — Ukrainian translation ("word — переклад").\n\n'
+        "If the filtered source has limited detail, derive items from the topic and scenes while staying consistent with them.\n"
+        "Do not include key_ideas, discussion_questions, or vocabulary_items."
+    )
 )
 
 _PREVIEW_B2_FILTER_SYSTEM = (
@@ -542,6 +605,105 @@ _PREVIEW_SYSTEM_QUESTIONS = (
     "Do not include key_ideas, words, warmup_questions, vocabulary_items, or grammar_patterns."
 )
 
+_PREVIEW_SPEAKING_FILTER_SYSTEM = (
+    "You follow the user instructions exactly. Output ONE JSON object only, no markdown."
+)
+
+_PREVIEW_SPEAKING_FILTER_USER = (
+    "Filter this content for speaking practice.\n\n"
+    "Output ONLY:\n"
+    "- 1 clear topic (from source, no replacement)\n"
+    "- 3–5 key situations or angles from source\n\n"
+    "Rules:\n"
+    "- Stay semantically close to the original source\n"
+    "- Do NOT replace topic with generic scenario\n"
+    "- Do NOT invent unrelated context\n"
+    "- Focus on real-life situations and experiences\n"
+    "- If topic is complex → simplify to real-life version\n"
+    "- NEVER switch topic\n\n"
+    'Return one JSON object with keys "topic" (string) and "scenes" (array of 3 to 5 strings). '
+    "Each line is one short English situation or angle. No extra keys."
+)
+
+
+def _preview_system_speaking(level: Optional[str]) -> str:
+    if _is_lesson_cefr_b2(level):
+        level_block = (
+            "LEVEL ADAPTATION (B2):\n"
+            "- Add deeper thinking and arguments.\n"
+            "- Use:\n"
+            '  - "To what extent do you agree...?"\n'
+            '  - "What would happen if...?"\n'
+            '  - "Do you think this is a good idea? Why?"\n\n'
+        )
+    elif _is_lesson_cefr_b1(level):
+        level_block = (
+            "LEVEL ADAPTATION (B1):\n"
+            "- Add reasons and simple explanations.\n"
+            "- Use:\n"
+            '  - "Why do you think...?"\n'
+            '  - "How do you feel about...?"\n'
+            '  - "What would you do if...?"\n\n'
+        )
+    else:
+        level_block = (
+            "LEVEL ADAPTATION (A1/A2):\n"
+            "- Simple structure.\n"
+            "- Use patterns like:\n"
+            '  - "Do you usually...? Why?"\n'
+            '  - "Tell me about..."\n'
+            '  - "What do you like about...?"\n'
+            "- Must still avoid pure yes/no.\n\n"
+        )
+    return (
+        "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+        "Use the SPEAKING FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
+        "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
+        "This preview is for speaking practice only. Apply ONLY these rules.\n\n"
+        "TOPIC:\n"
+        "- 1 short, clear topic from source\n"
+        "- Must sound natural and usable in conversation\n"
+        "- No academic framing\n\n"
+        "DISCUSSION QUESTIONS: exactly 6 questions\n"
+        "- Must be open-ended (NO yes/no questions)\n"
+        "- Must require 1–2 minutes of speaking\n"
+        "- Focus on:\n"
+        "  - personal experience\n"
+        "  - opinions\n"
+        "  - feelings\n"
+        "  - real-life situations\n\n"
+        + level_block
+        + "SPEAKING TASK: exactly 1\n\n"
+        "- Must be a real speaking scenario\n"
+        "- Must require 30–60 seconds of continuous speech\n"
+        "- Use formats like:\n"
+        '  - "Talk about a time when..."\n'
+        '  - "Describe a situation where..."\n'
+        '  - "Imagine you are..."\n\n'
+        "- Must be directly connected to topic\n"
+        "- Must NOT require special knowledge\n\n"
+        "GLOBAL RULES:\n\n"
+        "- Every element must stay connected to source meaning\n"
+        "- Do NOT introduce unrelated ideas\n"
+        "- Do NOT generate academic or scientific language\n"
+        "- Do NOT add vocabulary or grammar sections\n"
+        "- Keep language natural and conversational\n"
+        "- Avoid generic filler questions\n"
+        "- Questions must help teacher start speaking immediately\n\n"
+        "CRITICAL CHECK BEFORE OUTPUT:\n\n"
+        '- If question can be answered with "yes/no" → rewrite it\n'
+        "- If question sounds like textbook → simplify it\n"
+        "- If question does not push student to speak → replace it\n\n"
+        "Goal:\n"
+        "Teacher opens → student starts speaking immediately\n\n"
+        'Return ONLY these keys:\n'
+        '- "topic": one short line (teacher-friendly)\n'
+        '- "discussion_questions": exactly 6 strings\n'
+        '- "speaking_task": exactly 1 string (the speaking scenario)\n'
+        "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
+    )
+
+
 _PREVIEW_SYSTEM_VOCABULARY = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "Use the transcript below ONLY as the source (no invented facts).\n"
@@ -614,6 +776,13 @@ def _frozen_base_snapshot_for_patch(
         questions = pd.get("discussion_questions", [])
         words = []
         patterns = []
+    elif patch_kind == "speaking":
+        questions = {
+            "discussion_questions": pd.get("discussion_questions", []),
+            "speaking_task": pd.get("speaking_task", ""),
+        }
+        words = []
+        patterns = []
     elif patch_kind == "vocabulary":
         questions = []
         words = pd.get("vocabulary_items", [])
@@ -656,6 +825,9 @@ _INTENT_BIAS_BY_KIND: dict[str, str] = {
     "lesson": (
         "VELIORA_ONBOARDING_INTENT_HINT: урок lesson warm up lead in розігрів розпочати навчання"
     ),
+    "speaking": (
+        "VELIORA_ONBOARDING_INTENT_HINT: питання discussion обговорення запитання speaking діалог"
+    ),
     "questions": (
         "VELIORA_ONBOARDING_INTENT_HINT: питання discussion обговорення запитання speaking діалог"
     ),
@@ -684,6 +856,13 @@ def _patch_hard_constraints_block(
             "- discussion_questions: MUST contain 3–5 items.\n"
             '- Command "додай більше питань" / "більше питань": ADD questions until there are 4–5 total; '
             "keep existing questions unless asked to remove.\n"
+        )
+    if kind == "speaking":
+        return (
+            "HARD CONSTRAINTS (this format):\n"
+            "- discussion_questions: MUST contain exactly 6 items (open-ended; not yes/no).\n"
+            "- speaking_task: MUST be exactly 1 non-empty string (real speaking scenario, 30–60 seconds).\n"
+            '- Command "додай більше питань": ADD or adjust questions while keeping exactly 6 total unless teacher asks otherwise.\n'
         )
     if kind == "phrases":
         return (
@@ -793,6 +972,10 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
         "questions": (
             "Apply: зроби простіше — simplify discussion_questions wording only; keep 3–5 questions.\n"
         ),
+        "speaking": (
+            "Apply: зроби простіше — simplify discussion_questions and speaking_task wording only; "
+            "keep exactly 6 questions and 1 speaking_task; stay open-ended and conversational.\n"
+        ),
         "vocabulary": (
             "Apply: зроби простіше — simplify `note` (meaning) text only; keep 8–10 vocabulary_items; "
             "same english chunks unless simplification requires tiny edits.\n"
@@ -853,6 +1036,10 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
         "questions": (
             "Apply: зроби глибше — richer discussion_questions; stay in source; keep 3–5 items.\n"
         ),
+        "speaking": (
+            "Apply: зроби глибше — richer discussion_questions and speaking_task; stay in source; "
+            "keep exactly 6 questions and 1 speaking_task; remain open-ended.\n"
+        ),
         "vocabulary": (
             "Apply: зроби глибше — richer `note` (meanings) or slightly more precise english; "
             "keep 8–10 vocabulary_items.\n"
@@ -898,6 +1085,14 @@ def _preview_patch_rules_custom(kind: str, level: Optional[str] = None) -> str:
                 '- "додай більше питань": extend discussion_questions to 4–5 grounded questions.\n'
             )
         )
+    if kind == "speaking":
+        return (
+            common
+            + _patch_hard_constraints_block(kind, level)
+            + (
+                '- "додай більше питань": refine or replace discussion_questions entries; keep exactly 6 total.\n'
+            )
+        )
     if kind == "lesson":
         return common + _patch_hard_constraints_block(kind, level)
     if kind == "phrases":
@@ -921,7 +1116,7 @@ _ONB_FMT_STEP1_KB = InlineKeyboardMarkup(
     [
         [
             InlineKeyboardButton("📚 Урок", callback_data="onb_fmt_lesson"),
-            InlineKeyboardButton("💬 Speaking", callback_data="onb_fmt_questions"),
+            InlineKeyboardButton("💬 Speaking", callback_data="onb_fmt_speaking"),
         ],
         [
             InlineKeyboardButton("📖 Слова", callback_data="onb_fmt_vocabulary"),
@@ -955,7 +1150,7 @@ _POST_CARD_FMT_KB = InlineKeyboardMarkup(
     [
         [
             InlineKeyboardButton("📚 Урок", callback_data="onb_p_f_lesson"),
-            InlineKeyboardButton("💬 Speaking", callback_data="onb_p_f_questions"),
+            InlineKeyboardButton("💬 Speaking", callback_data="onb_p_f_speaking"),
         ],
         [
             InlineKeyboardButton("📖 Слова", callback_data="onb_p_f_vocabulary"),
@@ -1005,6 +1200,7 @@ _PREVIEW_LIMIT_KB = InlineKeyboardMarkup(
 
 _FMT_CHANGE_LABELS = {
     "lesson": "📚 Урок",
+    "speaking": "💬 Speaking",
     "questions": "💬 Speaking",
     "vocabulary": "📖 Слова",
     "phrases": "✏️ Граматика",
@@ -1041,7 +1237,9 @@ def _preview_format_kind(fmt: Optional[str]) -> str:
     f = str(fmt).strip().lower()
     if f == "lesson":
         return "lesson"
-    if f in ("speaking", "questions"):
+    if f == "speaking":
+        return "speaking"
+    if f == "questions":
         return "questions"
     if f in ("vocabulary", "words"):
         return "vocabulary"
@@ -1059,6 +1257,8 @@ def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
         return _PREVIEW_SYSTEM_LESSON_B1
     if kind == "lesson" and _is_lesson_cefr_b2(level):
         return _PREVIEW_SYSTEM_LESSON_B2
+    if kind == "speaking":
+        return _preview_system_speaking(level)
     return {
         "lesson": _PREVIEW_SYSTEM_LESSON,
         "questions": _PREVIEW_SYSTEM_QUESTIONS,
@@ -1082,6 +1282,7 @@ def _preview_merge_list_keys(
         return ("warmup_questions", "support_words", "choices")
     return {
         "questions": ("discussion_questions",),
+        "speaking": ("discussion_questions",),
         "vocabulary": ("vocabulary_items",),
         "phrases": ("grammar_patterns",),
         "default": ("questions", "exercises"),
@@ -1313,6 +1514,46 @@ def _b2_resolved_filtered_block(topic: str, scenes: list[str]) -> str:
     return _b2_filtered_source_user_block(topic, scenes[:5])
 
 
+_SPEAKING_FILTER_FALLBACK_TOPIC = _B2_FILTER_FALLBACK_TOPIC
+_SPEAKING_FILTER_FALLBACK_SCENES = _B2_FILTER_FALLBACK_SCENES
+
+_coerce_speaking_filter_output = _coerce_a1_filter_output
+
+
+def _speaking_filtered_source_user_block(topic: str, scenes: list[str]) -> str:
+    lines = [
+        "SPEAKING FILTERED SOURCE — use ONLY this text as your source for the speaking preview.",
+        "Do not use or rely on any raw transcript.",
+        "",
+        f"Topic: {topic}",
+        "",
+        "Key situations / angles:",
+    ]
+    for s in scenes:
+        lines.append(f"- {s}")
+    return "\n".join(lines)
+
+
+def _speaking_resolved_filtered_block(topic: str, scenes: list[str]) -> str:
+    if not topic:
+        return _speaking_filtered_source_user_block(
+            _SPEAKING_FILTER_FALLBACK_TOPIC, list(_SPEAKING_FILTER_FALLBACK_SCENES)
+        )
+    if len(scenes) < 3:
+        seen = {s.lower() for s in scenes}
+        for s in _SPEAKING_FILTER_FALLBACK_SCENES:
+            if len(scenes) >= 3:
+                break
+            if s.lower() not in seen:
+                scenes.append(s)
+                seen.add(s.lower())
+        if len(scenes) < 3:
+            return _speaking_filtered_source_user_block(
+                _SPEAKING_FILTER_FALLBACK_TOPIC, list(_SPEAKING_FILTER_FALLBACK_SCENES)
+            )
+    return _speaking_filtered_source_user_block(topic, scenes[:5])
+
+
 class _OnboardingEnrichedMessage:
     """Proxy so pipeline sees enriched text/caption without mutating the real Message."""
 
@@ -1375,6 +1616,20 @@ def _normalize_preview_output(
         while len(dq) < 3:
             dq.append("—")
         return {"topic": topic, "discussion_questions": dq}
+
+    if kind == "speaking":
+        dq = data.get("discussion_questions")
+        if not isinstance(dq, list):
+            dq = []
+        dq = [str(x).strip() for x in dq if str(x).strip()][:6]
+        while len(dq) < 6:
+            dq.append("—")
+        task = str(data.get("speaking_task") or "").strip() or "—"
+        return {
+            "topic": topic,
+            "discussion_questions": dq,
+            "speaking_task": task,
+        }
 
     if kind == "vocabulary":
         items = _coerce_vocabulary_items(data.get("vocabulary_items"))
@@ -1502,6 +1757,20 @@ def _format_preview_message(
             dq = []
         dq = [str(x).strip() for x in dq if str(x).strip()]
         body = "💬 Питання для обговорення:\n" + "\n".join(f"• {x}" for x in dq)
+        return header + body
+
+    if kind == "speaking":
+        dq = preview_data.get("discussion_questions")
+        if not isinstance(dq, list):
+            dq = []
+        dq = [str(x).strip() for x in dq if str(x).strip()]
+        task = str(preview_data.get("speaking_task") or "").strip() or "—"
+        body = (
+            "💬 Питання для обговорення:\n"
+            + "\n".join(f"• {x}" for x in dq)
+            + "\n\n🎤 Завдання для мовлення:\n"
+            + f"• {task}"
+        )
         return header + body
 
     if kind == "vocabulary":
@@ -1665,6 +1934,28 @@ class MessageHandlerService:
         topic, scenes = _coerce_b2_filter_output(data)
         return _b2_resolved_filtered_block(topic, scenes)
 
+    async def _call_speaking_filter_gpt(self, transcript_snippet: str) -> str:
+        user_content = (
+            f"{_PREVIEW_SPEAKING_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
+        )
+        response = await self._openai_client.chat.completions.create(
+            model=self._openai_model,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": _PREVIEW_SPEAKING_FILTER_SYSTEM},
+                {"role": "user", "content": user_content},
+            ],
+        )
+        raw = response.choices[0].message.content or "{}"
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        topic, scenes = _coerce_speaking_filter_output(data)
+        return _speaking_resolved_filtered_block(topic, scenes)
+
     async def _call_preview_gpt(
         self,
         transcript: str,
@@ -1685,6 +1976,8 @@ class MessageHandlerService:
             user_block = await self._call_b1_filter_gpt(snippet)
         elif kind == "lesson" and _is_lesson_cefr_b2(level):
             user_block = await self._call_b2_filter_gpt(snippet)
+        elif kind == "speaking":
+            user_block = await self._call_speaking_filter_gpt(snippet)
         else:
             user_block = f"Transcript:\n{snippet}"
         if extra_instruction and extra_instruction.strip():
@@ -1756,6 +2049,12 @@ class MessageHandlerService:
         if not isinstance(data, dict):
             data = {}
         normalized = _normalize_preview_output(data, patch_kind, preview_level)
+        if patch_kind == "speaking":
+            st = str(normalized.get("speaking_task") or "").strip()
+            if not st or st == "—":
+                prev_t = pd_in.get("speaking_task")
+                if isinstance(prev_t, str) and prev_t.strip() and prev_t.strip() != "—":
+                    normalized["speaking_task"] = prev_t.strip()
         if custom_correction:
             for k in _preview_merge_list_keys(patch_kind, preview_level):
                 if k in normalized:
@@ -1919,6 +2218,13 @@ class MessageHandlerService:
                     f"APPROVED PREVIEW:\n"
                     f"TOPIC: {preview_data.get('topic', '')}\n"
                     f"DISCUSSION QUESTIONS: {preview_data.get('discussion_questions', [])}\n"
+                )
+            elif kind == "speaking":
+                approved_block = (
+                    f"APPROVED PREVIEW:\n"
+                    f"TOPIC: {preview_data.get('topic', '')}\n"
+                    f"DISCUSSION QUESTIONS: {preview_data.get('discussion_questions', [])}\n"
+                    f"SPEAKING TASK: {preview_data.get('speaking_task', '')}\n"
                 )
             else:
                 approved_block = (

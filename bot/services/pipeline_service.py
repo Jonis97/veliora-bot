@@ -155,6 +155,7 @@ def _detect_user_intent(message: Message) -> str:
             "lesson": "lesson",
             "vocabulary": "vocabulary",
             "questions": "questions",
+            "speaking": "questions",
             "phrases": "phrases",
         }
         if fmt in fmt_map:
