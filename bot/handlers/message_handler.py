@@ -1208,7 +1208,7 @@ _VOCABULARY_PROMPT_BODY = (
     "- English word or phrase — Ukrainian translation only (no definitions, no extra gloss)\n"
     "- One example sentence in English: natural, relevant to the topic, sounds like spoken English\n\n"
     "GENERAL RULES:\n"
-    "- All target words/phrases must come directly from the source — do NOT invent words not present in the input\n"
+    "- Choose words that are useful for students at their level. If source words are too complex, replace them with simpler everyday alternatives that relate to the same topic.\n"
     "- Use only high-frequency, useful vocabulary\n"
     "- Avoid academic, medical, or scientific terminology\n"
     "- Avoid rare, abstract, or low-utility words\n"
