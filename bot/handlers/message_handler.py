@@ -1239,7 +1239,7 @@ _VOCABULARY_PROMPT_BODY = (
     "Words = chosen by teacher for student level\n\n"
     "This applies to ANY video, ANY topic, ANY level.\n\n"
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
-    "INPUT: The teacher provides a YouTube transcript or text below — that is your ONLY source.\n\n"
+    "INPUT: The teacher provides a YouTube transcript or text below — use it ONLY to understand the topic. Do NOT copy words from it.\n\n"
     "OUTPUT STRUCTURE:\n"
     "1. Topic — clear, short, based on the source\n"
     "2. Vocabulary list — 6 to 8 items\n\n"
