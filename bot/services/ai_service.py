@@ -290,7 +290,7 @@ Output valid JSON only.
 class AIContentService:
     def __init__(self, anthropic_client: AsyncAnthropic) -> None:
         self._anthropic_client = anthropic_client
-        self._model = "claude-haiku-4-5-20251001"
+        self._model = "claude-sonnet-4-6"
 
     async def generate_card_content(
         self,

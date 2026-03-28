@@ -15,7 +15,7 @@ from bot.utils.errors import GenerationFailedError, TranscriptUnavailableError
 
 LOGGER = logging.getLogger(__name__)
 
-_PREVIEW_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
+_PREVIEW_CLAUDE_MODEL = "claude-sonnet-4-6"
 
 _CLAUDE_JSON_ONLY_SYSTEM_PREFIX = (
     "You must respond with ONLY a valid JSON object.\n"
