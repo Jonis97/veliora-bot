@@ -1343,11 +1343,26 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
     if _is_lesson_cefr_a1(level):
         level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR A1):\n\n"
-            "A1 VOCABULARY RULES:\n"
-            "- ALLOWED: basic everyday words, body parts, simple actions, basic feelings\n"
-            "- FORBIDDEN: any word needing explanation, abstract or technical words, multi-syllable uncommon words\n"
-            "- EXAMPLES: max 5-6 words, present simple only, one idea per sentence\n"
-            "- GOAL: student recognizes and uses basic words in simple speech\n\n"
+            "A1 VOCABULARY RULES:\n\n"
+            "TEACHER MINDSET FOR A1:\n"
+            "Think like a teacher for a complete beginner.\n"
+            "Ask yourself: what is the simplest physical situation in this topic that anyone can relate to?\n"
+            "Build vocabulary around ONLY that situation.\n\n"
+            "ALLOWED:\n"
+            "- Physical actions (push, pull, lift, move, open, feel)\n"
+            "- Body parts (arm, leg, back, hand, body)\n"
+            "- Basic feelings (tired, strong, sore, good)\n"
+            "- Simple everyday objects (door, chair, bag, bed)\n\n"
+            "FORBIDDEN (no exceptions):\n"
+            "- contract, relax, tension, resistance\n"
+            "- damage, repair, recovery\n"
+            "- protein, nutrition, hormone\n"
+            "- Any word a 10-year-old would not know immediately\n\n"
+            "WORD TEST:\n"
+            "Before including any word ask:\n"
+            "'Can a complete beginner say this word in a simple sentence today?'\n"
+            "If NO → skip it completely.\n\n"
+            "EXAMPLES max 5-6 words, present simple only.\n\n"
         )
     elif _is_lesson_cefr_a2(level):
         level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
