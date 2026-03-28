@@ -1286,31 +1286,38 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
     if _is_lesson_cefr_a1(level):
         level_adapt = (
             "LEVEL ADAPTATION (CEFR A1):\n\n"
-            "- Very common, basic words only\n"
-            "- Example sentences: short and simple (max 6–8 words each)\n"
-            "- Present Simple only in examples\n"
-            "- No complex structures in examples\n\n"
+            "A1 VOCABULARY RULES:\n"
+            "- ALLOWED: basic everyday words, body parts, simple actions, basic feelings\n"
+            "- FORBIDDEN: any word needing explanation, abstract or technical words, multi-syllable uncommon words\n"
+            "- EXAMPLES: max 5-6 words, present simple only, one idea per sentence\n"
+            "- GOAL: student recognizes and uses basic words in simple speech\n\n"
         )
     elif _is_lesson_cefr_a2(level):
         level_adapt = (
             "LEVEL ADAPTATION (CEFR A2):\n\n"
-            "- Common everyday words\n"
-            "- Simple example sentences; past or future allowed if natural\n"
-            "- Basic connectors allowed in examples (and, but, because)\n\n"
+            "A2 VOCABULARY RULES:\n"
+            "- ALLOWED: simple everyday vocabulary, common verbs/nouns/adjectives, daily situation words\n"
+            "- FORBIDDEN: scientific or academic terms, complex abstract vocabulary\n"
+            "- EXAMPLES: max 6-8 words, present/past simple, clear and natural\n"
+            "- GOAL: student describes simple actions and experiences\n\n"
         )
     elif _is_lesson_cefr_b1(level):
         level_adapt = (
             "LEVEL ADAPTATION (CEFR B1):\n\n"
-            "- Conversational vocabulary\n"
-            "- Natural example sentences with some variation\n"
-            "- Opinions or simple context in examples allowed\n\n"
+            "B1 VOCABULARY RULES:\n"
+            "- ALLOWED: conversational vocabulary, common phrasal verbs, real spoken English words\n"
+            "- FORBIDDEN: academic or textbook vocabulary, overly formal or technical terms\n"
+            "- EXAMPLES: max 8-12 words, natural spoken style, past/future forms allowed\n"
+            "- GOAL: student talks about everyday topics naturally\n\n"
         )
     elif _is_lesson_cefr_b2(level):
         level_adapt = (
             "LEVEL ADAPTATION (CEFR B2):\n\n"
-            "- More nuanced but still practical words from the source\n"
-            "- Richer, more expressive example sentences\n"
-            "- Still conversational — not academic\n\n"
+            "B2 VOCABULARY RULES:\n"
+            "- ALLOWED: nuanced but practical vocabulary, expressive and flexible language\n"
+            "- FORBIDDEN: scientific/medical/research terms, overly complex or rare vocabulary\n"
+            "- EXAMPLES: max 10-14 words, natural fluent conversational tone\n"
+            "- GOAL: student expresses ideas clearly in discussion\n\n"
         )
     else:
         level_adapt = (
