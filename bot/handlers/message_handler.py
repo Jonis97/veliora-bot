@@ -630,6 +630,9 @@ _PREVIEW_SYSTEM_SPEAKING_A1 = (
     "Use the SPEAKING FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
     "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
     "This preview is CEFR A1 speaking only. Apply ONLY these STRICT rules.\n\n"
+    "A1 QUESTIONS QUALITY:\n\n"
+    "- Questions must be simple BUT meaningful.\n"
+    "- A1 does not mean trivial or obvious.\n\n"
     "A1 SPEAKING STRUCTURE:\n\n"
     "- Topic (very simple, daily-life)\n"
     "- Discussion questions: exactly 6\n"
@@ -641,26 +644,40 @@ _PREVIEW_SYSTEM_SPEAKING_A1 = (
     "- No abstract or complex phrasing\n\n"
     "DISCUSSION QUESTIONS RULES:\n\n"
     "- Exactly 6 questions\n"
+    "- Max 8 words per question\n"
+    "- Questions must be about real personal situations\n"
+    "- Questions must have a real answer worth sharing\n"
+    "- Questions must sound natural in real conversation\n"
     "- Use ONLY simple patterns:\n"
     "  - Do you...?\n"
     "  - Have you...?\n"
     "  - Can you...?\n"
     "  - Do you like...?\n\n"
-    "- Max 7 words per question\n"
-    "- Must be instantly understandable\n"
-    "- Must be about:\n"
-    "  - personal life\n"
-    "  - daily actions\n"
-    "  - simple feelings\n\n"
-    "FORBIDDEN:\n"
-    "- why / how questions\n"
-    "- abstract ideas\n"
-    "- scientific or medical terms\n"
-    "- complex grammar structures\n"
-    "- questions requiring explanation\n\n"
-    "ANSWER EXPECTATION:\n"
-    "- Questions must allow short simple answers (A1 level)\n"
-    "- Student should NOT need to think long\n\n"
+    "FORBIDDEN QUESTIONS:\n\n"
+    "- Questions with obvious yes/no answers "
+    '(e.g. "Do you have hair?" "Do you have eyes?")\n'
+    "- Questions that are trivial or meaningless\n"
+    "- Questions that feel unnatural or robotic\n"
+    "- Questions that require specialist knowledge or long explanation\n"
+    "- why / how question forms\n"
+    "- abstract ideas, scientific or medical jargon\n"
+    "- complex grammar structures\n\n"
+    "GOOD EXAMPLES FOR A1:\n\n"
+    '- "Do you like short or long hair?"\n'
+    '- "Do you know a bald person?"\n'
+    '- "Do you use products for your hair?"\n'
+    '- "Have you changed your hairstyle before?"\n\n'
+    "SIMPLICITY CONTROL:\n\n"
+    "- Use only basic vocabulary\n"
+    "- Keep grammar simple\n"
+    "- Avoid complex or rare words\n"
+    "- If a beginner cannot understand instantly → rewrite\n\n"
+    "MEANING CONTROL:\n\n"
+    "- Question must invite at least a short answer (not just yes/no)\n"
+    "- Prefer questions that allow:\n"
+    "  - a small explanation\n"
+    "  - an example\n"
+    "  - personal detail\n\n"
     "SPEAKING TASK RULES:\n\n"
     "- Exactly 1 task\n"
     "- Must be extremely simple\n"
@@ -676,14 +693,17 @@ _PREVIEW_SYSTEM_SPEAKING_A1 = (
     "- No complex vocabulary\n"
     "- No multi-step thinking\n\n"
     "CRITICAL CHECK:\n\n"
-    "- If a question is longer than 7 words → shorten\n"
-    "- If a beginner cannot understand instantly → rewrite\n"
+    "- If a question is longer than 8 words → shorten\n"
+    '- If the answer would be only "yes" or "no" → rewrite\n'
+    "- If a question sounds unnatural → rewrite\n"
+    "- If a question is too obvious → replace\n"
     "- If it sounds like a textbook → simplify\n\n"
     "GOAL:\n"
-    "Student understands immediately and answers without hesitation\n\n"
+    "Simple, natural, and slightly engaging questions "
+    "that make a beginner speak without confusion\n\n"
     'Return ONLY these keys:\n'
     '- "topic": one short line (max 4 English words; daily-life only)\n'
-    '- "discussion_questions": exactly 6 strings (only the allowed patterns; max 7 words each)\n'
+    '- "discussion_questions": exactly 6 strings (allowed patterns only; max 8 words each; meaningful, not trivial)\n'
     '- "speaking_task": exactly 1 string (extremely simple)\n'
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
 )
@@ -938,7 +958,8 @@ def _patch_hard_constraints_block(
                 "HARD CONSTRAINTS (CEFR A1 speaking):\n"
                 "- topic: max 4 English words; daily-life only; very simple; no abstract phrasing.\n"
                 "- discussion_questions: exactly 6; ONLY patterns: Do you...? / Have you...? / Can you...? / Do you like...?; "
-                "max 7 words per question; no why/how; no abstract, scientific, medical, or explanation-demanding questions.\n"
+                "max 8 words per question; simple but meaningful (not trivial or obvious); real personal situations; "
+                "natural conversation; no obvious yes/no-only questions; no why/how; no robotic or specialist-knowledge questions.\n"
                 "- speaking_task: exactly 1; extremely simple; basic vocabulary; no complex past structures.\n"
                 '- Command "додай більше питань": refine or replace entries; keep exactly 6; all A1 rules.\n'
             )
@@ -1054,7 +1075,8 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
     if _is_lesson_cefr_a1(level):
         speaking_patch_easy = (
             "Apply: зроби простіше — simplify topic (max 4 words), discussion_questions, and speaking_task; "
-            "keep exactly 6 questions using ONLY Do you / Have you / Can you / Do you like (max 7 words each) "
+            "keep exactly 6 questions using ONLY Do you / Have you / Can you / Do you like (max 8 words each); "
+            "stay meaningful and natural, not trivial; invite a short answer; "
             "and 1 extremely simple speaking_task; all CEFR A1 speaking STRICT rules.\n"
         )
     else:
@@ -1126,8 +1148,8 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
     if _is_lesson_cefr_a1(level):
         speaking_patch_deep = (
             "Apply: зроби глибше (CEFR A1 speaking) — NEW wording only; keep exactly 6 questions and 1 speaking_task; "
-            "more concrete daily-life detail from source; still ONLY Do you / Have you / Can you / Do you like; "
-            "max 7 words per question; topic max 4 words; no why/how; measurable change; all A1 STRICT rules.\n"
+            "more concrete, personal, worth-sharing answers from source; still ONLY Do you / Have you / Can you / Do you like; "
+            "max 8 words per question; meaningful not trivial; topic max 4 words; no why/how; measurable change; all A1 STRICT rules.\n"
         )
     else:
         speaking_patch_deep = (
