@@ -637,10 +637,13 @@ _PREVIEW_SYSTEM_SPEAKING_A1 = (
     "- Topic (very simple, daily-life)\n"
     "- Discussion questions: exactly 6\n"
     "- Speaking task: exactly 1\n\n"
-    "TOPIC RULES:\n"
-    "- Must be very simple and clear\n"
+    "TOPIC SIMPLIFICATION:\n\n"
+    "- Topic must use ONLY A1 words\n"
+    "- Replace:\n"
+    '  - "hair growth" → "hair"\n'
+    '  - "hair loss" → avoid or simplify (e.g. worry about hair, thin hair)\n'
+    "- Keep topic short and simple: prefer 1–3 words; never more than 4 English words\n"
     "- Must describe a daily-life situation\n"
-    "- Max 4 words\n"
     "- No abstract or complex phrasing\n\n"
     "DISCUSSION QUESTIONS RULES:\n\n"
     "- Exactly 6 questions\n"
@@ -723,12 +726,29 @@ _PREVIEW_SYSTEM_SPEAKING_A1 = (
     '- Do NOT introduce "why" questions that require explanation\n'
     "- Keep vocabulary simple and familiar\n"
     "- Keep sentence structure basic\n\n"
+    "FINAL A1 TOPIC + VOCAB CONSISTENCY RULE:\n\n"
+    "QUESTION CONSISTENCY:\n"
+    "- Every question must stay connected to the topic\n"
+    "- Do NOT introduce unrelated ideas (e.g. stress)\n\n"
+    "VOCABULARY LIMIT:\n"
+    "- Use ONLY basic everyday words\n"
+    "- Avoid:\n"
+    "  - growth\n"
+    "  - loss\n"
+    "  - stress (if not essential and simple)\n\n"
+    "REWRITE RULE:\n"
+    "- If a word is above A1 → replace or remove\n"
+    "- If a question is not directly about the topic → remove or rewrite\n\n"
     "GLOBAL RULES:\n\n"
     "- Everything must be simple, clear, and real-life\n"
     "- No academic or abstract language\n"
     "- No complex vocabulary\n"
     "- No multi-step thinking\n\n"
     "CRITICAL CHECK:\n\n"
+    "- Does every question match the topic?\n"
+    "- Does every word belong to A1 vocabulary?\n"
+    "- Can a beginner understand instantly?\n"
+    "If NO to any → rewrite\n\n"
     "- If a question is longer than 8 words → shorten\n"
     '- If the answer would be only "yes" or "no" → rewrite\n'
     "- If a question sounds unnatural → rewrite\n"
@@ -741,12 +761,13 @@ _PREVIEW_SYSTEM_SPEAKING_A1 = (
     "- If speaking_task does not clearly connect to the topic → rewrite\n"
     "- If vocabulary is above A1 or uses forbidden words → simplify\n\n"
     "GOAL:\n"
-    "Simple, natural, real-life questions that sound like real conversation and are easy to answer; "
-    "plus a clear, topic-based speaking_task a beginner can handle immediately\n\n"
+    "Fully consistent, simple, topic-based speaking with zero confusion for the A1 student\n\n"
     'Return ONLY these keys:\n'
-    '- "topic": one short line (max 4 English words; daily-life only)\n'
-    '- "discussion_questions": exactly 6 strings (allowed patterns only; max 8 words each; meaningful, not trivial; '
-    "no treatment/medical wording; no meta-questions: Can you talk/share/describe about...)\n"
+    '- "topic": one short line (A1 words only; prefer 1–3 words; max 4 English words; daily-life only; '
+    "e.g. simplify hair growth → hair; avoid or simplify hair loss)\n"
+    '- "discussion_questions": exactly 6 strings (on-topic only; allowed patterns only; max 8 words each; '
+    "meaningful, not trivial; no treatment/medical wording; avoid growth, loss, stress unless essential; "
+    "no meta-questions: Can you talk/share/describe about...)\n"
     '- "speaking_task": exactly 1 string (A1 vocabulary; specific to this topic; not generic)\n'
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
 )
@@ -999,10 +1020,13 @@ def _patch_hard_constraints_block(
         if _is_lesson_cefr_a1(level):
             return (
                 "HARD CONSTRAINTS (CEFR A1 speaking):\n"
-                "- topic: max 4 English words; daily-life only; very simple; no abstract phrasing.\n"
+                "- topic: A1 vocabulary only; prefer 1–3 words; max 4 English words; daily-life; "
+                "e.g. hair growth → hair; hair loss → avoid or simplify; no abstract phrasing.\n"
                 "- forbidden vocabulary everywhere: treatment, treatments, any medical terms; "
+                "prefer avoiding growth, loss, stress unless essential and simple; "
                 "replace with simple everyday words or drop the idea.\n"
-                "- discussion_questions: exactly 6; ONLY patterns: Do you...? / Have you...? / Can you...? (not meta) / Do you like...?; "
+                "- discussion_questions: exactly 6; every question must match the topic — no unrelated ideas; "
+                "ONLY patterns: Do you...? / Have you...? / Can you...? (not meta) / Do you like...?; "
                 "FORBIDDEN: \"Can you talk about...\", \"Can you share about...\", \"Can you describe...\"; "
                 "max 8 words per question; simple but meaningful (not trivial or obvious); real personal situations; "
                 "natural conversation; no obvious yes/no-only questions; no why/how; no robotic or specialist-knowledge questions.\n"
@@ -1122,11 +1146,11 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
         )
     if _is_lesson_cefr_a1(level):
         speaking_patch_easy = (
-            "Apply: зроби простіше — simplify topic (max 4 words), discussion_questions, and speaking_task; "
-            "keep exactly 6 questions using ONLY Do you / Have you / Can you / Do you like (max 8 words each); "
+            "Apply: зроби простіше — simplify topic (A1 words; prefer 1–3 words; max 4), discussion_questions, and speaking_task; "
+            "keep every question on-topic; keep exactly 6 questions using ONLY Do you / Have you / Can you / Do you like (max 8 words each); "
             "no meta-questions (Can you talk/share/describe about...); replace with specific personal questions; "
             "stay meaningful and natural, not trivial; invite a short answer; "
-            "no treatment, treatments, or medical terms; "
+            "no treatment, treatments, medical terms; avoid growth, loss, stress unless essential; "
             "1 speaking_task: topic-specific (not generic), A1 words only; all CEFR A1 speaking STRICT rules.\n"
         )
     else:
@@ -1198,9 +1222,10 @@ def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
     if _is_lesson_cefr_a1(level):
         speaking_patch_deep = (
             "Apply: зроби глибше (CEFR A1 speaking) — NEW wording only; keep exactly 6 questions and 1 speaking_task; "
-            "more concrete, personal, worth-sharing detail from source; still ONLY Do you / Have you / Can you / Do you like; "
-            "never Can you talk/share/describe about...; max 8 words per question; meaningful not trivial; topic max 4 words; "
-            "no why that needs long explanation; no extra complex ideas; simple familiar words; basic sentences; "
+            "all questions must stay tied to the same topic; more concrete, personal detail from source; "
+            "still ONLY Do you / Have you / Can you / Do you like; never Can you talk/share/describe about...; "
+            "max 8 words per question; meaningful not trivial; topic A1 words, prefer 1–3 words, max 4; "
+            "no why that needs long explanation; no unrelated ideas (e.g. stress); avoid growth, loss, stress unless essential; "
             "no treatment/medical wording; speaking_task must stay topic-specific (not generic); measurable change; all A1 STRICT rules.\n"
         )
     else:
