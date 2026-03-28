@@ -2233,22 +2233,23 @@ def _is_lesson_cefr_b2(level: Optional[str]) -> bool:
 def _grammar_preview_level_prefix(level: Optional[str]) -> str:
     if _is_lesson_cefr_a1(level):
         return (
-            "YOU ARE TEACHING LEVEL A1. USE ONLY: present simple, can/can't, am/is/are. "
+            "ACTIVE LEVEL: A1. USE ONLY: present simple, can/can't, am/is/are. "
             "FORBIDDEN: passive voice, conditionals, perfect tenses.\n\n"
         )
     if _is_lesson_cefr_a2(level):
         return (
-            "YOU ARE TEACHING LEVEL A2. USE ONLY: past simple, will/going to, comparatives. "
+            "ACTIVE LEVEL: A2. USE ONLY: past simple, will/going to, comparatives. "
             "FORBIDDEN: passive voice, present perfect, conditionals.\n\n"
         )
     if _is_lesson_cefr_b1(level):
         return (
-            "YOU ARE TEACHING LEVEL B1. USE ONLY: present perfect, first conditional, modals. "
+            "ACTIVE LEVEL: B1. USE ONLY: present perfect, first conditional, modals. "
             "FORBIDDEN: passive voice, second conditional.\n\n"
         )
     if _is_lesson_cefr_b2(level):
         return (
-            "YOU ARE TEACHING LEVEL B2. USE ONLY: passive voice, second conditional, reported speech.\n\n"
+            "ACTIVE LEVEL: B2. USE ONLY: passive voice, second conditional, reported speech. "
+            "FORBIDDEN: present simple as main grammar point.\n\n"
         )
     return ""
 
