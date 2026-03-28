@@ -1429,14 +1429,15 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
         "Do not include key_ideas, words, warmup_questions, discussion_questions, or grammar_patterns."
     )
 
-_PREVIEW_SYSTEM_PHRASES = (
+_GRAMMAR_PREVIEW_SHARED_HEADER = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "Use the transcript below ONLY as the source (no invented facts).\n\n"
     "GRAMMAR ROOM RULES:\n\n"
     "CORE PRINCIPLE:\n"
     "Grammar must help the student talk about the topic in real life.\n"
+    "Think like an experienced English teacher — practical and human, not a textbook.\n"
     "Do NOT explain grammar like a textbook.\n"
-    "Choose one grammar point that is most useful for this level and topic.\n\n"
+    "Choose ONE grammar point that fits this CEFR level first; use the topic second.\n\n"
     "OUTPUT STRUCTURE:\n"
     "1. Topic\n"
     "2. Grammar point\n"
@@ -1446,12 +1447,15 @@ _PREVIEW_SYSTEM_PHRASES = (
     "GLOBAL ROOM RULES:\n"
     "- Source gives the topic, not the full grammar lesson\n"
     "- Grammar point must be chosen by LEVEL first, topic second. Do NOT copy grammar from the source automatically.\n"
-    "- If grammar in source is too difficult, choose simpler grammar that fits topic\n"
+    "- If grammar in source is too difficult, choose simpler grammar that fits topic and this level\n"
     "- Use only 1 grammar point per output\n"
     "- Explanation must be short, clear, and practical\n"
     "- No academic grammar lectures\n"
     "- Examples must sound natural and spoken\n"
     "- Mini practice must be short and ready for class use\n\n"
+)
+
+_GRAMMAR_PREVIEW_VOCABULARY_BLOCK = (
     "EXAMPLE AND PRACTICE VOCABULARY RULE:\n"
     "Example sentences and mini practice tasks must use vocabulary\n"
     "that is simpler than the source and appropriate for the selected level.\n\n"
@@ -1469,91 +1473,24 @@ _PREVIEW_SYSTEM_PHRASES = (
     "If a source word is too difficult:\n"
     "- replace it with a simpler everyday alternative\n"
     "- or remove it completely\n\n"
-    "GRAMMAR SELECTION PRINCIPLE (mandatory):\n"
-    "Think like an experienced English teacher.\n"
-    "Do NOT copy grammar from the source automatically.\n"
-    "First decide:\n"
-    " 1. What is this topic about in real life?\n"
-    " 2. What does a student at this level need to say about it?\n"
-    " 3. What ONE grammar point will help them say it most naturally?\n"
-    "Choose grammar by level:\n"
-    "A1:\n"
-    " ∙ present simple\n"
-    " ∙ am / is / are\n"
-    " ∙ have / has\n"
-    " ∙ can / can't\n"
-    " ∙ there is / there are\n"
-    " ∙ basic yes/no questions\n"
-    " ∙ basic wh- questions\n"
-    "Goal:\n"
-    "Student says simple facts about the topic.\n"
-    "A2:\n"
-    " ∙ past simple\n"
-    " ∙ will / going to\n"
-    " ∙ can / can't\n"
-    " ∙ basic comparatives\n"
-    " ∙ adverbs of frequency\n"
-    " ∙ countable / uncountable\n"
-    "Goal:\n"
-    "Student talks about past events, plans, and everyday situations.\n"
-    "B1:\n"
-    " ∙ present perfect\n"
-    " ∙ first conditional\n"
-    " ∙ modals for advice / possibility\n"
-    " ∙ gerunds / infinitives\n"
-    " ∙ basic relative clauses\n"
-    " ∙ simple linking words\n"
-    "Goal:\n"
-    "Student talks about experience, advice, and consequences.\n"
-    "B2:\n"
-    " ∙ second conditional\n"
-    " ∙ passive voice\n"
-    " ∙ reported speech\n"
-    " ∙ modals of deduction / probability\n"
-    " ∙ linking structures for contrast and result\n"
-    "Goal:\n"
-    "Student discusses the topic with more nuance and precision.\n"
-    "CRITICAL RULES:\n"
-    " ∙ Choose only ONE grammar point\n"
-    " ∙ Do NOT give the same grammar point to all levels\n"
-    " ∙ Do NOT give B1 or B2 students can / can't as the main grammar point unless the topic clearly requires it\n"
-    " ∙ If the source grammar is too hard, choose the closest simpler grammar point for that level\n"
-    " ∙ Examples and mini practice must match the chosen grammar point and the level\n\n"
+)
+
+_GRAMMAR_PREVIEW_SHARED_TAIL = (
     "EXPLANATION RULES:\n"
     "- 1-2 sentences maximum\n"
     "- explain use not theory\n"
     "- no heavy grammar terminology\n\n"
     "EXAMPLE RULES:\n"
     "- 3 to 5 examples only\n"
-    "- match the same CEFR level\n"
+    "- match the same CEFR level as this preview\n"
     "- stay connected to topic\n"
     "- sound like real spoken English\n\n"
     "MINI PRACTICE RULES:\n"
     "- 1 short task only\n"
     "- allowed: fill in the gap, choose correct form, match, make a sentence\n"
     "- must be short and easy to use in class\n\n"
-    "A1 GRAMMAR:\n"
-    "ALLOWED: present simple, am/is/are, have/has, basic questions, can/cant, there is/are\n"
-    "FORBIDDEN: present perfect, conditionals, passive voice, reported speech\n"
-    "EXAMPLES: max 5-7 words, one idea, present simple preferred\n"
-    "GOAL: student can say one simple correct sentence about the topic\n\n"
-    "A2 GRAMMAR:\n"
-    "ALLOWED: past simple, can/cant, will/going to, comparatives, basic adverbs\n"
-    "FORBIDDEN: present perfect, passive voice, second conditional, reported speech\n"
-    "EXAMPLES: max 6-9 words, present/past/future, natural vocabulary\n"
-    "GOAL: student can describe simple actions, abilities, and plans\n\n"
-    "B1 GRAMMAR:\n"
-    "ALLOWED: present perfect, first conditional, modals, gerunds/infinitives, relative clauses\n"
-    "FORBIDDEN: academic terminology, multiple grammar points, overly formal structures\n"
-    "EXAMPLES: max 8-12 words, natural spoken style, opinions and reasons\n"
-    "GOAL: student can discuss topic with more detail and flexibility\n\n"
-    "B2 GRAMMAR:\n"
-    "ALLOWED: second conditional, passive voice, reported speech, modals of deduction, linking structures\n"
-    "FORBIDDEN: essay-style explanations, rare formal grammar, multiple advanced targets\n"
-    "EXAMPLES: max 10-14 words, natural and fluent, nuance and contrast allowed\n"
-    "GOAL: student can express ideas clearly and precisely in discussion\n\n"
     "FINAL QUALITY CHECK:\n"
-    "1. Is grammar point right for the level?\n"
+    "1. Is grammar point right for this level?\n"
     "2. Is it useful for speaking about topic?\n"
     "3. Is explanation simple enough?\n"
     "4. Do examples sound natural?\n"
@@ -1568,6 +1505,140 @@ _PREVIEW_SYSTEM_PHRASES = (
     '  - Object 3: structure = "Mini practice"; formula = one short practice task only\n'
     "Apply ONLY when format == \"grammar\" or format == \"phrases\".\n"
     "Do not include key_ideas, words, vocabulary_items, or discussion_questions."
+)
+
+_PREVIEW_SYSTEM_GRAMMAR_A1 = (
+    "CEFR A1 GRAMMAR PREVIEW — this level only.\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_HEADER
+    + _GRAMMAR_PREVIEW_VOCABULARY_BLOCK
+    + "GRAMMAR SELECTION PRINCIPLE (mandatory):\n"
+    "Think like an experienced English teacher.\n"
+    "Do NOT copy grammar from the source automatically.\n"
+    "Choose by LEVEL first, topic second.\n"
+    "First decide:\n"
+    " 1. What is this topic about in real life?\n"
+    " 2. What does an A1 student need to say about it?\n"
+    " 3. What ONE grammar point from the A1 list below fits best?\n\n"
+    "Choose ONLY from this A1 grammar set (one point per output):\n"
+    " ∙ present simple\n"
+    " ∙ am / is / are\n"
+    " ∙ have / has\n"
+    " ∙ can / can't\n"
+    " ∙ there is / there are\n"
+    " ∙ basic yes/no questions\n"
+    " ∙ basic wh- questions\n"
+    "Goal: Student says simple facts about the topic.\n\n"
+    "CRITICAL RULES:\n"
+    " ∙ Choose only ONE grammar point from the A1 list above\n"
+    " ∙ Do NOT copy grammar structures from the source automatically\n"
+    " ∙ If the source uses harder grammar, teach the closest simpler A1 point instead\n"
+    " ∙ Examples and mini practice must match the chosen point and A1 level\n\n"
+    "A1 GRAMMAR:\n"
+    "ALLOWED: present simple, am/is/are, have/has, basic questions, can/cant, there is/are\n"
+    "FORBIDDEN: present perfect, conditionals, passive voice, reported speech\n"
+    "EXAMPLES: max 5-7 words, one idea, present simple preferred\n"
+    "GOAL: student can say one simple correct sentence about the topic\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_TAIL
+)
+
+_PREVIEW_SYSTEM_GRAMMAR_A2 = (
+    "CEFR A2 GRAMMAR PREVIEW — this level only.\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_HEADER
+    + _GRAMMAR_PREVIEW_VOCABULARY_BLOCK
+    + "GRAMMAR SELECTION PRINCIPLE (mandatory):\n"
+    "Think like an experienced English teacher.\n"
+    "Do NOT copy grammar from the source automatically.\n"
+    "Choose by LEVEL first, topic second.\n"
+    "First decide:\n"
+    " 1. What is this topic about in real life?\n"
+    " 2. What does an A2 student need to say about it?\n"
+    " 3. What ONE grammar point from the A2 list below fits best?\n\n"
+    "Choose ONLY from this A2 grammar set (one point per output):\n"
+    " ∙ past simple\n"
+    " ∙ will / going to\n"
+    " ∙ can / can't\n"
+    " ∙ basic comparatives\n"
+    " ∙ adverbs of frequency\n"
+    " ∙ simple questions\n"
+    "Goal: Student talks about past events, plans, and everyday situations.\n\n"
+    "CRITICAL RULES:\n"
+    " ∙ Choose only ONE grammar point from the A2 list above\n"
+    " ∙ Do NOT copy grammar structures from the source automatically\n"
+    " ∙ If the source uses harder grammar, teach the closest simpler A2 point instead\n"
+    " ∙ Examples and mini practice must match the chosen point and A2 level\n\n"
+    "A2 GRAMMAR:\n"
+    "ALLOWED: past simple, can/cant, will/going to, comparatives, basic adverbs\n"
+    "FORBIDDEN: present perfect, passive voice, second conditional, reported speech\n"
+    "EXAMPLES: max 6-9 words, present/past/future, natural vocabulary\n"
+    "GOAL: student can describe simple actions, abilities, and plans\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_TAIL
+)
+
+_PREVIEW_SYSTEM_GRAMMAR_B1 = (
+    "CEFR B1 GRAMMAR PREVIEW — this level only.\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_HEADER
+    + _GRAMMAR_PREVIEW_VOCABULARY_BLOCK
+    + "GRAMMAR SELECTION PRINCIPLE (mandatory):\n"
+    "Think like an experienced English teacher.\n"
+    "Do NOT copy grammar from the source automatically.\n"
+    "Choose by LEVEL first, topic second.\n"
+    "First decide:\n"
+    " 1. What is this topic about in real life?\n"
+    " 2. What does a B1 student need to say about it?\n"
+    " 3. What ONE grammar point from the B1 list below fits best?\n\n"
+    "Choose ONLY from this B1 grammar set (one point per output):\n"
+    " ∙ present perfect\n"
+    " ∙ first conditional\n"
+    " ∙ modals for advice / possibility\n"
+    " ∙ gerunds / infinitives\n"
+    " ∙ basic relative clauses\n"
+    " ∙ simple linking\n"
+    "Goal: Student talks about experience, advice, and consequences.\n\n"
+    "CRITICAL RULES:\n"
+    " ∙ Choose only ONE grammar point from the B1 list above\n"
+    " ∙ Do NOT copy grammar structures from the source automatically\n"
+    " ∙ Do NOT use can / can't as the main grammar point unless the topic clearly requires it\n"
+    " ∙ If the source grammar is too hard, choose the closest simpler B1 point instead\n"
+    " ∙ Examples and mini practice must match the chosen point and B1 level\n\n"
+    "B1 GRAMMAR:\n"
+    "ALLOWED: present perfect, first conditional, modals, gerunds/infinitives, relative clauses\n"
+    "FORBIDDEN: academic terminology, multiple grammar points, overly formal structures\n"
+    "EXAMPLES: max 8-12 words, natural spoken style, opinions and reasons\n"
+    "GOAL: student can discuss topic with more detail and flexibility\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_TAIL
+)
+
+_PREVIEW_SYSTEM_GRAMMAR_B2 = (
+    "CEFR B2 GRAMMAR PREVIEW — this level only.\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_HEADER
+    + _GRAMMAR_PREVIEW_VOCABULARY_BLOCK
+    + "GRAMMAR SELECTION PRINCIPLE (mandatory):\n"
+    "Think like an experienced English teacher.\n"
+    "Do NOT copy grammar from the source automatically.\n"
+    "Choose by LEVEL first, topic second.\n"
+    "First decide:\n"
+    " 1. What is this topic about in real life?\n"
+    " 2. What does a B2 student need to say about it?\n"
+    " 3. What ONE grammar point from the B2 list below fits best?\n\n"
+    "Choose ONLY from this B2 grammar set (one point per output):\n"
+    " ∙ passive voice\n"
+    " ∙ second conditional\n"
+    " ∙ reported speech\n"
+    " ∙ modals of deduction / probability\n"
+    " ∙ linking structures for contrast / result\n"
+    "Goal: Student discusses the topic with more nuance and precision.\n\n"
+    "CRITICAL RULES:\n"
+    " ∙ Choose only ONE grammar point from the B2 list above\n"
+    " ∙ Do NOT copy grammar structures from the source automatically\n"
+    " ∙ Do NOT use present simple as the main grammar point unless the topic clearly requires it\n"
+    " ∙ If the source grammar is too hard, choose the closest simpler B2 point instead\n"
+    " ∙ Examples and mini practice must match the chosen point and B2 level\n\n"
+    "B2 GRAMMAR:\n"
+    "ALLOWED: second conditional, passive voice, reported speech, modals of deduction, linking structures\n"
+    "FORBIDDEN: essay-style explanations, rare formal grammar, multiple advanced targets\n"
+    "EXAMPLES: max 10-14 words, natural and fluent, nuance and contrast allowed\n"
+    "GOAL: student can express ideas clearly and precisely in discussion\n\n"
+    + _GRAMMAR_PREVIEW_SHARED_TAIL
 )
 
 _PREVIEW_INSTR_EASY = (
@@ -2229,30 +2300,6 @@ def _is_lesson_cefr_b2(level: Optional[str]) -> bool:
     return str(level).strip().upper() == "B2"
 
 
-def _grammar_preview_level_prefix(level: Optional[str]) -> str:
-    if _is_lesson_cefr_a1(level):
-        return (
-            "ACTIVE LEVEL: A1. USE ONLY: present simple, can/can't, am/is/are. "
-            "FORBIDDEN: passive voice, conditionals, perfect tenses.\n\n"
-        )
-    if _is_lesson_cefr_a2(level):
-        return (
-            "ACTIVE LEVEL: A2. USE ONLY: past simple, will/going to, comparatives. "
-            "FORBIDDEN: passive voice, present perfect, conditionals.\n\n"
-        )
-    if _is_lesson_cefr_b1(level):
-        return (
-            "ACTIVE LEVEL: B1. USE ONLY: present perfect, first conditional, modals. "
-            "FORBIDDEN: passive voice, second conditional.\n\n"
-        )
-    if _is_lesson_cefr_b2(level):
-        return (
-            "ACTIVE LEVEL: B2. USE ONLY: passive voice, second conditional, reported speech. "
-            "FORBIDDEN: present simple as main grammar point.\n\n"
-        )
-    return ""
-
-
 def _preview_format_kind(fmt: Optional[str]) -> str:
     if not fmt:
         return "default"
@@ -2283,8 +2330,16 @@ def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
         return _preview_system_speaking(level)
     if kind == "vocabulary":
         return _preview_system_vocabulary(level)
+    if kind == "phrases" and _is_lesson_cefr_a1(level):
+        return _PREVIEW_SYSTEM_GRAMMAR_A1
+    if kind == "phrases" and _is_lesson_cefr_a2(level):
+        return _PREVIEW_SYSTEM_GRAMMAR_A2
+    if kind == "phrases" and _is_lesson_cefr_b1(level):
+        return _PREVIEW_SYSTEM_GRAMMAR_B1
+    if kind == "phrases" and _is_lesson_cefr_b2(level):
+        return _PREVIEW_SYSTEM_GRAMMAR_B2
     if kind == "phrases":
-        return _grammar_preview_level_prefix(level) + _PREVIEW_SYSTEM_PHRASES
+        return _PREVIEW_SYSTEM_GRAMMAR_B1
     return {
         "lesson": _PREVIEW_SYSTEM_LESSON,
         "questions": _PREVIEW_SYSTEM_QUESTIONS,
