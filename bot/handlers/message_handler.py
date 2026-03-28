@@ -625,12 +625,47 @@ _PREVIEW_SPEAKING_FILTER_USER = (
     "Each line is one short English situation or angle. No extra keys."
 )
 
+_SPEAKING_GLOBAL_FORBIDDEN_RULES = (
+    "GLOBAL FORBIDDEN (applies to ALL speaking levels: A1, A2, B1, B2 — individual level rules still apply on top):\n\n"
+    "FORBIDDEN vocabulary:\n"
+    "- treatments, treatment\n"
+    "- medical, medicine, medication\n"
+    "- remedy, remedies\n"
+    "- genetics, genetic\n"
+    "- hormones, hormonal\n"
+    "- research, researchers\n"
+    "- scientific, scientist\n\n"
+    "FORBIDDEN patterns:\n"
+    "- meta-questions:\n"
+    '  - "Can you talk about..."\n'
+    '  - "Can you describe..."\n'
+    '  - "Can you share about..."\n'
+    "- academic framing in topic name\n"
+    "- questions requiring expert knowledge\n"
+    "- questions not answerable from personal experience\n"
+    "- trivial or obvious questions\n"
+    "- questions answerable with only yes/no\n"
+    "- generic speaking tasks not connected to topic\n\n"
+    "CONTEXTUAL RESTRICTIONS:\n"
+    '- "causes" allowed ONLY in simple everyday context '
+    '(e.g. "What causes you stress?") NOT in scientific/explanatory form\n'
+    '- "temporary" / "permanent" allowed ONLY in everyday context NOT in medical/scientific meaning\n\n'
+)
+
+_SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE = (
+    "- GLOBAL (all speaking levels A1–B2): same forbidden vocabulary, forbidden patterns, and contextual "
+    "restrictions as in GLOBAL FORBIDDEN above (treatments, medical, medication, remedy, genetics, hormones, "
+    "research, scientific; meta talk/describe/share; academic topic; expert-only; non-experience; trivial; "
+    "yes/no only; generic task; causes / temporary / permanent — everyday only).\n"
+)
+
 _PREVIEW_SYSTEM_SPEAKING_A1 = (
     "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
     "Use the SPEAKING FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
     "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
     "This preview is CEFR A1 speaking only. Apply ONLY these STRICT rules.\n\n"
-    "A1 QUESTIONS QUALITY:\n\n"
+    + _SPEAKING_GLOBAL_FORBIDDEN_RULES
+    + "A1 QUESTIONS QUALITY:\n\n"
     "- Questions must be simple BUT meaningful.\n"
     "- A1 does not mean trivial or obvious.\n\n"
     "A1 SPEAKING STRUCTURE:\n\n"
@@ -777,7 +812,8 @@ _PREVIEW_SYSTEM_SPEAKING_A2 = (
     "Use the SPEAKING FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
     "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
     "This preview is CEFR A2 speaking only. Apply ONLY these rules.\n\n"
-    "STRUCTURE:\n\n"
+    + _SPEAKING_GLOBAL_FORBIDDEN_RULES
+    + "STRUCTURE:\n\n"
     "- Topic (simple, natural, max 5 words, from source)\n"
     "- Discussion questions: exactly 6\n"
     "- Speaking task: exactly 1\n\n"
@@ -871,7 +907,8 @@ def _preview_system_speaking(level: Optional[str]) -> str:
         "Use the SPEAKING FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
         "It is a filtered topic and key situations — not a raw transcript; do not use or assume any other text.\n"
         "This preview is for speaking practice only. Apply ONLY these rules.\n\n"
-        "TOPIC:\n"
+        + _SPEAKING_GLOBAL_FORBIDDEN_RULES
+        + "TOPIC:\n"
         "- 1 short, clear topic from source\n"
         "- Must sound natural and usable in conversation\n"
         "- No academic framing\n\n"
@@ -1072,7 +1109,8 @@ def _patch_hard_constraints_block(
         if _is_lesson_cefr_a1(level):
             return (
                 "HARD CONSTRAINTS (CEFR A1 speaking):\n"
-                "- topic: A1 vocabulary only; prefer 1–3 words; max 4 English words; daily-life; "
+                + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
+                + "- topic: A1 vocabulary only; prefer 1–3 words; max 4 English words; daily-life; "
                 "e.g. hair growth → hair; hair loss → avoid or simplify; no abstract phrasing.\n"
                 "- forbidden vocabulary everywhere: treatment, treatments, any medical terms; "
                 "prefer avoiding growth, loss, stress unless essential and simple; "
@@ -1090,7 +1128,8 @@ def _patch_hard_constraints_block(
         if _is_lesson_cefr_a2(level):
             return (
                 "HARD CONSTRAINTS (CEFR A2 speaking):\n"
-                "- topic: max 5 English words; simple, natural; from source; daily-life; no academic framing.\n"
+                + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
+                + "- topic: max 5 English words; simple, natural; from source; daily-life; no academic framing.\n"
                 "- discussion_questions: exactly 6; keep ALL A1 speaking bases (on-topic; no meta "
                 '"Can you talk/share/describe about..."; no trivial/obvious meaningless); '
                 "allowed forms include What/Why/How do you feel/What do you usually do when; "
@@ -1103,8 +1142,9 @@ def _patch_hard_constraints_block(
                 '- Command "додай більше питань": refine or replace; keep exactly 6; all A2 rules.\n'
             )
         return (
-            "HARD CONSTRAINTS (this format):\n"
-            "- discussion_questions: MUST contain exactly 6 items (open-ended; not yes/no).\n"
+            "HARD CONSTRAINTS (this format — B1/B2 speaking):\n"
+            + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
+            + "- discussion_questions: MUST contain exactly 6 items (open-ended; not yes/no).\n"
             "- speaking_task: MUST be exactly 1 non-empty string (real speaking scenario, 30–60 seconds).\n"
             '- Command "додай більше питань": ADD or adjust questions while keeping exactly 6 total unless teacher asks otherwise.\n'
         )
