@@ -1445,7 +1445,7 @@ _PREVIEW_SYSTEM_PHRASES = (
     "5. 1 mini practice task\n\n"
     "GLOBAL ROOM RULES:\n"
     "- Source gives the topic, not the full grammar lesson\n"
-    "- Grammar point must be found in or supported by the source\n"
+    "- Grammar point must be chosen by LEVEL first, topic second. Do NOT copy grammar from the source automatically.\n"
     "- If grammar in source is too difficult, choose simpler grammar that fits topic\n"
     "- Use only 1 grammar point per output\n"
     "- Explanation must be short, clear, and practical\n"
