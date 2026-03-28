@@ -1377,19 +1377,19 @@ def _preview_system_vocabulary(level: Optional[str]) -> str:
         level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR B1):\n\n"
             "B1 VOCABULARY RULES:\n"
-            "- ALLOWED: conversational vocabulary, common phrasal verbs, real spoken English words\n"
-            "- FORBIDDEN: academic or textbook vocabulary, overly formal or technical terms\n"
-            "- EXAMPLES: max 8-12 words, natural spoken style, past/future forms allowed\n"
-            "- GOAL: student talks about everyday topics naturally\n\n"
+            "- ALLOWED: conversational vocabulary, common everyday expressions, phrasal verbs, practical words for feelings/habits/opinions\n"
+            "- FORBIDDEN: academic/textbook vocabulary, scientific/medical/technical terms, rare or formal words\n"
+            "- EXAMPLES: max 8-12 words, natural spoken style, present/past/future allowed\n"
+            "- GOAL: student can discuss everyday topics naturally in conversation\n\n"
         )
     elif _is_lesson_cefr_b2(level):
         level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
             "LEVEL ADAPTATION (CEFR B2):\n\n"
             "B2 VOCABULARY RULES:\n"
-            "- ALLOWED: nuanced but practical vocabulary, expressive and flexible language\n"
-            "- FORBIDDEN: scientific/medical/research terms, overly complex or rare vocabulary\n"
-            "- EXAMPLES: max 10-14 words, natural fluent conversational tone\n"
-            "- GOAL: student expresses ideas clearly in discussion\n\n"
+            "- ALLOWED: nuanced but practical vocabulary, expressive words for opinions/comparison/reflection\n"
+            "- FORBIDDEN: scientific/medical/research terms, overly formal vocabulary, textbook abstract terminology\n"
+            "- EXAMPLES: max 10-14 words, natural fluent conversational style, varied structure\n"
+            "- GOAL: student can express ideas clearly and with nuance in discussion\n\n"
         )
     else:
         level_adapt = _VOCABULARY_LEVEL_DIFFERENTIATION_BLOCK + (
