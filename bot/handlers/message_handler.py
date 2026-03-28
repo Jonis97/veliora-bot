@@ -124,6 +124,68 @@ _PREVIEW_SYSTEM_LESSON_A1 = (
     "Do not include key_ideas, discussion_questions, or vocabulary_items."
 )
 
+_PREVIEW_SYSTEM_LESSON_A2 = (
+    "You are a helpful teacher. Output ONE JSON object only, no markdown.\n"
+    "Use the A2 FILTERED SOURCE in the user message ONLY as the source (no invented facts beyond it). "
+    "It is a filtered topic and scenes — not a raw transcript; do not use or assume any other text.\n"
+    "This preview is for CEFR level A2 only. Apply ONLY these rules for lesson + A2.\n\n"
+    "GLOBAL:\n"
+    "- Every element must reflect the main situation and core meaning from the filtered source.\n"
+    "- Do NOT introduce unrelated elements.\n"
+    "- Do NOT add generic filler.\n"
+    "- Simplify the language, NOT the topic.\n"
+    "- Follow exact counts strictly (no more, no less).\n"
+    "- Do not regenerate existing content; only extend if asked (initial generation: fill all fields from source).\n"
+    '- No placeholders like "—".\n'
+    "- No empty fields.\n\n"
+    'Return ONLY these keys for a lesson preview:\n'
+    '- "topic": one short line (teacher-friendly), same situation as the source (simplified, not replaced)\n'
+    '- "warmup_questions": exactly 5 questions\n'
+    '- "core_questions": exactly 4 questions\n'
+    '- "choices": exactly 4 items\n'
+    '- "support_words": exactly 6 items (each "English — Ukrainian")\n\n'
+    "WARM-UP (warmup_questions): exactly 5 questions\n"
+    '- Patterns ONLY: "Do you...?" / "Is it...?" / "Can you...?"\n'
+    "- Must be personal and concrete.\n"
+    '- Forbidden: "Have you ever", abstract topics.\n\n'
+    "CORE QUESTIONS (core_questions): exactly 4 questions\n"
+    "- Why and How questions are allowed.\n"
+    "- BUT: must stay concrete, simple, and directly tied to the source situation.\n"
+    "- Must relate directly to topic.\n"
+    "- Do NOT move into abstract reasoning or theory.\n"
+    "- Simple cause-effect is allowed (because, so, helps, makes).\n\n"
+    "THIS OR THAT (choices): exactly 4 items\n"
+    '- Format ONLY: "X or Y?" (question mark at end).\n'
+    "- May reflect simple contrast from the source.\n\n"
+    "VOCABULARY (support_words): exactly 6 items\n"
+    '- Format each string: "English — Ukrainian".\n'
+    "- Slightly wider than A1 but still practical.\n"
+    "- Must be directly related to topic.\n\n"
+    "If the filtered source has limited detail, derive items from the topic and scenes while staying consistent with them.\n"
+    "Do not include key_ideas, discussion_questions, or vocabulary_items."
+)
+
+_PREVIEW_A2_FILTER_SYSTEM = (
+    "You follow the user instructions exactly. Output ONE JSON object only, no markdown."
+)
+
+_PREVIEW_A2_FILTER_USER = (
+    "Filter this content for A2 English students.\n\n"
+    "Output ONLY:\n"
+    "- 1 simplified topic (same situation as source, not replaced)\n"
+    "- 3–5 scenes or cause-effect points from the source\n\n"
+    "Rules:\n"
+    "- Stay semantically close to the original source\n"
+    "- Do NOT replace topic with generic daily routine\n"
+    "- Do NOT invent context that does not exist in source\n"
+    "- Topic may include simple cause-effect (why/how)\n"
+    "- Language must be simple and concrete\n"
+    "- If topic cannot be simplified → keep closest real-life version\n"
+    "- NEVER switch to unrelated situations\n\n"
+    'Return one JSON object with keys "topic" (string) and "scenes" (array of 3 to 5 strings). '
+    "Each scene or cause-effect point is one short English line. No extra keys."
+)
+
 _PREVIEW_A1_FILTER_SYSTEM = (
     "You follow the user instructions exactly. Output ONE JSON object only, no markdown."
 )
@@ -360,6 +422,19 @@ def _patch_hard_constraints_block(
                 '- choices: exactly 4, format only "X or Y?" (concrete; X/Y one word or max 2-word phrase).\n'
                 '- support_words: exactly 6, each "English — Ukrainian", nouns/verbs only, topic-related.\n'
             )
+        if _is_lesson_cefr_a2(level):
+            return (
+                "HARD CONSTRAINTS (CEFR A2 lesson):\n"
+                "- GENERAL: concrete, simple English; no \"—\" or empty fields; "
+                "do not regenerate existing blocks—only extend when asked; exact counts only; "
+                "every element tied to main situation and core meaning; no unrelated or generic filler.\n"
+                "- warmup_questions: exactly 5; patterns only Do you / Is it / Can you; "
+                "no \"Have you ever\"; personal and concrete.\n"
+                "- core_questions: exactly 4; Why/How allowed if concrete and tied to source; "
+                "no abstract reasoning or theory; simple cause-effect only.\n"
+                '- choices: exactly 4, format only "X or Y?".\n'
+                '- support_words: exactly 6, each "English — Ukrainian", topic-related, practical A2 level.\n'
+            )
         return (
             "HARD CONSTRAINTS (this format):\n"
             "- warmup_questions: exactly 5 real strings (never \"—\" or empty).\n"
@@ -373,16 +448,24 @@ def _patch_hard_constraints_block(
 
 
 def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
-    lesson_easy = (
-        "Apply: зроби простіше — simplify wording of warmup_questions, core_questions, choices, "
-        "and support_words only; keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines; "
-        "same topic, simpler A1 English and Ukrainian glosses.\n"
-        if _is_lesson_cefr_a1(level)
-        else (
+    if _is_lesson_cefr_a1(level):
+        lesson_easy = (
+            "Apply: зроби простіше — simplify wording of warmup_questions, core_questions, choices, "
+            "and support_words only; keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines; "
+            "same topic, simpler A1 English and Ukrainian glosses.\n"
+        )
+    elif _is_lesson_cefr_a2(level):
+        lesson_easy = (
+            "Apply: зроби простіше — simplify wording of warmup_questions, core_questions, choices, "
+            "and support_words only; keep exactly 5 warm-ups, 4 core questions, 4 choices, 6 support lines; "
+            "same topic and source situation, simpler A2 English and Ukrainian glosses; "
+            "keep warmup patterns Do you / Is it / Can you only; core Why/How only if still concrete and tied to source.\n"
+        )
+    else:
+        lesson_easy = (
             "Apply: зроби простіше — simplify wording of warmup_questions, choices, and support_words only; "
             "keep exactly 5 warm-up questions, 3–4 choices, and at least 5 support words; same topics, simpler English.\n"
         )
-    )
     spec = {
         "lesson": lesson_easy,
         "questions": (
@@ -408,19 +491,27 @@ def _preview_patch_rules_easy(kind: str, level: Optional[str] = None) -> str:
 
 
 def _preview_patch_rules_deep(kind: str, level: Optional[str] = None) -> str:
-    lesson_deep = (
-        "Apply: зроби глибше (CEFR A1 lesson) — warmup_questions and core_questions: do NOT repeat or paraphrase "
-        "the existing strings; write NEW questions only, each more specific to daily life, while keeping exactly "
-        "5 warm-ups and 4 core questions. Example: \"Do you talk to yourself?\" → "
-        "\"Do you talk to yourself at home or outside?\" "
-        "For choices and support_words: use NEW concrete daily-life wording where you change them; "
-        "keep exactly 4 choices and 6 support lines; stay in source and all A1 rules.\n"
-        if _is_lesson_cefr_a1(level)
-        else (
+    if _is_lesson_cefr_a1(level):
+        lesson_deep = (
+            "Apply: зроби глибше (CEFR A1 lesson) — warmup_questions and core_questions: do NOT repeat or paraphrase "
+            "the existing strings; write NEW questions only, each more specific to daily life, while keeping exactly "
+            "5 warm-ups and 4 core questions. Example: \"Do you talk to yourself?\" → "
+            "\"Do you talk to yourself at home or outside?\" "
+            "For choices and support_words: use NEW concrete daily-life wording where you change them; "
+            "keep exactly 4 choices and 6 support lines; stay in source and all A1 rules.\n"
+        )
+    elif _is_lesson_cefr_a2(level):
+        lesson_deep = (
+            "Apply: зроби глибше (CEFR A2 lesson) — enrich warmup_questions, core_questions, choices, support_words; "
+            "stay in the same source situation and core meaning; keep exactly 5 warm-ups, 4 core questions, "
+            "4 choices, 6 support lines; add concrete detail and simple cause-effect where it helps; "
+            "do NOT repeat or lightly paraphrase—make wording meaningfully new; no abstract theory; all A2 rules.\n"
+        )
+    else:
+        lesson_deep = (
             "Apply: зроби глибше — enrich warmup_questions, choices, and support_words; stay in source; "
             "keep 5 warm-ups, 3–4 choices, at least 5 support words.\n"
         )
-    )
     spec = {
         "lesson": lesson_deep,
         "questions": (
@@ -590,6 +681,12 @@ def _is_lesson_cefr_a1(level: Optional[str]) -> bool:
     return str(level).strip().upper() == "A1"
 
 
+def _is_lesson_cefr_a2(level: Optional[str]) -> bool:
+    if level is None:
+        return False
+    return str(level).strip().upper() == "A2"
+
+
 def _preview_format_kind(fmt: Optional[str]) -> str:
     if not fmt:
         return "default"
@@ -608,6 +705,8 @@ def _preview_format_kind(fmt: Optional[str]) -> str:
 def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
     if kind == "lesson" and _is_lesson_cefr_a1(level):
         return _PREVIEW_SYSTEM_LESSON_A1
+    if kind == "lesson" and _is_lesson_cefr_a2(level):
+        return _PREVIEW_SYSTEM_LESSON_A2
     return {
         "lesson": _PREVIEW_SYSTEM_LESSON,
         "questions": _PREVIEW_SYSTEM_QUESTIONS,
@@ -620,7 +719,9 @@ def _preview_system_for_initial(kind: str, level: Optional[str] = None) -> str:
 def _preview_merge_list_keys(
     kind: str, level: Optional[str] = None
 ) -> tuple[str, ...]:
-    if kind == "lesson" and _is_lesson_cefr_a1(level):
+    if kind == "lesson" and (
+        _is_lesson_cefr_a1(level) or _is_lesson_cefr_a2(level)
+    ):
         return ("warmup_questions", "core_questions", "support_words", "choices")
     if kind == "lesson":
         return ("warmup_questions", "support_words", "choices")
@@ -737,6 +838,46 @@ def _a1_resolved_filtered_block(topic: str, scenes: list[str]) -> str:
     return _a1_filtered_source_user_block(topic, scenes[:5])
 
 
+_A2_FILTER_FALLBACK_TOPIC = _A1_FILTER_FALLBACK_TOPIC
+_A2_FILTER_FALLBACK_SCENES = _A1_FILTER_FALLBACK_SCENES
+
+_coerce_a2_filter_output = _coerce_a1_filter_output
+
+
+def _a2_filtered_source_user_block(topic: str, scenes: list[str]) -> str:
+    lines = [
+        "A2 FILTERED SOURCE — use ONLY this text as your source for the lesson preview.",
+        "Do not use or rely on any raw transcript.",
+        "",
+        f"Topic: {topic}",
+        "",
+        "Scenes:",
+    ]
+    for s in scenes:
+        lines.append(f"- {s}")
+    return "\n".join(lines)
+
+
+def _a2_resolved_filtered_block(topic: str, scenes: list[str]) -> str:
+    if not topic:
+        return _a2_filtered_source_user_block(
+            _A2_FILTER_FALLBACK_TOPIC, list(_A2_FILTER_FALLBACK_SCENES)
+        )
+    if len(scenes) < 3:
+        seen = {s.lower() for s in scenes}
+        for s in _A2_FILTER_FALLBACK_SCENES:
+            if len(scenes) >= 3:
+                break
+            if s.lower() not in seen:
+                scenes.append(s)
+                seen.add(s.lower())
+        if len(scenes) < 3:
+            return _a2_filtered_source_user_block(
+                _A2_FILTER_FALLBACK_TOPIC, list(_A2_FILTER_FALLBACK_SCENES)
+            )
+    return _a2_filtered_source_user_block(topic, scenes[:5])
+
+
 class _OnboardingEnrichedMessage:
     """Proxy so pipeline sees enriched text/caption without mutating the real Message."""
 
@@ -764,7 +905,7 @@ def _normalize_preview_output(
     topic = str(data.get("topic", "") or "").strip() or "—"
 
     if kind == "lesson":
-        if _is_lesson_cefr_a1(level):
+        if _is_lesson_cefr_a1(level) or _is_lesson_cefr_a2(level):
             wq = _lesson_nonempty_strings(data.get("warmup_questions"), 5)
             cq = _lesson_nonempty_strings(data.get("core_questions"), 4)
             ch = _lesson_nonempty_strings(data.get("choices"), 4)
@@ -1018,6 +1159,28 @@ class MessageHandlerService:
         topic, scenes = _coerce_a1_filter_output(data)
         return _a1_resolved_filtered_block(topic, scenes)
 
+    async def _call_a2_filter_gpt(self, transcript_snippet: str) -> str:
+        user_content = (
+            f"{_PREVIEW_A2_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
+        )
+        response = await self._openai_client.chat.completions.create(
+            model=self._openai_model,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": _PREVIEW_A2_FILTER_SYSTEM},
+                {"role": "user", "content": user_content},
+            ],
+        )
+        raw = response.choices[0].message.content or "{}"
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        topic, scenes = _coerce_a2_filter_output(data)
+        return _a2_resolved_filtered_block(topic, scenes)
+
     async def _call_preview_gpt(
         self,
         transcript: str,
@@ -1032,6 +1195,8 @@ class MessageHandlerService:
             snippet = snippet[:_PREVIEW_TRANSCRIPT_MAX]
         if kind == "lesson" and _is_lesson_cefr_a1(level):
             user_block = await self._call_a1_filter_gpt(snippet)
+        elif kind == "lesson" and _is_lesson_cefr_a2(level):
+            user_block = await self._call_a2_filter_gpt(snippet)
         else:
             user_block = f"Transcript:\n{snippet}"
         if extra_instruction and extra_instruction.strip():
