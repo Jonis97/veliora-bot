@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Optional, Union
 
-from openai import AsyncOpenAI
+from anthropic import AsyncAnthropic
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputFile, Message, Update
 from telegram.ext import ContextTypes
 
@@ -14,6 +14,8 @@ from bot.utils.errors import GenerationFailedError, TranscriptUnavailableError
 
 
 LOGGER = logging.getLogger(__name__)
+
+_PREVIEW_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 
 # Onboarding only — separate from active_source / pipeline memory.
 user_state: dict[int, dict[str, Optional[str]]] = {}
@@ -2678,28 +2680,40 @@ class MessageHandlerService:
         pipeline: ContentPipelineService,
         deduplicator: MessageDeduplicator,
         youtube_service: YouTubeTranscriptService,
-        openai_client: AsyncOpenAI,
-        openai_model: str,
+        anthropic_client: AsyncAnthropic,
     ) -> None:
         self._pipeline = pipeline
         self._deduplicator = deduplicator
         self._youtube_service = youtube_service
-        self._openai_client = openai_client
-        self._openai_model = openai_model
+        self._anthropic_client = anthropic_client
+
+    async def _claude_preview_complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        temperature: Optional[float] = None,
+    ) -> str:
+        kwargs: dict[str, Any] = {
+            "model": _PREVIEW_CLAUDE_MODEL,
+            "max_tokens": 8192,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+        }
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        response = await self._anthropic_client.messages.create(**kwargs)
+        raw = response.content[0].text if response.content else ""
+        return raw or "{}"
 
     async def _call_a1_filter_gpt(self, transcript_snippet: str) -> str:
         user_content = (
             f"{_PREVIEW_A1_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
         )
-        response = await self._openai_client.chat.completions.create(
-            model=self._openai_model,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": _PREVIEW_A1_FILTER_SYSTEM},
-                {"role": "user", "content": user_content},
-            ],
+        raw = await self._claude_preview_complete(
+            system=_PREVIEW_A1_FILTER_SYSTEM,
+            user=user_content,
         )
-        raw = response.choices[0].message.content or "{}"
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
@@ -2713,15 +2727,10 @@ class MessageHandlerService:
         user_content = (
             f"{_PREVIEW_A2_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
         )
-        response = await self._openai_client.chat.completions.create(
-            model=self._openai_model,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": _PREVIEW_A2_FILTER_SYSTEM},
-                {"role": "user", "content": user_content},
-            ],
+        raw = await self._claude_preview_complete(
+            system=_PREVIEW_A2_FILTER_SYSTEM,
+            user=user_content,
         )
-        raw = response.choices[0].message.content or "{}"
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
@@ -2735,15 +2744,10 @@ class MessageHandlerService:
         user_content = (
             f"{_PREVIEW_B1_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
         )
-        response = await self._openai_client.chat.completions.create(
-            model=self._openai_model,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": _PREVIEW_B1_FILTER_SYSTEM},
-                {"role": "user", "content": user_content},
-            ],
+        raw = await self._claude_preview_complete(
+            system=_PREVIEW_B1_FILTER_SYSTEM,
+            user=user_content,
         )
-        raw = response.choices[0].message.content or "{}"
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
@@ -2757,15 +2761,10 @@ class MessageHandlerService:
         user_content = (
             f"{_PREVIEW_B2_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
         )
-        response = await self._openai_client.chat.completions.create(
-            model=self._openai_model,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": _PREVIEW_B2_FILTER_SYSTEM},
-                {"role": "user", "content": user_content},
-            ],
+        raw = await self._claude_preview_complete(
+            system=_PREVIEW_B2_FILTER_SYSTEM,
+            user=user_content,
         )
-        raw = response.choices[0].message.content or "{}"
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
@@ -2779,15 +2778,10 @@ class MessageHandlerService:
         user_content = (
             f"{_PREVIEW_SPEAKING_FILTER_USER}\n\n---\n\nTranscript to filter:\n{transcript_snippet}"
         )
-        response = await self._openai_client.chat.completions.create(
-            model=self._openai_model,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": _PREVIEW_SPEAKING_FILTER_SYSTEM},
-                {"role": "user", "content": user_content},
-            ],
+        raw = await self._claude_preview_complete(
+            system=_PREVIEW_SPEAKING_FILTER_SYSTEM,
+            user=user_content,
         )
-        raw = response.choices[0].message.content or "{}"
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
@@ -2823,15 +2817,7 @@ class MessageHandlerService:
             user_block = f"Transcript:\n{snippet}"
         if extra_instruction and extra_instruction.strip():
             user_block += f"\n\nAdditional instruction:\n{extra_instruction.strip()}"
-        response = await self._openai_client.chat.completions.create(
-            model=self._openai_model,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_block},
-            ],
-        )
-        raw = response.choices[0].message.content or "{}"
+        raw = await self._claude_preview_complete(system=system, user=user_block)
         data = json.loads(raw)
         if not isinstance(data, dict):
             data = {}
@@ -2876,16 +2862,11 @@ class MessageHandlerService:
             rules_block,
             patch_kind,
         )
-        response = await self._openai_client.chat.completions.create(
-            model=self._openai_model,
-            response_format={"type": "json_object"},
+        raw = await self._claude_preview_complete(
+            system=_PREVIEW_PATCH_SYSTEM,
+            user=user_content,
             temperature=0.75,
-            messages=[
-                {"role": "system", "content": _PREVIEW_PATCH_SYSTEM},
-                {"role": "user", "content": user_content},
-            ],
         )
-        raw = response.choices[0].message.content or "{}"
         data = json.loads(raw)
         if not isinstance(data, dict):
             data = {}

@@ -47,8 +47,7 @@ def build_application() -> tuple[Application, str, int, str, str]:
         pipeline,
         deduplicator,
         youtube_service,
-        openai_client,
-        settings.openai_model,
+        anthropic_client,
     )
 
     app = Application.builder().token(settings.telegram_token).build()
