@@ -351,7 +351,13 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     '- No placeholders like "—".\n'
     "- No empty fields.\n"
     "- Simplify the language, but allow deeper meaning.\n"
-    "- Do NOT turn the lesson into an essay or lecture.\n\n"
+    "- Do NOT turn the lesson into an essay or lecture.\n"
+    "Global forbidden rule for ALL elements in B2:\n"
+    "- natural remedies\n"
+    "- genetics\n"
+    "- hormones\n"
+    "- medications\n"
+    "These words must never appear in any block (topic, warm-up, core, choices, vocabulary).\n\n"
     'Return ONLY these keys for a lesson preview:\n'
     '- "topic": one short line (teacher-friendly), same situation as the source (not replaced)\n'
     '- "warmup_questions": exactly 5 questions\n'
@@ -359,10 +365,20 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     '- "choices": exactly 4 items\n'
     '- "support_words": exactly 6 items (each "word — переклад": English — Ukrainian)\n\n'
     "TOPIC (topic line):\n"
+    "The topic must sound like a real-life situation or problem people talk about — "
+    "NOT like a documentary title, science headline, or academic chapter name.\n"
     "FORBIDDEN in topic name:\n"
     '- "The Science of..." (or similar)\n'
     "- Any topic starting with academic framing\n"
-    "Replace with personal, real-life wording.\n\n"
+    "FORBIDDEN topic patterns:\n"
+    '- "Understanding..."\n'
+    '- "Exploring..."\n'
+    '- "The Future of..."\n'
+    '- "Breakthroughs in..."\n'
+    '- "How X Works" (unless clearly casual and human-centered)\n'
+    "Replace with simple, human phrasing.\n"
+    "- Wrong: 'The Science of Hair Loss'\n"
+    "- Right: 'Worries about losing hair'\n\n"
     "WARM-UP (warmup_questions): exactly 5 questions\n"
     '- Patterns: "Do you...?" / "Is it...?" / "Can you...?" / "Have you...?"\n'
     "- Personal, relatable, real-life.\n"
@@ -402,7 +418,9 @@ _PREVIEW_SYSTEM_LESSON_B2 = (
     "- No academic, medical, or expert-only concepts.\n"
     "FORBIDDEN in This or That:\n"
     "- medical pattern names (e.g. male pattern baldness)\n"
-    "- scientific comparisons\n\n"
+    "- scientific comparisons\n"
+    "- natural remedies\n"
+    "- genetics\n\n"
     "VOCABULARY (support_words): exactly 6 items\n"
     "- Everyday, practical, usable in conversation.\n"
     "- May include simple abstract words (choice, result, opinion, reason, effect, change).\n"
@@ -433,7 +451,17 @@ _PREVIEW_B2_FILTER_USER = (
     "- Topic may include nuanced ideas, perspectives, and real-life complexity\n"
     "- Language must remain clear and understandable\n"
     "- If topic cannot be simplified → keep closest real-life version\n"
-    "- NEVER switch to unrelated topics\n\n"
+    "- NEVER switch to unrelated topics\n"
+    "The topic line must sound like a real-life situation or problem people talk about — "
+    "NOT like a documentary title, science headline, or academic chapter name.\n"
+    "FORBIDDEN topic patterns:\n"
+    '- "The Science of..."\n'
+    '- "Understanding..."\n'
+    '- "Exploring..."\n'
+    '- "The Future of..."\n'
+    '- "Breakthroughs in..."\n'
+    '- "How X Works" (unless clearly casual and human-centered)\n'
+    "Replace with simple, human phrasing.\n\n"
     'Return one JSON object with keys "topic" (string) and "scenes" (array of 3 to 5 strings). '
     "Each line is one short English scene, cause-effect point, or nuanced reasoning note. No extra keys."
 )
