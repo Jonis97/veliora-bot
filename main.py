@@ -1,5 +1,6 @@
 import logging
 
+from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
@@ -29,12 +30,13 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 def build_application() -> tuple[Application, str, int, str, str]:
     settings = load_settings()
     openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+    anthropic_client = AsyncAnthropic(api_key=settings.anthropic_api_key)
 
     youtube_service = YouTubeTranscriptService(settings.supadata_api_key)
     pipeline = ContentPipelineService(
         youtube_service=youtube_service,
         transcription_service=VoiceTranscriptionService(openai_client),
-        ai_service=AIContentService(openai_client, settings.openai_model),
+        ai_service=AIContentService(anthropic_client),
         template_service=TemplateService(),
         screenshot_service=ScreenshotService(settings.screenshotone_api_key),
         topic_image_service=TopicImageService(openai_client),

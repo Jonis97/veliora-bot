@@ -7,6 +7,7 @@ from typing import Optional
 class Settings:
     telegram_token: str
     openai_api_key: str
+    anthropic_api_key: str
     supadata_api_key: str
     screenshotone_api_key: str
     webhook_url: str
@@ -28,6 +29,7 @@ def load_settings() -> Settings:
     return Settings(
         telegram_token=_required("TELEGRAM_TOKEN"),
         openai_api_key=_required("OPENAI_API_KEY"),
+        anthropic_api_key=_required("ANTHROPIC_API_KEY"),
         supadata_api_key=_required("SUPADATA_API_KEY"),
         screenshotone_api_key=_required("SCREENSHOTONE_API_KEY"),
         webhook_url=_required("WEBHOOK_URL"),

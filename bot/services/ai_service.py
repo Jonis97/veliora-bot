@@ -1,7 +1,7 @@
 import json
 from typing import Any, Optional
 
-from openai import AsyncOpenAI
+from anthropic import AsyncAnthropic
 
 from bot.services.template_service import DEFAULT_TEMPLATE
 from bot.utils.intent import OutputIntent
@@ -288,9 +288,9 @@ Output valid JSON only.
 
 
 class AIContentService:
-    def __init__(self, openai_client: AsyncOpenAI, model: str) -> None:
-        self._openai_client = openai_client
-        self._model = model
+    def __init__(self, anthropic_client: AsyncAnthropic) -> None:
+        self._anthropic_client = anthropic_client
+        self._model = "claude-haiku-4-5-20251001"
 
     async def generate_card_content(
         self,
@@ -316,15 +316,16 @@ class AIContentService:
             )
 
         async def _generate() -> dict[str, Any]:
-            response = await self._openai_client.chat.completions.create(
+            response = await self._anthropic_client.messages.create(
                 model=self._model,
-                response_format={"type": "json_object"},
+                max_tokens=2000,
+                system=SYSTEM_PROMPT,
                 messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
             )
-            content = response.choices[0].message.content or "{}"
+            raw = response.content[0].text if response.content else ""
+            content = raw or "{}"
             data = json.loads(content)
             data.setdefault("template", eff)
             data["template"] = eff
