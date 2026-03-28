@@ -944,16 +944,30 @@ _PREVIEW_SYSTEM_SPEAKING_B1 = (
     "- abstract theory or philosophy\n"
     "- questions that sound like essays\n"
     "- questions not connected to topic\n\n"
+    "FORBIDDEN QUESTION PATTERNS (B1):\n\n"
+    '- "How do people..."\n'
+    '- "Why do people..."\n'
+    "- any questions about society or groups in general\n\n"
+    "B1 questions must focus on:\n\n"
+    "- the student personally\n"
+    "- people they know\n"
+    "- real situations they have seen\n\n"
+    "NOT general world explanations.\n\n"
     "TOPIC RULES:\n\n"
     "- Max 5 words\n"
     "- Must be clear, natural, from source\n"
+    "- Topic must NOT use academic framing.\n"
+    'Wrong: "Social perceptions of baldness"\n'
+    'Right: "How people feel about baldness"\n'
     "- Forbidden: academic framing, complex terminology\n\n"
     "SPEAKING TASK RULES:\n\n"
+    "- speaking_task must be an INSTRUCTION for the student — what they must DO, not a sample answer or example text\n"
+    "- Speaking task = the task to perform in speech; do NOT write model dialogue or sentences for the student to read\n"
     "- Must be specific and connected to topic\n"
     "- Must require:\n"
     "  - opinion + explanation OR\n"
     "  - experience + reflection\n"
-    "- Must allow 4–6 sentences\n\n"
+    "- Student output: about 4–6 sentences when they speak (the task tells them what to do, not what to say word-for-word)\n\n"
     "FORBIDDEN TASKS:\n\n"
     "- generic tasks\n"
     "- abstract or theoretical tasks\n"
@@ -961,9 +975,11 @@ _PREVIEW_SYSTEM_SPEAKING_B1 = (
     "CORE PRINCIPLE:\n"
     'B1 = A2 + opinion + "because"\n\n'
     'Return ONLY these keys:\n'
-    '- "topic": one short line (max 5 English words; natural; from source)\n'
-    '- "discussion_questions": exactly 6 strings (allowed forms; max 12 words each; opinion + reason; on-topic; source-based)\n'
-    '- "speaking_task": exactly 1 string (specific; on-topic; opinion+explanation OR experience+reflection; 4–6 sentences)\n'
+    '- "topic": one short line (max 5 English words; natural; from source; no academic framing — e.g. not like a lecture title)\n'
+    '- "discussion_questions": exactly 6 strings (allowed forms; max 12 words each; opinion + reason; on-topic; source-based; '
+    "student/people-they-know/real situations only — not How do people / Why do people / society in general)\n"
+    '- "speaking_task": exactly 1 string (imperative instruction: what the student must DO in the speaking activity; '
+    "NOT a sample answer; on-topic; expects ~4–6 sentences of student speech)\n"
     "Do not include key_ideas, warmup_questions, vocabulary_items, grammar_patterns, choices, or support_words."
 )
 
@@ -1236,13 +1252,15 @@ def _patch_hard_constraints_block(
             return (
                 "HARD CONSTRAINTS (CEFR B1 speaking):\n"
                 + _SPEAKING_GLOBAL_HARD_CONSTRAINTS_LINE
-                + "- topic: max 5 English words; clear, natural; from source; no academic framing or complex terminology.\n"
+                + "- topic: max 5 English words; clear, natural; from source; no academic framing or complex terminology "
+                '(e.g. wrong: "Social perceptions of baldness"; right: "How people feel about baldness").\n'
                 "- discussion_questions: exactly 6; keep ALL A1+A2 speaking bases; max 12 words each; "
                 "allowed forms include Why/How do you feel/Do you agree/What would you do if/Which do you prefer and why/Do you think; "
-                "must require opinion + reason (explicit or implied); personal or relatable; source meaning; "
-                "everyday understanding only; answerable by opinion, experience, or simple reasoning — not specialist or teacher-style; "
-                "FORBIDDEN: What do you know about...; expert/scientific; abstract theory; essay-like; off-topic.\n"
-                "- speaking_task: exactly 1; specific; on-topic; opinion+explanation OR experience+reflection; 4–6 sentences; "
+                "must require opinion + reason (explicit or implied); focus on student personally, people they know, situations they saw — "
+                "NOT general world/society; FORBIDDEN: How do people...; Why do people...; society/groups in general; "
+                "What do you know about...; expert/scientific; abstract theory; essay-like; off-topic.\n"
+                "- speaking_task: exactly 1; must be an instruction for what the student must DO (not sample answer or model text); "
+                "specific; on-topic; opinion+explanation OR experience+reflection; expects ~4–6 sentences of student speech; "
                 "not generic, abstract, or expert-level.\n"
                 "- CORE: B1 = A2 + opinion + because.\n"
                 '- Command "додай більше питань": refine or replace; keep exactly 6; all B1 speaking rules.\n'
