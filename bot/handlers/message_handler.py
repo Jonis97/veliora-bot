@@ -2279,6 +2279,9 @@ _POST_CARD_KB = InlineKeyboardMarkup(
             InlineKeyboardButton("🔄 Змінити формат", callback_data="onb_p_fmt"),
             InlineKeyboardButton("📊 Змінити рівень", callback_data="onb_p_lvl"),
         ],
+        [
+            InlineKeyboardButton("🏠 Меню", callback_data="onb_prv_menu"),
+        ],
     ]
 )
 
@@ -2314,6 +2317,9 @@ _PREVIEW_KB = InlineKeyboardMarkup(
                 "Уточнити / Переробити", callback_data="onb_prv_ref"
             ),
         ],
+        [
+            InlineKeyboardButton("🏠 Меню", callback_data="onb_prv_menu"),
+        ],
     ]
 )
 
@@ -2322,6 +2328,9 @@ _PREVIEW_LIMIT_KB = InlineKeyboardMarkup(
         [
             InlineKeyboardButton("✅ Все ок", callback_data="onb_prv_ok"),
             InlineKeyboardButton("🔄 Нове джерело", callback_data="onb_prv_new"),
+        ],
+        [
+            InlineKeyboardButton("🏠 Меню", callback_data="onb_prv_menu"),
         ],
     ]
 )
@@ -3393,6 +3402,14 @@ class MessageHandlerService:
                 await query.edit_message_reply_markup(reply_markup=None)
             except Exception:  # noqa: BLE001
                 pass
+            return
+
+        if data == "onb_prv_menu":
+            preview_state.pop(chat_id, None)
+            await query.message.reply_text(
+                "Що хочеш отримати?",
+                reply_markup=_ONB_FMT_STEP1_KB,
+            )
             return
 
         if data == "onb_prv_ref":
