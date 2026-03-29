@@ -2310,17 +2310,9 @@ _PREVIEW_KB = InlineKeyboardMarkup(
     [
         [
             InlineKeyboardButton("✅ Все ок", callback_data="onb_prv_ok"),
-            InlineKeyboardButton("✏️ Уточнити", callback_data="onb_prv_ref"),
-        ],
-    ]
-)
-
-_PREVIEW_REFINE_KB = InlineKeyboardMarkup(
-    [
-        [
-            InlineKeyboardButton("📉 Простіше", callback_data="onb_prv_r_easy"),
-            InlineKeyboardButton("📚 Глибше", callback_data="onb_prv_r_deep"),
-            InlineKeyboardButton("✍️ Своє", callback_data="onb_prv_r_own"),
+            InlineKeyboardButton(
+                "Уточнити / Переробити", callback_data="onb_prv_ref"
+            ),
         ],
     ]
 )
@@ -3412,19 +3404,13 @@ class MessageHandlerService:
                 return
             if prv.get("limit_reached") or int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
                 return
-            prv["awaiting_edit"] = False
-            try:
-                await query.edit_message_text(
-                    "Як адаптувати матеріал?",
-                    reply_markup=_PREVIEW_REFINE_KB,
-                )
-            except Exception as exc:  # noqa: BLE001
-                LOGGER.warning("Refine menu edit failed: %s", exc)
-                sent = await query.message.reply_text(
-                    "Як адаптувати матеріал?",
-                    reply_markup=_PREVIEW_REFINE_KB,
-                )
-                prv["preview_message_id"] = sent.message_id
+            prv["awaiting_edit"] = True
+            await query.message.reply_text(
+                "Напиши, що саме потрібно змінити або переробити 👇\n"
+                "Опиши одним або кількома реченнями (наприклад: простіші питання, "
+                "інший фокус, додати приклади). Формат, рівень і структура перегляду "
+                "залишаються тими самими, якщо ти явно не попросиш їх змінити."
+            )
             return
 
         if data == "onb_prv_r_easy":
@@ -3496,8 +3482,10 @@ class MessageHandlerService:
                 return
             prv["awaiting_edit"] = True
             await query.message.reply_text(
-                "Напиши одним реченням що змінити 👇\n"
-                "Наприклад: 'фокус на Present Simple' або 'для бізнес теми'"
+                "Напиши, що саме потрібно змінити або переробити 👇\n"
+                "Опиши одним або кількома реченнями (наприклад: простіші питання, "
+                "інший фокус, додати приклади). Формат, рівень і структура перегляду "
+                "залишаються тими самими, якщо ти явно не попросиш їх змінити."
             )
             return
 
