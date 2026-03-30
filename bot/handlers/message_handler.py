@@ -2380,10 +2380,10 @@ _POST_CARD_LVL_KB = InlineKeyboardMarkup(
 _PREVIEW_KB = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton("✅ Все ок", callback_data="onb_prv_ok"),
             InlineKeyboardButton(
-                "Уточнити / Переробити", callback_data="onb_prv_ref"
+                "✅ Підтвердити і зробити картку", callback_data="onb_prv_ok"
             ),
+            InlineKeyboardButton("✏️ Змінити матеріал", callback_data="onb_prv_ref"),
         ],
         [
             InlineKeyboardButton("🏠 Меню", callback_data="onb_prv_menu"),
