@@ -2380,10 +2380,8 @@ _POST_CARD_LVL_KB = InlineKeyboardMarkup(
 _PREVIEW_KB = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton(
-                "✅ Підтвердити і зробити картку", callback_data="onb_prv_ok"
-            ),
-            InlineKeyboardButton("✏️ Змінити матеріал", callback_data="onb_prv_ref"),
+            InlineKeyboardButton("✅ Картка", callback_data="onb_prv_ok"),
+            InlineKeyboardButton("✏️ Правки", callback_data="onb_prv_ref"),
         ],
         [
             InlineKeyboardButton("🏠 Меню", callback_data="onb_prv_menu"),
@@ -2394,7 +2392,7 @@ _PREVIEW_KB = InlineKeyboardMarkup(
 _PREVIEW_LIMIT_KB = InlineKeyboardMarkup(
     [
         [
-            InlineKeyboardButton("✅ Все ок", callback_data="onb_prv_ok"),
+            InlineKeyboardButton("✅ Картка", callback_data="onb_prv_ok"),
             InlineKeyboardButton("🔄 Нове джерело", callback_data="onb_prv_new"),
         ],
         [
@@ -3548,7 +3546,7 @@ class MessageHandlerService:
                 text = (
                     f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
                     "Формат, рівень і структура залишаються.\n"
-                    "Можеш попросити:\n"
+                    "Приклади:\n"
                     "• зроби простіше\n"
                     "• додай 2 питання\n"
                     "• додай 2 слова"
@@ -3557,7 +3555,7 @@ class MessageHandlerService:
                 text = (
                     f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
                     "Формат, рівень і структура залишаються.\n"
-                    "Можеш попросити:\n"
+                    "Приклади:\n"
                     "• зроби питання коротшими\n"
                     "• зроби питання живішими\n"
                     "• додай 2 питання"
@@ -3566,7 +3564,7 @@ class MessageHandlerService:
                 text = (
                     f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
                     "Формат, рівень і структура залишаються.\n"
-                    "Можеш попросити:\n"
+                    "Приклади:\n"
                     "• додай 3 слова\n"
                     "• зроби слова простішими\n"
                     "• додай приклади"
@@ -3575,7 +3573,7 @@ class MessageHandlerService:
                 text = (
                     f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
                     "Формат, рівень і структура залишаються.\n"
-                    "Можеш попросити:\n"
+                    "Приклади:\n"
                     "• спростити пояснення\n"
                     "• додати 2 приклади\n"
                     "• зробити practice простішим"
