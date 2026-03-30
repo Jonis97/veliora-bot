@@ -3331,12 +3331,16 @@ class MessageHandlerService:
         prv["limit_reached"] = False
         if prv["edit_rounds"] >= _MAX_PREVIEW_EDIT_ROUNDS:
             prv["limit_reached"] = True
+            limit_preview_text = (
+                _format_preview_message(preview_data, prv.get("format"))
+                + "\n\n⚠️ Правки закінчились."
+            )
             await self._edit_or_reply_preview(
                 bot,
                 chat_id,
                 prv,
                 anchor_message,
-                _PREVIEW_LIMIT_TEXT,
+                limit_preview_text,
                 _PREVIEW_LIMIT_KB,
             )
         else:
