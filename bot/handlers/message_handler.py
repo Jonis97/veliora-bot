@@ -3287,6 +3287,7 @@ class MessageHandlerService:
             "edit_rounds": 0,
             "limit_reached": False,
             "confirmed": False,
+            "last_instruction": "",
         }
 
     async def _edit_or_reply_preview(
@@ -3336,12 +3337,48 @@ class MessageHandlerService:
                 _PREVIEW_LIMIT_KB,
             )
         else:
+            body = _format_preview_message(preview_data, prv.get("format"))
+            instruction = (prv.get("last_instruction") or "").lower()
+            remaining = _MAX_PREVIEW_EDIT_ROUNDS - prv["edit_rounds"]
+            if "слов" in instruction or "word" in instruction:
+                what_changed = "✅ Додано нові слова"
+            elif "прост" in instruction or "simpl" in instruction:
+                what_changed = "✅ Спрощено матеріал"
+            elif "питань" in instruction or "question" in instruction:
+                what_changed = "✅ Додано нові питання"
+            else:
+                what_changed = "✅ Матеріал оновлено"
+            counter = (
+                f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}"
+            )
+            if remaining == 1:
+                warning = (
+                    "⚠️ Остання правка. Після неї — підтверджуй або нове джерело."
+                )
+            else:
+                warning = ""
+            if remaining > 0:
+                if "слов" in instruction or "word" in instruction:
+                    hint = "Хочеш, можу спростити або ускладнити лексику?"
+                elif "питань" in instruction or "question" in instruction:
+                    hint = "Хочеш, можу зробити питання коротшими або живішими?"
+                else:
+                    hint = ""
+            else:
+                hint = ""
+            status_lines = [
+                line
+                for line in (what_changed, counter, warning, hint)
+                if line
+            ]
+            status_block = "\n".join(status_lines)
+            preview_text = f"{body}\n\n{status_block}" if status_block else body
             await self._edit_or_reply_preview(
                 bot,
                 chat_id,
                 prv,
                 anchor_message,
-                _format_preview_message(preview_data, prv.get("format")),
+                preview_text,
                 _PREVIEW_KB,
             )
 
@@ -3522,6 +3559,7 @@ class MessageHandlerService:
                     "Не вдалося оновити перегляд. Надішли джерело знову або спробуй пізніше."
                 )
                 return
+            prv["last_instruction"] = _PREVIEW_INSTR_EASY
             await self._after_refine_increment(
                 context.bot, chat_id, prv, query.message, pd
             )
@@ -3551,6 +3589,7 @@ class MessageHandlerService:
                     "Не вдалося оновити перегляд. Надішли джерело знову або спробуй пізніше."
                 )
                 return
+            prv["last_instruction"] = _PREVIEW_INSTR_DEEP
             await self._after_refine_increment(
                 context.bot, chat_id, prv, query.message, pd
             )
@@ -3684,6 +3723,7 @@ class MessageHandlerService:
                         "Не вдалося оновити перегляд. Надішли джерело знову або спробуй пізніше."
                     )
                     return
+                prv_early["last_instruction"] = original_content
                 await self._after_refine_increment(
                     context.bot, chat_id, prv_early, message, pd
                 )
