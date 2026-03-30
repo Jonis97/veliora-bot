@@ -3324,7 +3324,10 @@ class MessageHandlerService:
     ) -> None:
         prv["preview_data"] = preview_data
         prv["edit_rounds"] = int(prv.get("edit_rounds") or 0) + 1
-        prv["awaiting_edit"] = False
+        if prv["edit_rounds"] >= _MAX_PREVIEW_EDIT_ROUNDS:
+            prv["awaiting_edit"] = False
+        else:
+            prv["awaiting_edit"] = True
         prv["limit_reached"] = False
         if prv["edit_rounds"] >= _MAX_PREVIEW_EDIT_ROUNDS:
             prv["limit_reached"] = True
