@@ -3527,12 +3527,59 @@ class MessageHandlerService:
             if prv.get("limit_reached") or int(prv.get("edit_rounds") or 0) >= _MAX_PREVIEW_EDIT_ROUNDS:
                 return
             prv["awaiting_edit"] = True
-            await query.message.reply_text(
-                "Напиши, що саме потрібно змінити або переробити 👇\n"
-                "Опиши одним або кількома реченнями (наприклад: простіші питання, "
-                "інший фокус, додати приклади). Формат, рівень і структура перегляду "
-                "залишаються тими самими, якщо ти явно не попросиш їх змінити."
-            )
+            remaining = _MAX_PREVIEW_EDIT_ROUNDS - int(prv.get("edit_rounds") or 0)
+            if remaining <= 0:
+                await query.message.reply_text(
+                    "Напиши, що саме потрібно змінити або переробити 👇\n"
+                    "Опиши одним або кількома реченнями (наприклад: простіші питання, "
+                    "інший фокус, додати приклади). Формат, рівень і структура перегляду "
+                    "залишаються тими самими, якщо ти явно не попросиш їх змінити."
+                )
+                return
+            kind = _preview_format_kind(prv.get("format"))
+            if kind == "lesson":
+                text = (
+                    f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
+                    "Формат, рівень і структура залишаються.\n"
+                    "Можеш попросити:\n"
+                    "• зроби простіше\n"
+                    "• додай 2 питання\n"
+                    "• додай 2 слова"
+                )
+            elif kind in ("speaking", "questions"):
+                text = (
+                    f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
+                    "Формат, рівень і структура залишаються.\n"
+                    "Можеш попросити:\n"
+                    "• зроби питання коротшими\n"
+                    "• зроби питання живішими\n"
+                    "• додай 2 питання"
+                )
+            elif kind == "vocabulary":
+                text = (
+                    f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
+                    "Формат, рівень і структура залишаються.\n"
+                    "Можеш попросити:\n"
+                    "• додай 3 слова\n"
+                    "• зроби слова простішими\n"
+                    "• додай приклади"
+                )
+            elif kind == "phrases":
+                text = (
+                    f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
+                    "Формат, рівень і структура залишаються.\n"
+                    "Можеш попросити:\n"
+                    "• спростити пояснення\n"
+                    "• додати 2 приклади\n"
+                    "• зробити practice простішим"
+                )
+            else:
+                text = (
+                    f"✏️ Залишилось правок: {remaining} з {_MAX_PREVIEW_EDIT_ROUNDS}\n\n"
+                    "Формат, рівень і структура залишаються.\n"
+                    "Напиши, що саме хочеш змінити."
+                )
+            await query.message.reply_text(text)
             return
 
         if data == "onb_prv_r_easy":
