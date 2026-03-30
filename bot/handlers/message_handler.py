@@ -3707,6 +3707,7 @@ class MessageHandlerService:
                     json.dumps(pd_for_patch, ensure_ascii=False, default=str),
                     original_content[:2000],
                 )
+                await message.reply_text("✏️ Вношу правки…")
                 try:
                     pd = await self._call_preview_patch_gpt(
                         tr,
