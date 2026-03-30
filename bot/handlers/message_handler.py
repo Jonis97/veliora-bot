@@ -2314,7 +2314,7 @@ def _preview_patch_rules_custom(kind: str, level: Optional[str] = None) -> str:
 
 _PREVIEW_LIMIT_TEXT = "Давай підтвердимо або почнемо з нового 👇"
 
-_MAX_PREVIEW_EDIT_ROUNDS = 5
+_MAX_PREVIEW_EDIT_ROUNDS = 3
 
 _ONB_FMT_STEP1_KB = InlineKeyboardMarkup(
     [
