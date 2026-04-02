@@ -1261,8 +1261,9 @@ class TemplateService:
             items = [escape("—")]
         n = len(items)
         cell_parts: List[str] = []
+        rhythm_classes = (" sc2-cell--lift", " sc2-cell--soft", " sc2-cell--cream")
         for i, q in enumerate(items):
-            rhythm = " sc2-cell--lift" if i % 2 == 0 else " sc2-cell--soft"
+            rhythm = rhythm_classes[i % 3]
             cell_parts.append(
                 f'<div class="sc2-cell{rhythm}" role="article">'
                 f'<p class="sc2-q">{q}</p></div>'
@@ -1295,7 +1296,7 @@ class TemplateService:
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
     body {{
-      background: #cfc6b8;
+      background: #c4baa8;
       font-family: "Lora", "DM Serif Display", Georgia, serif;
       -webkit-font-smoothing: antialiased;
     }}
@@ -1303,85 +1304,140 @@ class TemplateService:
       width: 600px;
       min-height: 920px;
       margin: 0 auto;
-      padding: 32px 30px 44px;
+      padding: 34px 32px 48px;
       position: relative;
-      background-color: #f7f0e5;
+      overflow: hidden;
+      background-color: #f3e9dc;
       background-image:
-        radial-gradient(ellipse 120% 80% at 50% -10%, rgba(255, 255, 255, 0.75) 0%, transparent 52%),
-        radial-gradient(ellipse 90% 60% at 100% 100%, rgba(212, 184, 148, 0.12) 0%, transparent 45%),
-        linear-gradient(90deg, rgba(139, 119, 95, 0.035) 1px, transparent 1px),
-        linear-gradient(rgba(139, 119, 95, 0.028) 1px, transparent 1px),
-        linear-gradient(175deg, #fcf9f4 0%, #efe4d6 55%, #e8dcc8 100%);
-      background-size: 100% 100%, 100% 100%, 22px 22px, 22px 22px, auto;
+        radial-gradient(ellipse 100% 70% at 50% -15%, rgba(255, 255, 255, 0.82) 0%, transparent 48%),
+        radial-gradient(ellipse 70% 45% at 0% 20%, rgba(196, 165, 116, 0.14) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 40% at 100% 85%, rgba(180, 150, 120, 0.12) 0%, transparent 50%),
+        linear-gradient(90deg, rgba(120, 100, 75, 0.028) 1px, transparent 1px),
+        linear-gradient(rgba(120, 100, 75, 0.022) 1px, transparent 1px),
+        linear-gradient(168deg, #fdfbf7 0%, #f0e4d4 42%, #e5d8c6 100%);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px, 24px 24px, auto;
       box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.55),
-        0 18px 48px rgba(42, 36, 28, 0.08);
+        inset 0 0 0 1px rgba(255, 255, 255, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        0 22px 56px rgba(42, 36, 28, 0.1);
+    }}
+    .sc2-page::after {{
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      inset: 0;
+      opacity: 0.35;
+      background-image: radial-gradient(rgba(90, 70, 50, 0.04) 1px, transparent 1px);
+      background-size: 5px 5px;
+      mix-blend-mode: multiply;
     }}
     .sc2-accent-bar {{
-      height: 5px;
-      margin: -32px -30px 26px -30px;
-      border-radius: 0 0 10px 10px;
+      position: relative;
+      z-index: 1;
+      height: 6px;
+      margin: -34px -32px 28px -32px;
+      border-radius: 0 0 12px 12px;
       background: linear-gradient(
-        90deg,
-        #b8956a 0%,
-        #d4b896 22%,
-        #8b7355 55%,
-        #c4a574 100%
+        92deg,
+        #a67c52 0%,
+        #d4b896 18%,
+        #9a7b58 48%,
+        #c9a876 78%,
+        #b8956a 100%
       );
-      opacity: 0.88;
+      box-shadow: 0 3px 12px rgba(90, 70, 45, 0.2);
     }}
     .sc2-header {{
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: row;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 20px;
-      margin-bottom: 32px;
-      padding-bottom: 22px;
-      border-bottom: 1px solid rgba(107, 93, 74, 0.14);
+      gap: 22px;
+      margin-bottom: 36px;
+      padding-bottom: 26px;
+      border-bottom: none;
+      background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(139, 115, 85, 0.1) 50%,
+        transparent 100%
+      );
+      background-size: 100% 1px;
+      background-position: 0 100%;
+      background-repeat: no-repeat;
     }}
     .sc2-header--with-visual .sc2-title-block {{
-      padding-top: 2px;
+      padding-top: 4px;
     }}
     .sc2-title-block {{
       flex: 1;
       min-width: 0;
       text-align: left;
-      padding-right: 8px;
+      padding-right: 10px;
+    }}
+    .sc2-title-wrap {{
+      position: relative;
+      padding: 16px 20px 18px 22px;
+      border-radius: 20px;
+      background: linear-gradient(
+        145deg,
+        rgba(255, 252, 248, 0.95) 0%,
+        rgba(248, 240, 228, 0.55) 55%,
+        rgba(255, 250, 244, 0.75) 100%
+      );
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.75),
+        0 6px 28px rgba(42, 36, 28, 0.07),
+        0 2px 8px rgba(42, 36, 28, 0.04);
+    }}
+    .sc2-title-wrap::before {{
+      content: "";
+      position: absolute;
+      left: 10px;
+      top: 14px;
+      bottom: 14px;
+      width: 5px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #d4b896 0%, #8b6f4a 55%, #c4a574 100%);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
     }}
     .sc2-title {{
       margin: 0;
+      padding-left: 8px;
       font-family: "DM Serif Display", Georgia, serif;
-      font-size: 29px;
+      font-size: 30px;
       font-weight: 700;
-      line-height: 1.1;
-      color: #1e1812;
-      letter-spacing: -0.025em;
+      line-height: 1.08;
+      color: #16120e;
+      letter-spacing: -0.028em;
       word-wrap: break-word;
       overflow-wrap: anywhere;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
     }}
     .sc2-handle {{
-      margin: 12px 0 0;
-      font-size: 12.5px;
-      line-height: 1.45;
-      letter-spacing: 0.055em;
+      margin: 14px 0 0 10px;
+      font-size: 11.5px;
+      line-height: 1.5;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
-      color: #7a6b58;
-      font-weight: 500;
+      color: #6d604e;
+      font-weight: 600;
     }}
     .sc2-deco {{
       flex-shrink: 0;
-      width: 128px;
-      height: 100px;
-      margin: 4px 0 0;
-      padding: 4px;
-      border-radius: 22px;
-      background: linear-gradient(145deg, #fffefb 0%, #ebe0d2 100%);
+      width: 150px;
+      height: 118px;
+      margin: 2px 0 0;
+      padding: 5px;
+      border-radius: 26px;
+      background: linear-gradient(155deg, #ffffff 0%, #ebe3d6 45%, #ddd2c3 100%);
       box-shadow:
-        0 10px 28px rgba(42, 36, 28, 0.14),
-        0 2px 6px rgba(42, 36, 28, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        0 14px 36px rgba(42, 36, 28, 0.16),
+        0 4px 10px rgba(42, 36, 28, 0.07),
+        inset 0 2px 0 rgba(255, 255, 255, 0.9),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.4);
       overflow: hidden;
     }}
     .sc2-deco img {{
@@ -1389,13 +1445,17 @@ class TemplateService:
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 18px;
+      border-radius: 21px;
       vertical-align: middle;
+      filter: saturate(0.97) contrast(1.02);
     }}
     .sc2-grid {{
+      position: relative;
+      z-index: 1;
       display: grid;
       width: 100%;
-      gap: 20px 20px;
+      row-gap: 28px;
+      column-gap: 18px;
       align-content: start;
       justify-content: center;
     }}
@@ -1404,7 +1464,7 @@ class TemplateService:
       justify-items: center;
     }}
     .sc2-grid--n1 .sc2-cell {{
-      max-width: 420px;
+      max-width: 430px;
       width: 100%;
     }}
     .sc2-grid--n2,
@@ -1420,51 +1480,62 @@ class TemplateService:
       grid-column: 1 / -1;
       justify-self: center;
       width: 100%;
-      max-width: 340px;
+      max-width: 348px;
     }}
     .sc2-grid--n5 .sc2-cell:nth-child(5) {{
       grid-column: 1 / -1;
       justify-self: center;
       width: 100%;
-      max-width: calc(50% - 10px);
+      max-width: calc(50% - 9px);
     }}
     .sc2-grid--n7 .sc2-cell:nth-child(7) {{
       grid-column: 1 / -1;
       justify-self: center;
       width: 100%;
-      max-width: calc(50% - 10px);
+      max-width: calc(50% - 9px);
     }}
     .sc2-cell {{
-      border-radius: 18px;
-      padding: 18px 16px;
-      min-height: 96px;
+      border-radius: 24px;
+      padding: 20px 18px;
+      min-height: 100px;
       display: flex;
       align-items: center;
       justify-content: center;
     }}
     .sc2-cell--lift {{
-      background: linear-gradient(165deg, #fffcf7 0%, #f5ebe0 100%);
-      border: 1px solid rgba(139, 115, 85, 0.28);
+      background: linear-gradient(168deg, #fffefb 0%, #f3e8dc 52%, #ebe0d4 100%);
+      border: 1px solid rgba(130, 105, 78, 0.22);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.95) inset,
-        0 8px 22px rgba(42, 36, 28, 0.07);
+        0 2px 0 rgba(255, 255, 255, 0.88) inset,
+        0 10px 28px rgba(42, 36, 28, 0.08),
+        0 2px 6px rgba(42, 36, 28, 0.04);
     }}
     .sc2-cell--soft {{
-      background: linear-gradient(180deg, rgba(255, 252, 248, 0.92) 0%, rgba(245, 238, 228, 0.55) 100%);
-      border: 1.5px dashed rgba(122, 102, 78, 0.34);
-      box-shadow: 0 4px 16px rgba(42, 36, 28, 0.04);
+      background: linear-gradient(185deg, rgba(255, 252, 248, 0.98) 0%, rgba(244, 234, 222, 0.65) 100%);
+      border: 1.5px dashed rgba(115, 95, 72, 0.32);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.75) inset,
+        0 6px 20px rgba(42, 36, 28, 0.05);
+    }}
+    .sc2-cell--cream {{
+      background: linear-gradient(160deg, #faf6ef 0%, #efe4d8 100%);
+      border: 1px dashed rgba(140, 118, 92, 0.38);
+      border-top: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow:
+        0 8px 24px rgba(42, 36, 28, 0.06),
+        inset 0 -1px 0 rgba(120, 95, 70, 0.05);
     }}
     .sc2-q {{
       margin: 0;
       font-size: 14px;
-      line-height: 1.58;
+      line-height: 1.62;
       font-weight: 500;
-      color: #2a2319;
+      color: #252018;
       text-align: center;
       overflow-wrap: anywhere;
       word-wrap: break-word;
       max-width: 100%;
-      letter-spacing: 0.01em;
+      letter-spacing: 0.012em;
     }}
   </style>
 </head>
@@ -1473,7 +1544,9 @@ class TemplateService:
     <div class="sc2-accent-bar" aria-hidden="true"></div>
     <header class="sc2-header{header_mod}">
       <div class="sc2-title-block">
-        <h1 class="sc2-title">{title}</h1>
+        <div class="sc2-title-wrap">
+          <h1 class="sc2-title">{title}</h1>
+        </div>
         {handle_html}
       </div>
       {deco_html}
