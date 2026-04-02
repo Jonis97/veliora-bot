@@ -309,7 +309,7 @@ class ContentPipelineService:
         if resolved.intent == "vocabulary":
             eff_template = "vocab_card"
         elif resolved.intent == "questions":
-            eff_template = "questions_card"
+            eff_template = "speaking_card_v2"
         elif resolved.intent == "lesson":
             eff_template = "lesson_card_v1"
         elif resolved.intent == "phrases":

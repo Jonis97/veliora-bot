@@ -14,6 +14,7 @@ ALLOWED_TEMPLATES = {
     "influencer_card_v2",
     "vocab_card",
     "questions_card",
+    "speaking_card_v2",
     "lesson_card_v1",
     "phrases_card",
 }
@@ -388,6 +389,8 @@ class TemplateService:
             return self._vocab_card_template(normalized)
         if template_name == "questions_card":
             return self._questions_card_template(normalized)
+        if template_name == "speaking_card_v2":
+            return self._speaking_card_v2_template(normalized)
         if template_name == "lesson_card_v1":
             return self._lesson_card_v1_template(normalized)
         if template_name == "phrases_card":
@@ -1237,6 +1240,123 @@ class TemplateService:
   <div class="qc-page page">
     <header>
       <h1 class="qc-title">{title}</h1>
+      {handle_html}
+    </header>
+    {grid_html}
+    {thumb_html}
+  </div>
+</body>
+</html>"""
+
+    def _speaking_card_v2_template(self, card: dict[str, Any]) -> str:
+        title = card["title"]
+        handle = (card.get("handle_display") or "").strip()
+        handle_html = f'<p class="sc2-handle">{handle}</p>' if handle else ""
+        raw_q = list(card.get("questions_lines") or [])[:8]
+        pad = escape("—")
+        while len(raw_q) < 8:
+            raw_q.append(pad)
+        cells = "".join(
+            f'<div class="sc2-cell" role="article"><p class="sc2-q">{q}</p></div>'
+            for q in raw_q[:8]
+        )
+        grid_html = f'<div class="sc2-grid">{cells}</div>'
+
+        thumb_url = (card.get("image_url") or "").strip()
+        if thumb_url and is_safe_topic_image_url(thumb_url):
+            safe_u = escape(thumb_url, quote=True)
+            thumb_html = (
+                f'<figure class="sc2-visual"><img src="{safe_u}" alt="" loading="lazy" /></figure>'
+            )
+        else:
+            thumb_html = ""
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{ background: #e8e8e8; font-family: "DM Serif Display", Georgia, serif; -webkit-font-smoothing: antialiased; }}
+    .sc2-page {{
+      width: 600px;
+      min-height: 920px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, #faf8f5 0%, #f0ebe4 100%);
+      padding: 32px 24px 28px;
+      position: relative;
+    }}
+    .sc2-title {{
+      margin: 0;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #0a0a0a;
+      text-align: center;
+      letter-spacing: -0.02em;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }}
+    .sc2-handle {{
+      margin: 8px 0 0;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: #555;
+    }}
+    .sc2-grid {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(4, auto);
+      gap: 10px;
+      margin-top: 22px;
+      align-content: start;
+    }}
+    .sc2-cell {{
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid rgba(26, 26, 26, 0.85);
+      padding: 12px 10px;
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 6px 18px rgba(0,0,0,0.05);
+    }}
+    .sc2-q {{
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 500;
+      color: #141414;
+      text-align: center;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+    }}
+    .sc2-visual {{
+      margin: 20px auto 0;
+      max-width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+    }}
+    .sc2-visual img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+    }}
+  </style>
+</head>
+<body>
+  <div class="sc2-page page">
+    <header>
+      <h1 class="sc2-title">{title}</h1>
       {handle_html}
     </header>
     {grid_html}
