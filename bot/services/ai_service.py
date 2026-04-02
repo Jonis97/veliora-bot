@@ -326,7 +326,15 @@ class AIContentService:
             )
             raw = response.content[0].text if response.content else ""
             content = raw or "{}"
-            data = json.loads(content)
+            raw = (content or "").strip()
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+                raw = raw.strip()
+            if not raw:
+                raise ValueError("Empty response from Claude")
+            data = json.loads(raw)
             data.setdefault("template", eff)
             data["template"] = eff
             co = data.get("contrast")
