@@ -15,6 +15,7 @@ ALLOWED_TEMPLATES = {
     "vocab_card",
     "questions_card",
     "speaking_card_v2",
+    "speaking_poster_card",
     "lesson_card_v1",
     "phrases_card",
 }
@@ -391,6 +392,8 @@ class TemplateService:
             return self._questions_card_template(normalized)
         if template_name == "speaking_card_v2":
             return self._speaking_card_v2_template(normalized)
+        if template_name == "speaking_poster_card":
+            return self._speaking_poster_card_template(normalized)
         if template_name == "lesson_card_v1":
             return self._lesson_card_v1_template(normalized)
         if template_name == "phrases_card":
@@ -1611,6 +1614,233 @@ class TemplateService:
           <h1 class="sc2-title">{title}</h1>
         </div>
         {handle_html}
+      </div>
+      {deco_html}
+    </header>
+    {grid_html}
+  </div>
+</body>
+</html>"""
+
+    def _speaking_poster_card_template(self, card: dict[str, Any]) -> str:
+        title = card["title"]
+        handle = (card.get("handle_display") or "").strip()
+        sub_html = f'<p class="sp-sub">{handle}</p>' if handle else ""
+        items = [
+            q
+            for q in list(card.get("questions_lines") or [])[:8]
+            if str(q).strip()
+        ]
+        if not items:
+            items = [escape("—")]
+        n = len(items)
+        styles = (" sp-card--a", " sp-card--b", " sp-card--c")
+        cells = "".join(
+            f'<article class="sp-card{styles[i % 3]}" role="article">'
+            f'<p class="sp-q">{items[i]}</p></article>'
+            for i in range(n)
+        )
+        grid_mod = f" sp-grid--n{n}"
+        grid_html = f'<div class="sp-grid{grid_mod}">{cells}</div>'
+
+        thumb_url = (card.get("image_url") or "").strip()
+        if thumb_url and is_safe_topic_image_url(thumb_url):
+            safe_u = escape(thumb_url, quote=True)
+            deco_html = (
+                f'<figure class="sp-deco" aria-hidden="true">'
+                f'<img src="{safe_u}" alt="" loading="lazy" /></figure>'
+            )
+            head_cls = "sp-top sp-top--visual"
+        else:
+            deco_html = ""
+            head_cls = "sp-top"
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{
+      background: #b8a994;
+      font-family: "Lora", "DM Serif Display", Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .sp-page {{
+      width: 600px;
+      min-height: 920px;
+      margin: 0 auto;
+      padding: 38px 34px 48px;
+      position: relative;
+      overflow: hidden;
+      background-color: #f2e8dc;
+      background-image:
+        radial-gradient(ellipse 110% 65% at 50% -8%, rgba(255, 255, 255, 0.78) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 40% at 92% 8%, rgba(200, 170, 130, 0.18) 0%, transparent 55%),
+        linear-gradient(90deg, rgba(100, 82, 60, 0.025) 1px, transparent 1px),
+        linear-gradient(rgba(100, 82, 60, 0.02) 1px, transparent 1px),
+        linear-gradient(172deg, #fdf9f3 0%, #ebe0d2 45%, #dfd2c2 100%);
+      background-size: 100% 100%, 100% 100%, 26px 26px, 26px 26px, auto;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.42),
+        0 24px 60px rgba(38, 32, 24, 0.12);
+    }}
+    .sp-page::before {{
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      inset: 0;
+      opacity: 0.28;
+      background-image: radial-gradient(rgba(70, 55, 40, 0.035) 1px, transparent 1px);
+      background-size: 6px 6px;
+    }}
+    .sp-ribbon {{
+      position: relative;
+      z-index: 1;
+      height: 7px;
+      margin: -38px -34px 30px -34px;
+      border-radius: 0 0 14px 14px;
+      background: linear-gradient(93deg, #9a7a58 0%, #d4b896 25%, #7d6246 55%, #c9a876 100%);
+      box-shadow: 0 4px 14px rgba(60, 48, 32, 0.18);
+    }}
+    .sp-top {{
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px 28px;
+      margin-bottom: 36px;
+      padding-bottom: 8px;
+    }}
+    .sp-top--visual {{
+      align-items: stretch;
+    }}
+    .sp-headline {{
+      flex: 1;
+      min-width: 0;
+      padding: 4px 8px 0 4px;
+    }}
+    .sp-title {{
+      margin: 0;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 34px;
+      font-weight: 700;
+      line-height: 1.05;
+      color: #141008;
+      letter-spacing: -0.03em;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+    }}
+    .sp-sub {{
+      margin: 14px 0 0;
+      font-size: 12px;
+      line-height: 1.5;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #6a5c4a;
+      font-weight: 600;
+    }}
+    .sp-deco {{
+      flex: 0 0 auto;
+      width: min(46%, 276px);
+      min-width: 200px;
+      height: 152px;
+      padding: 6px;
+      border-radius: 26px;
+      align-self: center;
+      background: linear-gradient(150deg, #ffffff 0%, #e8dfd2 50%, #d4c8b8 100%);
+      box-shadow:
+        0 16px 40px rgba(38, 32, 24, 0.15),
+        inset 0 2px 0 rgba(255, 255, 255, 0.9);
+      overflow: hidden;
+    }}
+    .sp-deco img {{
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 20px;
+      filter: saturate(0.96) contrast(1.03);
+    }}
+    .sp-grid {{
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      column-gap: 22px;
+      row-gap: 26px;
+      align-content: start;
+      justify-items: stretch;
+      padding-top: 8px;
+    }}
+    .sp-grid--n1 .sp-card {{
+      grid-column: 1 / -1;
+      max-width: 440px;
+      justify-self: center;
+    }}
+    .sp-grid--n3 .sp-card:nth-child(3),
+    .sp-grid--n5 .sp-card:nth-child(5),
+    .sp-grid--n7 .sp-card:nth-child(7) {{
+      grid-column: 1 / -1;
+      justify-self: center;
+      max-width: calc(50% - 11px);
+    }}
+    .sp-card {{
+      border-radius: 22px;
+      padding: 20px 18px;
+      min-height: 102px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }}
+    .sp-card--a {{
+      background: linear-gradient(175deg, #fffefb 0%, #f4ebe2 100%);
+      border: 1.5px dashed rgba(120, 98, 72, 0.4);
+      box-shadow:
+        0 2px 0 rgba(255, 255, 255, 0.85) inset,
+        0 10px 26px rgba(38, 32, 24, 0.07);
+    }}
+    .sp-card--b {{
+      background: linear-gradient(185deg, rgba(255, 252, 248, 0.98) 0%, rgba(242, 232, 220, 0.75) 100%);
+      border: 1px solid rgba(130, 108, 78, 0.22);
+      box-shadow: 0 8px 22px rgba(38, 32, 24, 0.06);
+    }}
+    .sp-card--c {{
+      background: linear-gradient(165deg, #faf6ef 0%, #ebe0d4 100%);
+      border: 1.5px dashed rgba(100, 85, 65, 0.32);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.8) inset,
+        0 6px 18px rgba(38, 32, 24, 0.05);
+    }}
+    .sp-q {{
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.62;
+      font-weight: 500;
+      color: #221a12;
+      text-align: center;
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
+      letter-spacing: 0.015em;
+    }}
+  </style>
+</head>
+<body>
+  <div class="sp-page page">
+    <div class="sp-ribbon" aria-hidden="true"></div>
+    <header class="{head_cls}">
+      <div class="sp-headline">
+        <h1 class="sp-title">{title}</h1>
+        {sub_html}
       </div>
       {deco_html}
     </header>
