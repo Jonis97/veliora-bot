@@ -1259,18 +1259,30 @@ class TemplateService:
         ]
         if not items:
             items = [escape("—")]
-        n = len(items)
-        cell_parts: List[str] = []
         rhythm_classes = (" sc2-cell--lift", " sc2-cell--soft", " sc2-cell--cream")
-        for i, q in enumerate(items):
-            rhythm = rhythm_classes[i % 3]
-            cell_parts.append(
-                f'<div class="sc2-cell{rhythm}" role="article">'
-                f'<p class="sc2-q">{q}</p></div>'
-            )
-        grid_html = (
-            f'<div class="sc2-grid sc2-grid--n{n}" data-count="{n}">{"".join(cell_parts)}</div>'
+        hero_q = items[0]
+        rest = items[1:]
+        hero_html = (
+            f'<div class="sc2-hero-slot">'
+            f'<article class="sc2-cell sc2-cell--hero" role="article">'
+            f'<p class="sc2-q sc2-q--hero">{hero_q}</p></article></div>'
         )
+        if not rest:
+            grid_html = f'<div class="sc2-poster-flow">{hero_html}</div>'
+        else:
+            cell_parts: List[str] = []
+            for i, q in enumerate(rest):
+                rhythm = rhythm_classes[(i + 1) % 3]
+                cell_parts.append(
+                    f'<div class="sc2-cell{rhythm}" role="article">'
+                    f'<p class="sc2-q">{q}</p></div>'
+                )
+            r = len(rest)
+            grid_html = (
+                f'<div class="sc2-poster-flow">{hero_html}'
+                f'<div class="sc2-cluster sc2-cluster--r{r}">{"".join(cell_parts)}</div>'
+                f"</div>"
+            )
 
         thumb_url = (card.get("image_url") or "").strip()
         if thumb_url and is_safe_topic_image_url(thumb_url):
@@ -1354,9 +1366,9 @@ class TemplateService:
       flex-direction: row;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 22px;
-      margin-bottom: 36px;
-      padding-bottom: 26px;
+      gap: 20px 26px;
+      margin-bottom: 34px;
+      padding: 4px 4px 28px 2px;
       border-bottom: none;
       background: linear-gradient(
         to right,
@@ -1368,8 +1380,11 @@ class TemplateService:
       background-position: 0 100%;
       background-repeat: no-repeat;
     }}
+    .sc2-header--with-visual {{
+      align-items: stretch;
+    }}
     .sc2-header--with-visual .sc2-title-block {{
-      padding-top: 4px;
+      padding-top: 6px;
     }}
     .sc2-title-block {{
       flex: 1;
@@ -1426,73 +1441,114 @@ class TemplateService:
       font-weight: 600;
     }}
     .sc2-deco {{
-      flex-shrink: 0;
-      width: 150px;
-      height: 118px;
-      margin: 2px 0 0;
-      padding: 5px;
-      border-radius: 26px;
-      background: linear-gradient(155deg, #ffffff 0%, #ebe3d6 45%, #ddd2c3 100%);
+      flex: 0 1 auto;
+      width: min(48%, 278px);
+      min-width: 208px;
+      height: 158px;
+      margin: 0 0 0 auto;
+      align-self: center;
+      padding: 6px;
+      border-radius: 28px;
+      background: linear-gradient(148deg, #ffffff 0%, #ebe3d6 42%, #d8cdc0 100%);
       box-shadow:
-        0 14px 36px rgba(42, 36, 28, 0.16),
-        0 4px 10px rgba(42, 36, 28, 0.07),
-        inset 0 2px 0 rgba(255, 255, 255, 0.9),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+        0 18px 44px rgba(42, 36, 28, 0.18),
+        0 6px 14px rgba(42, 36, 28, 0.08),
+        inset 0 2px 0 rgba(255, 255, 255, 0.95),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.5);
       overflow: hidden;
     }}
     .sc2-deco img {{
       display: block;
       width: 100%;
       height: 100%;
+      min-height: 142px;
       object-fit: cover;
-      border-radius: 21px;
+      border-radius: 22px;
       vertical-align: middle;
-      filter: saturate(0.97) contrast(1.02);
+      filter: saturate(0.96) contrast(1.03) brightness(1.02);
     }}
-    .sc2-grid {{
+    .sc2-poster-flow {{
       position: relative;
       z-index: 1;
-      display: grid;
       width: 100%;
-      row-gap: 28px;
-      column-gap: 18px;
+    }}
+    .sc2-hero-slot {{
+      margin: 0 0 6px 0;
+      padding: 0 1px 18px 3px;
+    }}
+    .sc2-cell--hero {{
+      min-height: 118px;
+      padding: 26px 26px 28px;
+      border-radius: 28px;
+      background: linear-gradient(
+        168deg,
+        #fffefb 0%,
+        #f2e6dc 48%,
+        #e4d6c8 100%
+      );
+      border: 1px solid rgba(105, 82, 58, 0.3);
+      box-shadow:
+        0 3px 0 rgba(255, 255, 255, 0.92) inset,
+        0 18px 46px rgba(42, 36, 28, 0.12),
+        0 5px 14px rgba(42, 36, 28, 0.06);
+    }}
+    .sc2-cluster {{
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      column-gap: 20px;
+      row-gap: 22px;
+      padding-top: 22px;
+      margin-top: 8px;
       align-content: start;
       justify-content: center;
     }}
-    .sc2-grid--n1 {{
-      grid-template-columns: 1fr;
-      justify-items: center;
+    .sc2-cluster::before {{
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      top: 0;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(107, 93, 74, 0.18) 20%,
+        rgba(107, 93, 74, 0.18) 80%,
+        transparent
+      );
     }}
-    .sc2-grid--n1 .sc2-cell {{
-      max-width: 430px;
+    .sc2-cluster .sc2-cell:nth-child(2n) {{
+      transform: translateY(6px);
+    }}
+    .sc2-cluster .sc2-cell:nth-child(4n+3),
+    .sc2-cluster .sc2-cell:nth-child(4n+4) {{
+      margin-top: 8px;
+    }}
+    .sc2-cluster--r1 .sc2-cell {{
+      grid-column: 1 / -1;
+      justify-self: center;
+      max-width: 400px;
       width: 100%;
     }}
-    .sc2-grid--n2,
-    .sc2-grid--n3,
-    .sc2-grid--n4,
-    .sc2-grid--n5,
-    .sc2-grid--n6,
-    .sc2-grid--n7,
-    .sc2-grid--n8 {{
-      grid-template-columns: 1fr 1fr;
-    }}
-    .sc2-grid--n3 .sc2-cell:nth-child(3) {{
+    .sc2-cluster--r3 .sc2-cell:nth-child(3) {{
       grid-column: 1 / -1;
       justify-self: center;
       width: 100%;
-      max-width: 348px;
+      max-width: 352px;
     }}
-    .sc2-grid--n5 .sc2-cell:nth-child(5) {{
+    .sc2-cluster--r5 .sc2-cell:nth-child(5) {{
       grid-column: 1 / -1;
       justify-self: center;
       width: 100%;
-      max-width: calc(50% - 9px);
+      max-width: calc(50% - 10px);
     }}
-    .sc2-grid--n7 .sc2-cell:nth-child(7) {{
+    .sc2-cluster--r7 .sc2-cell:nth-child(7) {{
       grid-column: 1 / -1;
       justify-self: center;
       width: 100%;
-      max-width: calc(50% - 9px);
+      max-width: calc(50% - 10px);
     }}
     .sc2-cell {{
       border-radius: 24px;
@@ -1536,6 +1592,13 @@ class TemplateService:
       word-wrap: break-word;
       max-width: 100%;
       letter-spacing: 0.012em;
+    }}
+    .sc2-q--hero {{
+      font-size: 15.5px;
+      line-height: 1.58;
+      font-weight: 600;
+      letter-spacing: 0.018em;
+      color: #1a1510;
     }}
   </style>
 </head>
