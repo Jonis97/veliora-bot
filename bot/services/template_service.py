@@ -1253,23 +1253,29 @@ class TemplateService:
         handle = (card.get("handle_display") or "").strip()
         handle_html = f'<p class="sc2-handle">{handle}</p>' if handle else ""
         raw_q = list(card.get("questions_lines") or [])[:8]
-        pad = escape("—")
-        while len(raw_q) < 8:
-            raw_q.append(pad)
-        cells = "".join(
-            f'<div class="sc2-cell" role="article"><p class="sc2-q">{q}</p></div>'
-            for q in raw_q[:8]
-        )
-        grid_html = f'<div class="sc2-grid">{cells}</div>'
+        cell_parts: List[str] = []
+        for i in range(8):
+            if i < len(raw_q) and str(raw_q[i]).strip():
+                q = raw_q[i]
+                cell_parts.append(
+                    f'<div class="sc2-cell" role="article">'
+                    f'<p class="sc2-q">{q}</p></div>'
+                )
+            else:
+                cell_parts.append(
+                    '<div class="sc2-cell sc2-cell--empty" role="presentation" '
+                    'aria-hidden="true"><span class="sc2-ph"></span></div>'
+                )
+        grid_html = f'<div class="sc2-grid">{"".join(cell_parts)}</div>'
 
         thumb_url = (card.get("image_url") or "").strip()
         if thumb_url and is_safe_topic_image_url(thumb_url):
             safe_u = escape(thumb_url, quote=True)
-            thumb_html = (
-                f'<figure class="sc2-visual"><img src="{safe_u}" alt="" loading="lazy" /></figure>'
+            deco_html = (
+                f'<figure class="sc2-deco"><img src="{safe_u}" alt="" loading="lazy" /></figure>'
             )
         else:
-            thumb_html = ""
+            deco_html = ""
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1278,89 +1284,137 @@ class TemplateService:
   <meta name="viewport" content="width=600, initial-scale=1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet" />
   <style>
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
-    body {{ background: #e8e8e8; font-family: "DM Serif Display", Georgia, serif; -webkit-font-smoothing: antialiased; }}
+    body {{
+      background: #d8d0c4;
+      font-family: "Source Serif 4", "DM Serif Display", Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }}
     .sc2-page {{
       width: 600px;
       min-height: 920px;
       margin: 0 auto;
-      background: linear-gradient(180deg, #faf8f5 0%, #f0ebe4 100%);
-      padding: 32px 24px 28px;
+      padding: 36px 28px 40px;
       position: relative;
+      background-color: #f4ebe0;
+      background-image:
+        radial-gradient(ellipse 140% 90% at 50% 0%, rgba(255, 252, 248, 0.65) 0%, transparent 55%),
+        linear-gradient(90deg, rgba(139, 119, 95, 0.04) 1px, transparent 1px),
+        linear-gradient(rgba(139, 119, 95, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, #faf6ef 0%, #efe6d8 100%);
+      background-size: 100% 100%, 24px 24px, 24px 24px, auto;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    }}
+    .sc2-header {{
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }}
+    .sc2-title-block {{
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+      padding-right: 4px;
     }}
     .sc2-title {{
       margin: 0;
-      font-size: 30px;
+      font-family: "DM Serif Display", Georgia, serif;
+      font-size: 28px;
       font-weight: 700;
-      line-height: 1.1;
-      color: #0a0a0a;
-      text-align: center;
+      line-height: 1.12;
+      color: #2a241c;
       letter-spacing: -0.02em;
       word-wrap: break-word;
       overflow-wrap: anywhere;
     }}
     .sc2-handle {{
-      margin: 8px 0 0;
-      text-align: center;
-      font-size: 11px;
-      letter-spacing: 0.06em;
-      color: #555;
+      margin: 10px 0 0;
+      font-size: 12px;
+      line-height: 1.35;
+      letter-spacing: 0.04em;
+      color: #6b5d4a;
+      font-weight: 500;
+    }}
+    .sc2-deco {{
+      flex-shrink: 0;
+      width: 112px;
+      height: 84px;
+      margin: 2px 0 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px dashed rgba(107, 93, 74, 0.35);
+      background: rgba(255, 252, 248, 0.6);
+      box-shadow: 0 2px 8px rgba(42, 36, 28, 0.06);
+    }}
+    .sc2-deco img {{
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      vertical-align: middle;
+      opacity: 0.92;
     }}
     .sc2-grid {{
       display: grid;
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: repeat(4, auto);
-      gap: 10px;
-      margin-top: 22px;
+      grid-template-rows: repeat(4, minmax(88px, auto));
+      gap: 14px 16px;
       align-content: start;
     }}
     .sc2-cell {{
-      background: #fff;
-      border-radius: 16px;
-      border: 1px solid rgba(26, 26, 26, 0.85);
-      padding: 12px 10px;
-      min-height: 68px;
+      background: linear-gradient(180deg, #fffefb 0%, #faf6f0 100%);
+      border-radius: 14px;
+      border: 1.5px dashed rgba(122, 102, 78, 0.42);
+      padding: 14px 12px;
+      min-height: 88px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 6px 18px rgba(0,0,0,0.05);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.9) inset,
+        0 4px 14px rgba(42, 36, 28, 0.05);
+    }}
+    .sc2-cell--empty {{
+      background: rgba(255, 252, 248, 0.45);
+      border-style: dashed;
+      border-color: rgba(122, 102, 78, 0.22);
+    }}
+    .sc2-ph {{
+      display: block;
+      width: 48px;
+      height: 2px;
+      border-radius: 1px;
+      background: linear-gradient(90deg, transparent, rgba(122, 102, 78, 0.12), transparent);
     }}
     .sc2-q {{
       margin: 0;
-      font-size: 12px;
-      line-height: 1.45;
+      font-size: 13px;
+      line-height: 1.5;
       font-weight: 500;
-      color: #141414;
+      color: #2c261d;
       text-align: center;
       overflow-wrap: anywhere;
       word-wrap: break-word;
-    }}
-    .sc2-visual {{
-      margin: 20px auto 0;
       max-width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,0.08);
-    }}
-    .sc2-visual img {{
-      display: block;
-      width: 100%;
-      height: auto;
-      vertical-align: middle;
     }}
   </style>
 </head>
 <body>
   <div class="sc2-page page">
-    <header>
-      <h1 class="sc2-title">{title}</h1>
-      {handle_html}
+    <header class="sc2-header">
+      <div class="sc2-title-block">
+        <h1 class="sc2-title">{title}</h1>
+        {handle_html}
+      </div>
+      {deco_html}
     </header>
     {grid_html}
-    {thumb_html}
   </div>
 </body>
 </html>"""
