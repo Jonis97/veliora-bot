@@ -345,6 +345,18 @@ class ContentPipelineService:
                     str(x).strip() for x in lead_in_questions if str(x).strip()
                 ][:3]
 
+                discussion_questions = preview_dict.get("core_questions", [])
+                if not isinstance(discussion_questions, list):
+                    discussion_questions = []
+                discussion_questions = [
+                    str(x).strip() for x in discussion_questions if str(x).strip()
+                ][:3]
+
+                vocab = preview_dict.get("support_words", [])
+                if not isinstance(vocab, list):
+                    vocab = []
+                vocab = [str(x).strip() for x in vocab if str(x).strip()][:6]
+
                 choices_raw = preview_dict.get("choices", [])
                 if not isinstance(choices_raw, list):
                     choices_raw = []
@@ -358,11 +370,13 @@ class ContentPipelineService:
                             choices_out.append(s)
 
                 card_for_render = {
-                    "template": "lesson_card_v1",
+                    "template": "lesson_art_v1",
                     "topic": lesson_topic,
-                    "lead_in_questions": lead_in_questions,
-                    "choices": choices_out,
                     "title": lesson_topic,
+                    "lead_in_questions": lead_in_questions,
+                    "discussion_questions": discussion_questions,
+                    "choices": choices_out,
+                    "vocab": vocab,
                 }
 
                 unsplash_url: Optional[str] = None
@@ -385,13 +399,15 @@ class ContentPipelineService:
                     if image_url:
                         card_for_render["image_url"] = image_url
 
-                html = self._template_service.render_html(card_for_render, "lesson_card_v1")
+                html = self._template_service.render_html(card_for_render, "lesson_art_v1")
                 image_bytes = await self._screenshot_service.html_to_image(html)
 
-                LOGGER.info("lesson_preview_bypass_used=true")
+                LOGGER.info(
+                    "selected_template=lesson_art_v1 lesson_preview_bypass_used=true"
+                )
 
                 return PipelineResult(
-                    template_used="lesson_card_v1",
+                    template_used="lesson_art_v1",
                     source_type=resolved.source_type,
                     output_intent="Картка",
                     image_bytes=image_bytes,
@@ -503,7 +519,7 @@ class ContentPipelineService:
         source_type: str,
         intent_label_s: str,
     ) -> str:
-        if template_used == "lesson_card_v1":
+        if template_used in ("lesson_card_v1", "lesson_art_v1"):
             topic = str(card.get("topic", "") or card.get("title", "Lesson")).strip()
             lines_l = [
                 f"{intent_label_s} · {template_used} · джерело: {source_type}",
@@ -518,6 +534,13 @@ class ContentPipelineService:
                     lines_l.append(f"• {str(q).strip()}")
             else:
                 lines_l.append("• —")
+            dq = card.get("discussion_questions")
+            if isinstance(dq, list) and any(str(x).strip() for x in dq):
+                lines_l.extend(["", "Discussion:"])
+                for q in dq[:3]:
+                    s = str(q).strip()
+                    if s:
+                        lines_l.append(f"• {s}")
             lines_l.extend(["", "This or that:"])
             ch = card.get("choices")
             if isinstance(ch, list):
@@ -541,6 +564,13 @@ class ContentPipelineService:
                         lines_l.append(f"• {str(c).strip()}")
             else:
                 lines_l.append("• —")
+            vo = card.get("vocab")
+            if isinstance(vo, list) and any(str(x).strip() for x in vo):
+                lines_l.extend(["", "Vocabulary:"])
+                for w in vo[:6]:
+                    s = str(w).strip()
+                    if s:
+                        lines_l.append(f"• {s}")
             lines_l.extend(["", "(Попередній перегляд зображення недоступний — текст картки вище.)"])
             text = "\n".join(lines_l)
             if len(text) > 4000:

@@ -17,6 +17,7 @@ ALLOWED_TEMPLATES = {
     "speaking_card_v2",
     "speaking_poster_card",
     "lesson_card_v1",
+    "lesson_art_v1",
     "phrases_card",
 }
 
@@ -188,6 +189,20 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
             escape(str(x).strip())[:500] for x in lead_in_in[:3] if str(x).strip()
         ]
 
+    disc_in: Any = raw.get("discussion_questions")
+    discussion_questions_lines: List[str] = []
+    if isinstance(disc_in, list):
+        discussion_questions_lines = [
+            escape(str(x).strip())[:500] for x in disc_in[:3] if str(x).strip()
+        ]
+
+    vocab_lesson_in: Any = raw.get("vocab")
+    lesson_vocab_lines: List[str] = []
+    if isinstance(vocab_lesson_in, list):
+        lesson_vocab_lines = [
+            escape(str(x).strip())[:200] for x in vocab_lesson_in[:6] if str(x).strip()
+        ]
+
     choices_in: Any = raw.get("choices")
     choice_lines: List[str] = []
     if isinstance(choices_in, list):
@@ -259,6 +274,8 @@ def _normalize_card(raw: dict[str, Any]) -> dict[str, Any]:
         "handle_display": handle_display,
         "lesson_topic": lesson_topic,
         "lead_in_questions_lines": lead_in_questions_lines,
+        "discussion_questions_lines": discussion_questions_lines,
+        "lesson_vocab_lines": lesson_vocab_lines,
         "choice_lines": choice_lines,
         "phrases_blocks": phrases_blocks,
     }
@@ -396,6 +413,8 @@ class TemplateService:
             return self._speaking_poster_card_template(normalized)
         if template_name == "lesson_card_v1":
             return self._lesson_card_v1_template(normalized)
+        if template_name == "lesson_art_v1":
+            return self._lesson_art_v1_template(normalized)
         if template_name == "phrases_card":
             return self._phrases_card_template(normalized)
         if template_name == "warm_paper_v2":
@@ -2042,6 +2061,214 @@ class TemplateService:
       <ul class="lc-ul">{choice_items}</ul>
     </section>
     {media_html}
+  </div>
+</body>
+</html>"""
+
+    def _lesson_art_v1_template(self, card: dict[str, Any]) -> str:
+        topic = (card.get("lesson_topic") or card.get("title") or "Lesson").strip()
+
+        lead_in = list(card.get("lead_in_questions_lines") or [])[:3]
+        if not lead_in:
+            lead_in = [escape("—")]
+        lead_items = "".join(f'<li class="la-li">{q}</li>' for q in lead_in)
+
+        discussion = list(card.get("discussion_questions_lines") or [])[:3]
+        if not discussion:
+            discussion = [escape("—")]
+        disc_items = "".join(f'<li class="la-li">{q}</li>' for q in discussion)
+
+        choices = list(card.get("choice_lines") or [])[:4]
+        if not choices:
+            choices = [escape("—")]
+        choice_items = "".join(f'<li class="la-li la-li-choice">{c}</li>' for c in choices)
+
+        vocab_lines = list(card.get("lesson_vocab_lines") or [])[:6]
+        if not vocab_lines:
+            vocab_lines = [escape("—")]
+        vocab_items = "".join(f'<li class="la-vocab-pill">{w}</li>' for w in vocab_lines)
+
+        raw_img = str(card.get("image_url") or "").strip()
+        if raw_img and is_safe_topic_image_url(raw_img):
+            safe_img = escape(raw_img, quote=True)
+            media_html = (
+                f'<figure class="la-media la-media-img">'
+                f'<img src="{safe_img}" alt="" loading="lazy" /></figure>'
+            )
+        else:
+            media_html = '<div class="la-media la-media-placeholder" aria-hidden="true"></div>'
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * {{ box-sizing: border-box; }}
+    html, body {{ margin: 0; padding: 0; }}
+    body {{
+      background: #e8dfd4;
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      color: #2c2420;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .la-page.page {{
+      width: 600px;
+      min-height: 1080px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #f7f1e8 0%, #efe6da 45%, #e9dfd2 100%);
+      padding: 36px 32px 40px;
+    }}
+    .la-page::before {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 120% 80% at 10% 0%, rgba(255, 255, 255, 0.65) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 60% at 95% 85%, rgba(220, 200, 175, 0.35) 0%, transparent 45%);
+    }}
+    .la-inner {{
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }}
+    .la-title-card {{
+      text-align: center;
+      padding: 28px 26px 26px;
+      border-radius: 22px;
+      background: #fffefb;
+      border: 1px solid rgba(120, 95, 75, 0.12);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 18px 44px rgba(55, 40, 30, 0.07),
+        0 6px 16px rgba(55, 40, 30, 0.04);
+    }}
+    .la-title {{
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 38px;
+      font-weight: 600;
+      line-height: 1.12;
+      margin: 0;
+      color: #2a211c;
+      letter-spacing: -0.02em;
+    }}
+    .la-title-line {{
+      width: min(200px, 55%);
+      height: 2px;
+      margin: 16px auto 0;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, rgba(90, 70, 55, 0.35), transparent);
+    }}
+    .la-block {{
+      padding: 20px 22px 22px;
+      border-radius: 18px;
+      background: #fffcfa;
+      border: 1px solid rgba(130, 105, 85, 0.1);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.9) inset,
+        0 12px 32px rgba(45, 35, 28, 0.06),
+        0 4px 12px rgba(45, 35, 28, 0.035);
+    }}
+    .la-h {{
+      margin: 0 0 14px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #7a6558;
+    }}
+    .la-ul {{
+      margin: 0;
+      padding: 0 0 0 18px;
+    }}
+    .la-li {{
+      margin: 0 0 11px;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #352a24;
+      font-weight: 500;
+    }}
+    .la-li:last-child {{ margin-bottom: 0; }}
+    .la-li-choice {{
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: #3d322c;
+    }}
+    .la-vocab-grid {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }}
+    .la-vocab-pill {{
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #3a3028;
+      background: linear-gradient(180deg, #faf6f1 0%, #f3ebe3 100%);
+      border: 1px solid rgba(120, 95, 75, 0.14);
+      box-shadow: 0 1px 2px rgba(40, 30, 22, 0.04);
+    }}
+    .la-media {{
+      margin-top: 4px;
+      width: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(110, 90, 72, 0.12);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 14px 36px rgba(45, 35, 28, 0.08),
+        0 5px 14px rgba(45, 35, 28, 0.05);
+    }}
+    .la-media-img img {{
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+    }}
+    .la-media-placeholder {{
+      min-height: 180px;
+      background: linear-gradient(165deg, #ebe3d9 0%, #dfd4c8 100%);
+    }}
+  </style>
+</head>
+<body>
+  <div class="la-page page">
+    <div class="la-inner">
+      <header class="la-title-card" aria-label="Topic">
+        <h1 class="la-title">{topic}</h1>
+        <div class="la-title-line" aria-hidden="true"></div>
+      </header>
+      <section class="la-block" aria-labelledby="la-lead">
+        <h2 id="la-lead" class="la-h">Lead-in</h2>
+        <ul class="la-ul">{lead_items}</ul>
+      </section>
+      <section class="la-block" aria-labelledby="la-disc">
+        <h2 id="la-disc" class="la-h">Discussion</h2>
+        <ul class="la-ul">{disc_items}</ul>
+      </section>
+      <section class="la-block" aria-labelledby="la-tot">
+        <h2 id="la-tot" class="la-h">This or that</h2>
+        <ul class="la-ul">{choice_items}</ul>
+      </section>
+      <section class="la-block" aria-labelledby="la-voc">
+        <h2 id="la-voc" class="la-h">Vocabulary</h2>
+        <ul class="la-vocab-grid">{vocab_items}</ul>
+      </section>
+      {media_html}
+    </div>
   </div>
 </body>
 </html>"""
