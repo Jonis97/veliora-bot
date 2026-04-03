@@ -2068,35 +2068,47 @@ class TemplateService:
     def _lesson_art_v1_template(self, card: dict[str, Any]) -> str:
         topic = (card.get("lesson_topic") or card.get("title") or "Lesson").strip()
 
-        lead_in = list(card.get("lead_in_questions_lines") or [])[:3]
+        # Flexible caps: lead-in 2–3, discussion 2–4, choices 3–4, vocab 4–6 (use what exists).
+        lead_raw = list(card.get("lead_in_questions_lines") or [])
+        lead_in = lead_raw[:3]
         if not lead_in:
             lead_in = [escape("—")]
         lead_items = "".join(f'<li class="la-li">{q}</li>' for q in lead_in)
 
-        discussion = list(card.get("discussion_questions_lines") or [])[:3]
+        disc_raw = list(card.get("discussion_questions_lines") or [])
+        discussion = disc_raw[:4]
         if not discussion:
             discussion = [escape("—")]
         disc_items = "".join(f'<li class="la-li">{q}</li>' for q in discussion)
 
-        choices = list(card.get("choice_lines") or [])[:4]
+        choice_raw = list(card.get("choice_lines") or [])
+        choices = choice_raw[:4]
         if not choices:
             choices = [escape("—")]
-        choice_items = "".join(f'<li class="la-li la-li-choice">{c}</li>' for c in choices)
+        choice_items = "".join(
+            f'<li class="la-li la-li-choice">{c}</li>' for c in choices
+        )
 
-        vocab_lines = list(card.get("lesson_vocab_lines") or [])[:6]
+        vocab_raw = list(card.get("lesson_vocab_lines") or [])
+        vocab_lines = vocab_raw[:6]
         if not vocab_lines:
             vocab_lines = [escape("—")]
-        vocab_items = "".join(f'<li class="la-vocab-pill">{w}</li>' for w in vocab_lines)
+        vocab_items = "".join(
+            f'<li class="la-vocab-pill"><span class="la-vocab-text">{w}</span></li>'
+            for w in vocab_lines
+        )
 
         raw_img = str(card.get("image_url") or "").strip()
         if raw_img and is_safe_topic_image_url(raw_img):
             safe_img = escape(raw_img, quote=True)
             media_html = (
-                f'<figure class="la-media la-media-img">'
+                f'<figure class="la-media la-media-img" aria-label="Visual">'
                 f'<img src="{safe_img}" alt="" loading="lazy" /></figure>'
             )
         else:
-            media_html = '<div class="la-media la-media-placeholder" aria-hidden="true"></div>'
+            media_html = (
+                '<div class="la-media la-media-placeholder" aria-hidden="true"></div>'
+            )
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -2110,137 +2122,187 @@ class TemplateService:
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
     body {{
-      background: #e8dfd4;
+      background: #e4d9cc;
       font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-      color: #2c2420;
+      color: #2b221d;
       -webkit-font-smoothing: antialiased;
     }}
     .la-page.page {{
       width: 600px;
-      min-height: 1080px;
+      min-height: 1120px;
       margin: 0 auto;
       position: relative;
       overflow: hidden;
-      background: linear-gradient(180deg, #f7f1e8 0%, #efe6da 45%, #e9dfd2 100%);
-      padding: 36px 32px 40px;
+      background:
+        radial-gradient(ellipse 140% 90% at 50% -10%, rgba(255, 252, 247, 0.95) 0%, transparent 55%),
+        linear-gradient(175deg, #faf6ef 0%, #f3ebe1 38%, #ebe0d4 72%, #e3d6c8 100%);
+      padding: 40px 30px 36px;
     }}
     .la-page::before {{
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
+      opacity: 0.55;
       background:
-        radial-gradient(ellipse 120% 80% at 10% 0%, rgba(255, 255, 255, 0.65) 0%, transparent 55%),
-        radial-gradient(ellipse 90% 60% at 95% 85%, rgba(220, 200, 175, 0.35) 0%, transparent 45%);
+        radial-gradient(ellipse 80% 50% at 15% 20%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 45% at 92% 88%, rgba(210, 185, 160, 0.28) 0%, transparent 50%);
+    }}
+    .la-page::after {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     }}
     .la-inner {{
       position: relative;
       z-index: 1;
       display: flex;
       flex-direction: column;
-      gap: 22px;
+      gap: 18px;
     }}
     .la-title-card {{
       text-align: center;
-      padding: 28px 26px 26px;
-      border-radius: 22px;
-      background: #fffefb;
-      border: 1px solid rgba(120, 95, 75, 0.12);
+      padding: 34px 28px 32px;
+      border-radius: 26px;
+      background:
+        linear-gradient(165deg, rgba(255, 255, 255, 0.92) 0%, #fffdfb 48%, #faf5ee 100%);
+      border: 1px solid rgba(130, 105, 85, 0.14);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.95) inset,
-        0 18px 44px rgba(55, 40, 30, 0.07),
-        0 6px 16px rgba(55, 40, 30, 0.04);
+        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 2px 0 rgba(255, 250, 245, 0.6) inset,
+        0 22px 50px rgba(55, 38, 28, 0.09),
+        0 8px 20px rgba(45, 32, 24, 0.05);
+    }}
+    .la-title-eyebrow {{
+      margin: 0 0 10px;
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: #9a8274;
     }}
     .la-title {{
       font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: 38px;
+      font-size: 42px;
       font-weight: 600;
-      line-height: 1.12;
+      line-height: 1.1;
       margin: 0;
-      color: #2a211c;
-      letter-spacing: -0.02em;
+      color: #231a15;
+      letter-spacing: -0.03em;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
     }}
     .la-title-line {{
-      width: min(200px, 55%);
-      height: 2px;
-      margin: 16px auto 0;
-      border-radius: 2px;
-      background: linear-gradient(90deg, transparent, rgba(90, 70, 55, 0.35), transparent);
+      width: min(240px, 62%);
+      height: 3px;
+      margin: 20px auto 0;
+      border-radius: 3px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(165, 130, 105, 0.45) 15%,
+        rgba(195, 155, 125, 0.55) 50%,
+        rgba(165, 130, 105, 0.45) 85%,
+        transparent
+      );
+      box-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+    }}
+    .la-title-deco {{
+      margin: 14px auto 0;
+      width: 48px;
+      height: 6px;
+      opacity: 0.45;
+      background: radial-gradient(circle, rgba(160, 125, 100, 0.5) 0%, transparent 70%);
     }}
     .la-block {{
       padding: 20px 22px 22px;
-      border-radius: 18px;
-      background: #fffcfa;
-      border: 1px solid rgba(130, 105, 85, 0.1);
+      border-radius: 20px;
+      background: #fffefb;
+      border: 1px solid rgba(125, 100, 80, 0.1);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.9) inset,
-        0 12px 32px rgba(45, 35, 28, 0.06),
-        0 4px 12px rgba(45, 35, 28, 0.035);
+        0 1px 0 rgba(255, 255, 255, 0.98) inset,
+        0 14px 36px rgba(42, 30, 22, 0.055),
+        0 4px 14px rgba(42, 30, 22, 0.04);
     }}
     .la-h {{
-      margin: 0 0 14px;
-      font-size: 10px;
+      margin: 0 0 13px;
+      font-size: 9.5px;
       font-weight: 600;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: #7a6558;
+      color: #8a7264;
     }}
     .la-ul {{
       margin: 0;
-      padding: 0 0 0 18px;
+      padding: 0 0 0 20px;
     }}
     .la-li {{
-      margin: 0 0 11px;
-      font-size: 14px;
-      line-height: 1.55;
-      color: #352a24;
+      margin: 0 0 12px;
+      font-size: 14.5px;
+      line-height: 1.58;
+      color: #342a24;
       font-weight: 500;
     }}
     .la-li:last-child {{ margin-bottom: 0; }}
     .la-li-choice {{
-      font-size: 13.5px;
-      line-height: 1.5;
+      font-size: 14px;
+      line-height: 1.52;
       color: #3d322c;
     }}
     .la-vocab-grid {{
       display: flex;
       flex-wrap: wrap;
-      gap: 8px 10px;
+      gap: 9px 10px;
       margin: 0;
       padding: 0;
       list-style: none;
     }}
     .la-vocab-pill {{
-      display: inline-block;
-      padding: 8px 14px;
+      display: block;
+      padding: 9px 16px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 500;
-      color: #3a3028;
-      background: linear-gradient(180deg, #faf6f1 0%, #f3ebe3 100%);
-      border: 1px solid rgba(120, 95, 75, 0.14);
-      box-shadow: 0 1px 2px rgba(40, 30, 22, 0.04);
+      color: #3d332c;
+      background: linear-gradient(180deg, #faf7f3 0%, #f0e8df 100%);
+      border: 1px solid rgba(125, 100, 82, 0.13);
+      box-shadow: 0 1px 2px rgba(38, 28, 20, 0.05);
+    }}
+    .la-vocab-text {{
+      display: inline;
     }}
     .la-media {{
-      margin-top: 4px;
+      margin-top: 6px;
       width: 100%;
-      border-radius: 18px;
+      border-radius: 22px;
       overflow: hidden;
-      border: 1px solid rgba(110, 90, 72, 0.12);
+      border: 1px solid rgba(110, 88, 70, 0.14);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.65) inset,
-        0 14px 36px rgba(45, 35, 28, 0.08),
-        0 5px 14px rgba(45, 35, 28, 0.05);
+        0 1px 0 rgba(255, 255, 255, 0.75) inset,
+        0 20px 48px rgba(38, 28, 22, 0.12),
+        0 8px 22px rgba(38, 28, 22, 0.08);
+    }}
+    .la-media.la-media-img {{
+      position: relative;
+      min-height: 280px;
+      max-height: 320px;
+      background: #e8dfd6;
     }}
     .la-media-img img {{
       display: block;
       width: 100%;
-      height: auto;
+      height: 100%;
+      min-height: 280px;
+      object-fit: cover;
+      object-position: center;
       vertical-align: middle;
     }}
     .la-media-placeholder {{
-      min-height: 180px;
-      background: linear-gradient(165deg, #ebe3d9 0%, #dfd4c8 100%);
+      min-height: 280px;
+      background:
+        linear-gradient(145deg, #efe6dc 0%, #e2d5c8 50%, #d8cbc0 100%);
     }}
   </style>
 </head>
@@ -2248,8 +2310,10 @@ class TemplateService:
   <div class="la-page page">
     <div class="la-inner">
       <header class="la-title-card" aria-label="Topic">
+        <p class="la-title-eyebrow">Lesson</p>
         <h1 class="la-title">{topic}</h1>
         <div class="la-title-line" aria-hidden="true"></div>
+        <div class="la-title-deco" aria-hidden="true"></div>
       </header>
       <section class="la-block" aria-labelledby="la-lead">
         <h2 id="la-lead" class="la-h">Lead-in</h2>
@@ -2263,7 +2327,7 @@ class TemplateService:
         <h2 id="la-tot" class="la-h">This or that</h2>
         <ul class="la-ul">{choice_items}</ul>
       </section>
-      <section class="la-block" aria-labelledby="la-voc">
+      <section class="la-block la-block-vocab" aria-labelledby="la-voc">
         <h2 id="la-voc" class="la-h">Vocabulary</h2>
         <ul class="la-vocab-grid">{vocab_items}</ul>
       </section>
