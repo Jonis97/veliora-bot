@@ -1,8 +1,18 @@
 import re
+from functools import lru_cache
 from html import escape
+from pathlib import Path
+from string import Template
 from typing import Any, List, Optional, Tuple
 
 from bot.utils.image_policy import is_safe_topic_image_url
+
+
+@lru_cache(maxsize=1)
+def _lesson_art_v1_html_source() -> str:
+    """Fixed premium layout; data is injected by TemplateService._lesson_art_v1_template."""
+    path = Path(__file__).resolve().parent.parent / "templates" / "lesson_art_v1.html"
+    return path.read_text(encoding="utf-8")
 
 
 ALLOWED_TEMPLATES = {
@@ -2110,242 +2120,15 @@ class TemplateService:
                 '<div class="la-media la-media-placeholder" aria-hidden="true"></div>'
             )
 
-        return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=600, initial-scale=1.0" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    * {{ box-sizing: border-box; }}
-    html, body {{ margin: 0; padding: 0; }}
-    body {{
-      background: #ddcfbf;
-      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-      color: #2a211c;
-      -webkit-font-smoothing: antialiased;
-    }}
-    .la-page.page {{
-      width: 600px;
-      min-height: 1180px;
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-      background:
-        radial-gradient(ellipse 120% 80% at 50% 0%, rgba(255, 253, 248, 0.98) 0%, transparent 52%),
-        linear-gradient(178deg, #f8f1e6 0%, #efe4d6 42%, #e5d8c8 78%, #dccfbf 100%);
-      padding: 36px 28px 32px;
-    }}
-    .la-page::before {{
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background:
-        radial-gradient(ellipse 90% 55% at 12% 18%, rgba(255, 255, 255, 0.55) 0%, transparent 52%),
-        radial-gradient(ellipse 75% 50% at 88% 78%, rgba(200, 175, 150, 0.22) 0%, transparent 48%);
-    }}
-    .la-inner {{
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 20px;
-    }}
-    .la-title-card {{
-      text-align: center;
-      padding: 40px 32px 36px;
-      border-radius: 30px;
-      background:
-        linear-gradient(168deg, #ffffff 0%, #fffdfa 42%, #faf6f0 100%);
-      border: 1px solid rgba(120, 95, 75, 0.12);
-      box-shadow:
-        0 2px 0 rgba(255, 255, 255, 1) inset,
-        0 26px 56px rgba(48, 32, 22, 0.1),
-        0 10px 24px rgba(42, 28, 20, 0.06);
-    }}
-    .la-title-eyebrow {{
-      margin: 0 0 12px;
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.32em;
-      text-transform: uppercase;
-      color: #9c8474;
-    }}
-    .la-title {{
-      font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: 44px;
-      font-weight: 600;
-      line-height: 1.08;
-      margin: 0 auto;
-      max-width: 520px;
-      color: #1c1410;
-      letter-spacing: -0.03em;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
-    }}
-    .la-title-line {{
-      width: min(260px, 70%);
-      height: 4px;
-      margin: 22px auto 0;
-      border-radius: 4px;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(175, 135, 108, 0.5) 12%,
-        rgba(200, 160, 128, 0.65) 50%,
-        rgba(175, 135, 108, 0.5) 88%,
-        transparent
-      );
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
-    }}
-    .la-title-deco {{
-      margin: 16px auto 0;
-      width: 56px;
-      height: 5px;
-      border-radius: 999px;
-      opacity: 0.4;
-      background: linear-gradient(90deg, transparent, rgba(150, 115, 90, 0.45), transparent);
-    }}
-    .la-content-stack {{
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }}
-    .la-block {{
-      position: relative;
-      padding: 22px 24px 24px;
-      border-radius: 22px;
-      background: #ffffff;
-      border: 1px solid rgba(118, 95, 75, 0.09);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 1) inset,
-        0 16px 40px rgba(38, 26, 18, 0.06),
-        0 5px 16px rgba(38, 26, 18, 0.04);
-    }}
-    .la-block::before {{
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 18px;
-      bottom: 18px;
-      width: 3px;
-      border-radius: 0 3px 3px 0;
-      background: linear-gradient(180deg, rgba(200, 165, 135, 0.55), rgba(190, 150, 120, 0.25));
-      opacity: 0.85;
-    }}
-    .la-h {{
-      margin: 0 0 14px 4px;
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.24em;
-      text-transform: uppercase;
-      color: #887062;
-    }}
-    .la-ul {{
-      margin: 0;
-      padding: 0 0 0 22px;
-    }}
-    .la-li {{
-      margin: 0 0 12px;
-      font-size: 14.5px;
-      line-height: 1.6;
-      color: #332a24;
-      font-weight: 500;
-    }}
-    .la-li:last-child {{ margin-bottom: 0; }}
-    .la-li-choice {{
-      font-size: 14px;
-      line-height: 1.55;
-      color: #3c312b;
-    }}
-    .la-vocab-grid {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 10px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }}
-    .la-vocab-pill {{
-      display: block;
-      padding: 10px 17px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #3a3028;
-      background: linear-gradient(180deg, #faf8f5 0%, #f2ebe3 100%);
-      border: 1px solid rgba(120, 98, 78, 0.12);
-      box-shadow: 0 1px 2px rgba(32, 22, 16, 0.04);
-    }}
-    .la-vocab-text {{
-      display: inline;
-    }}
-    .la-media {{
-      flex-shrink: 0;
-      margin-top: 4px;
-      width: 100%;
-      border-radius: 24px;
-      overflow: hidden;
-      border: 1px solid rgba(105, 85, 68, 0.12);
-      box-shadow:
-        0 2px 0 rgba(255, 255, 255, 0.65) inset,
-        0 24px 52px rgba(32, 22, 16, 0.14),
-        0 10px 28px rgba(32, 22, 16, 0.09);
-    }}
-    .la-media.la-media-img {{
-      position: relative;
-      height: 320px;
-      background: #e5dcd2;
-    }}
-    .la-media-img img {{
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-    }}
-    .la-media-placeholder {{
-      height: 320px;
-      background:
-        linear-gradient(152deg, #eee4d8 0%, #e0d4c6 45%, #d4c8ba 100%);
-    }}
-  </style>
-</head>
-<body>
-  <div class="la-page page">
-    <div class="la-inner">
-      <header class="la-title-card" aria-label="Topic">
-        <p class="la-title-eyebrow">Lesson</p>
-        <h1 class="la-title">{topic}</h1>
-        <div class="la-title-line" aria-hidden="true"></div>
-        <div class="la-title-deco" aria-hidden="true"></div>
-      </header>
-      <div class="la-content-stack">
-        <section class="la-block" aria-labelledby="la-lead">
-          <h2 id="la-lead" class="la-h">Lead-in</h2>
-          <ul class="la-ul">{lead_items}</ul>
-        </section>
-        <section class="la-block" aria-labelledby="la-disc">
-          <h2 id="la-disc" class="la-h">Discussion</h2>
-          <ul class="la-ul">{disc_items}</ul>
-        </section>
-        <section class="la-block" aria-labelledby="la-tot">
-          <h2 id="la-tot" class="la-h">This or that</h2>
-          <ul class="la-ul">{choice_items}</ul>
-        </section>
-        <section class="la-block" aria-labelledby="la-voc">
-          <h2 id="la-voc" class="la-h">Vocabulary</h2>
-          <ul class="la-vocab-grid">{vocab_items}</ul>
-        </section>
-      </div>
-      {media_html}
-    </div>
-  </div>
-</body>
-</html>"""
+        tpl = Template(_lesson_art_v1_html_source())
+        return tpl.safe_substitute(
+            title=topic,
+            lead_in_items=lead_items,
+            discussion_items=disc_items,
+            choice_items=choice_items,
+            vocab_items=vocab_items,
+            media_block=media_html,
+        )
 
     def _phrases_card_template(self, card: dict[str, Any]) -> str:
         title = card["title"]
