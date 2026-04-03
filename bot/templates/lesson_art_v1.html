@@ -2,24 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lesson Art V1</title>
+  <meta name="viewport" content="width=1080, initial-scale=1.0" />
+  <title>lesson_art_v1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
+    /* lesson_art_v1 — fixed_mockup contract (template_id: lesson_art_v1) */
     :root {
+      --canvas-w: 1080px;
+      --canvas-min-h: 1400px;
+      --outer-pad: 48px;
       --bg: #f6efe6;
       --bg-2: #efe4d7;
-      --card: rgba(255,255,255,0.96);
+      --title-card-bg: #f8f1e9;
+      --content-card-bg: #ffffff;
+      --content-card-border: rgba(255, 255, 255, 0.85);
       --text: #2f231c;
+      --title-color: #2c1f18;
       --muted: #8d796a;
-      --line: rgba(115, 93, 78, 0.14);
       --shadow: 0 18px 40px rgba(74, 53, 39, 0.08);
       --shadow-soft: 0 10px 24px rgba(74, 53, 39, 0.06);
-      --radius-xl: 34px;
-      --radius-lg: 28px;
-      --radius-md: 22px;
+      --radius-title: 34px;
+      --radius-card: 28px;
+      --radius-image: 28px;
+      --radius-pill: 999px;
+      --title-size: 54px;
+      --section-label-size: 12px;
+      --body-size: 19px;
+      --grid-gap: 24px;
+      --hero-h: 360px;
     }
 
     * {
@@ -30,33 +42,35 @@
       margin: 0;
       padding: 0;
       background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.7), transparent 30%),
-        radial-gradient(circle at top right, rgba(255,255,255,0.55), transparent 28%),
+        radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.65) 0%, transparent 36%),
+        radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.45) 0%, transparent 32%),
+        radial-gradient(ellipse 120% 80% at 50% 100%, rgba(230, 215, 198, 0.35) 0%, transparent 45%),
         linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
       color: var(--text);
+      -webkit-font-smoothing: antialiased;
     }
 
     body {
       font-family: "Plus Jakarta Sans", Arial, sans-serif;
-      padding: 36px;
     }
 
-    .sheet {
-      width: 920px;
+    .canvas {
+      width: var(--canvas-w);
+      min-height: var(--canvas-min-h);
       margin: 0 auto;
-      padding: 22px;
-      border-radius: 38px;
-      background: rgba(255,255,255,0.14);
+      padding: var(--outer-pad);
+      overflow: hidden;
     }
 
     .title-card {
-      background: linear-gradient(180deg, #fbf7f1 0%, #f3ebe0 100%);
-      border-radius: var(--radius-xl);
+      background: linear-gradient(180deg, var(--title-card-bg) 0%, #f3ebe3 100%);
+      border-radius: var(--radius-title);
       box-shadow: var(--shadow);
-      padding: 26px 44px 28px;
+      padding: 28px 40px 32px;
       text-align: center;
-      margin-bottom: 22px;
-      border: 1px solid rgba(255,255,255,0.7);
+      margin-bottom: var(--grid-gap);
+      border: 1px solid var(--content-card-border);
+      max-width: 100%;
     }
 
     .eyebrow {
@@ -69,63 +83,69 @@
     }
 
     .title {
-      margin: 0;
+      margin: 0 auto;
+      max-width: 100%;
       font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: 56px;
-      line-height: 0.98;
+      font-size: var(--title-size);
+      line-height: 1.05;
       font-weight: 600;
       letter-spacing: -0.03em;
-      color: #2c1f18;
+      color: var(--title-color);
+      overflow-wrap: anywhere;
+      word-wrap: break-word;
     }
 
     .title-accent {
-      width: 250px;
+      width: min(280px, 72%);
       height: 12px;
-      margin: 16px auto 0;
-      border-radius: 999px;
+      margin: 18px auto 0;
+      border-radius: var(--radius-pill);
       background:
-        radial-gradient(ellipse at center, rgba(191,164,142,0.55) 0%, rgba(191,164,142,0.18) 45%, rgba(191,164,142,0) 75%);
-      filter: blur(0.2px);
+        radial-gradient(ellipse at center, rgba(191, 164, 142, 0.55) 0%, rgba(191, 164, 142, 0.18) 45%, rgba(191, 164, 142, 0) 75%);
     }
 
-    .grid {
+    .top-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 18px;
-      margin-bottom: 18px;
+      gap: var(--grid-gap);
+      margin-bottom: var(--grid-gap);
     }
 
     .card {
       position: relative;
-      background: var(--card);
-      border-radius: var(--radius-lg);
+      background: var(--content-card-bg);
+      border-radius: var(--radius-card);
       box-shadow: var(--shadow-soft);
-      padding: 22px 24px 24px;
-      overflow: hidden;
-      min-height: 198px;
-      border: 1px solid rgba(255,255,255,0.85);
+      padding: 20px 22px 22px;
+      border: 1px solid var(--content-card-border);
+      min-height: 0;
+      min-width: 0;
+      overflow: auto;
+      max-height: 420px;
     }
 
     .card::before {
       content: "";
       position: absolute;
-      left: 18px;
-      top: 18px;
-      bottom: 18px;
+      left: 16px;
+      top: 16px;
+      bottom: 16px;
       width: 3px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(202,181,164,0.65), rgba(202,181,164,0));
-      opacity: 0.7;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(180deg, rgba(202, 181, 164, 0.65), rgba(202, 181, 164, 0));
+      opacity: 0.75;
+      pointer-events: none;
     }
 
     .card-inner {
-      margin-left: 6px;
+      margin-left: 8px;
+      min-width: 0;
     }
 
     .section-title {
-      margin: 0 0 18px;
-      font-size: 12px;
-      letter-spacing: 0.30em;
+      margin: 0 0 14px;
+      font-size: var(--section-label-size);
+      letter-spacing: 0.28em;
       text-transform: uppercase;
       color: var(--muted);
       font-weight: 600;
@@ -133,14 +153,14 @@
 
     ul.clean-list {
       margin: 0;
-      padding-left: 22px;
+      padding-left: 20px;
       list-style: disc;
     }
 
     ul.clean-list li {
-      margin: 0 0 12px;
-      font-size: 19px;
-      line-height: 1.42;
+      margin: 0 0 10px;
+      font-size: var(--body-size);
+      line-height: 1.45;
       color: var(--text);
     }
 
@@ -151,72 +171,121 @@
     .vocab-wrap {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      padding-top: 2px;
+      gap: 10px;
+      align-content: flex-start;
+      max-height: 320px;
+      overflow-y: auto;
     }
 
-    .pill {
+    .vocab-wrap .la-vocab-pill {
       display: inline-flex;
       align-items: center;
-      padding: 12px 18px;
-      border-radius: 999px;
+      margin: 0;
+      padding: 10px 16px;
+      border-radius: var(--radius-pill);
+      list-style: none;
       background: linear-gradient(180deg, #f8f3ec 0%, #efe5d9 100%);
       border: 1px solid rgba(144, 117, 98, 0.14);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
       color: #4c3b30;
-      font-size: 18px;
+      font-size: calc(var(--body-size) - 1px);
       line-height: 1.2;
-      white-space: nowrap;
+      max-width: 100%;
+      white-space: normal;
     }
 
-    .media {
-      margin-top: 6px;
-      background: rgba(255,255,255,0.28);
-      border-radius: var(--radius-xl);
-      padding: 14px;
-      box-shadow: var(--shadow-soft);
+    .vocab-wrap .la-vocab-text {
+      display: inline;
+      overflow-wrap: anywhere;
+    }
+
+    /* bottom_composition: asymmetric_split 68% / 32% */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: minmax(0, 68fr) minmax(0, 32fr);
+      gap: var(--grid-gap);
+      align-items: stretch;
+      min-height: 0;
+    }
+
+    .bottom-hero {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
     }
 
     .media-frame {
-      height: 360px;
+      height: var(--hero-h);
       width: 100%;
-      border-radius: 28px;
+      border-radius: var(--radius-image);
       overflow: hidden;
       background: linear-gradient(180deg, #eadfd2 0%, #d9c9b6 100%);
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(115, 93, 78, 0.1);
+      flex-shrink: 0;
     }
 
-    .media-frame img {
+    .media-frame figure.la-media-img {
+      margin: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
       display: block;
     }
 
-    .media-placeholder {
+    .media-frame figure.la-media-img img {
       width: 100%;
       height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    .media-frame .la-media-placeholder {
+      width: 100%;
+      height: 100%;
+      min-height: var(--hero-h);
       display: grid;
       place-items: center;
-      font-size: 18px;
-      color: rgba(76,59,48,0.6);
+      font-size: 16px;
+      color: rgba(76, 59, 48, 0.55);
       background:
-        radial-gradient(circle at top left, rgba(255,255,255,0.55), transparent 24%),
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.55), transparent 24%),
         linear-gradient(180deg, #efe5d8 0%, #dbcbb9 100%);
+    }
+
+    .bottom-echo {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bottom-echo .card {
+      flex: 1 1 auto;
+      min-height: var(--hero-h);
+      max-height: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bottom-echo .vocab-wrap {
+      max-height: none;
+      flex: 1 1 auto;
+      overflow-y: auto;
     }
   </style>
 </head>
 <body>
-  <main class="sheet">
+  <main class="canvas">
     <section class="title-card">
       <div class="eyebrow">Lesson</div>
       <h1 class="title">$title</h1>
-      <div class="title-accent"></div>
+      <div class="title-accent" aria-hidden="true"></div>
     </section>
 
-    <section class="grid">
+    <section class="top-grid" aria-label="Content grid">
       <article class="card">
         <div class="card-inner">
-          <h2 class="section-title">Lead-in</h2>
+          <h2 class="section-title">LEAD-IN</h2>
           <ul class="clean-list">
             $lead_in_items
           </ul>
@@ -225,7 +294,7 @@
 
       <article class="card">
         <div class="card-inner">
-          <h2 class="section-title">Discussion</h2>
+          <h2 class="section-title">DISCUSSION</h2>
           <ul class="clean-list">
             $discussion_items
           </ul>
@@ -234,7 +303,7 @@
 
       <article class="card">
         <div class="card-inner">
-          <h2 class="section-title">This or That</h2>
+          <h2 class="section-title">THIS OR THAT</h2>
           <ul class="clean-list">
             $choice_items
           </ul>
@@ -243,7 +312,7 @@
 
       <article class="card">
         <div class="card-inner">
-          <h2 class="section-title">Vocabulary</h2>
+          <h2 class="section-title">VOCAB</h2>
           <div class="vocab-wrap">
             $vocab_items
           </div>
@@ -251,9 +320,21 @@
       </article>
     </section>
 
-    <section class="media">
-      <div class="media-frame">
-        $media_block
+    <section class="bottom-row" aria-label="Bottom composition">
+      <div class="bottom-hero">
+        <div class="media-frame">
+          $media_block
+        </div>
+      </div>
+      <div class="bottom-echo">
+        <article class="card">
+          <div class="card-inner">
+            <h2 class="section-title">VOCAB</h2>
+            <div class="vocab-wrap">
+              $vocab_items
+            </div>
+          </div>
+        </article>
       </div>
     </section>
   </main>
