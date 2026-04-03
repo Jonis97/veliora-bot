@@ -8,6 +8,7 @@ MVP: one premium warm_paper_v2 card per request from the latest source only.
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from dataclasses import dataclass
@@ -67,6 +68,23 @@ def _approved_preview_topic_for_unsplash(source_text: str) -> Optional[str]:
         return None
     line = m.group(1).strip()
     return line or None
+
+
+def _extract_approved_preview_json(raw_ai: str) -> Optional[dict[str, Any]]:
+    start_marker = "APPROVED_PREVIEW_JSON_START"
+    end_marker = "APPROVED_PREVIEW_JSON_END"
+
+    if start_marker not in raw_ai or end_marker not in raw_ai:
+        return None
+
+    try:
+        start = raw_ai.index(start_marker) + len(start_marker)
+        end = raw_ai.index(end_marker, start)
+        payload = raw_ai[start:end].strip()
+        data = json.loads(payload)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
 
 
 _LESSON_CARD_V1_EXTRA_RULES = """
@@ -304,7 +322,6 @@ class ContentPipelineService:
     async def execute(self, prepare: PrepareResult) -> PipelineResult:
         resolved = prepare.resolved
         raw_ai = resolved.text_for_ai
-        grounded = _ground_for_ai(raw_ai)
 
         if resolved.intent == "vocabulary":
             eff_template = "vocab_card"
@@ -316,6 +333,76 @@ class ContentPipelineService:
             eff_template = "phrases_card"
         else:
             eff_template = DEFAULT_TEMPLATE
+
+        preview_dict = _extract_approved_preview_json(raw_ai)
+        if eff_template == "lesson_card_v1" and isinstance(preview_dict, dict):
+            try:
+                lesson_topic = str(preview_dict.get("topic", "") or "").strip()
+                lead_in_questions = preview_dict.get("warmup_questions", [])
+                if not isinstance(lead_in_questions, list):
+                    lead_in_questions = []
+                lead_in_questions = [
+                    str(x).strip() for x in lead_in_questions if str(x).strip()
+                ][:3]
+
+                choices_raw = preview_dict.get("choices", [])
+                if not isinstance(choices_raw, list):
+                    choices_raw = []
+                choices_out: list[Any] = []
+                for c in choices_raw[:6]:
+                    if isinstance(c, dict):
+                        choices_out.append(c)
+                    else:
+                        s = str(c).strip()
+                        if s:
+                            choices_out.append(s)
+
+                card_for_render = {
+                    "template": "lesson_card_v1",
+                    "topic": lesson_topic,
+                    "lead_in_questions": lead_in_questions,
+                    "choices": choices_out,
+                    "title": lesson_topic,
+                }
+
+                unsplash_url: Optional[str] = None
+                topic_kw = _first_meaningful_topic_word(lesson_topic)
+
+                if topic_kw and self._unsplash_access_key:
+                    unsplash_url = await _fetch_unsplash_regular_image_url(
+                        topic_kw, self._unsplash_access_key
+                    )
+
+                if unsplash_url:
+                    card_for_render["image_url"] = unsplash_url
+                elif resolved.source_type == "youtube" and resolved.youtube_thumbnail_url:
+                    card_for_render["image_url"] = resolved.youtube_thumbnail_url
+                else:
+                    fallback_topic = lesson_topic or "education"
+                    image_url = await self._topic_image_service.fetch_topic_image(
+                        fallback_topic
+                    )
+                    if image_url:
+                        card_for_render["image_url"] = image_url
+
+                html = self._template_service.render_html(card_for_render, "lesson_card_v1")
+                image_bytes = await self._screenshot_service.html_to_image(html)
+
+                LOGGER.info("lesson_preview_bypass_used=true")
+
+                return PipelineResult(
+                    template_used="lesson_card_v1",
+                    source_type=resolved.source_type,
+                    output_intent="Картка",
+                    image_bytes=image_bytes,
+                )
+            except Exception as exc:  # noqa: BLE001
+                LOGGER.warning(
+                    "lesson_preview_bypass_used=false fallback_to_ai=true error=%s",
+                    exc,
+                )
+
+        grounded = _ground_for_ai(raw_ai)
 
         if eff_template == "lesson_card_v1":
             grounded = grounded + _LESSON_CARD_V1_EXTRA_RULES

@@ -3487,19 +3487,16 @@ class MessageHandlerService:
             kind = _preview_format_kind(fmt)
 
             if kind == "lesson":
-                cq = preview_data.get("core_questions")
-                approved_block = (
-                    f"APPROVED PREVIEW:\n"
-                    f"TOPIC: {preview_data.get('topic', '')}\n"
-                    f"WARMUP QUESTIONS: {preview_data.get('warmup_questions', [])}\n"
+                preview_json_str = json.dumps(
+                    preview_data, ensure_ascii=False, default=str
                 )
-                if isinstance(cq, list) and any(
-                    str(x).strip() and str(x).strip() != "—" for x in cq
-                ):
-                    approved_block += f"CORE QUESTIONS: {cq}\n"
-                approved_block += (
-                    f"CHOICES: {preview_data.get('choices', [])}\n"
-                    f"SUPPORT WORDS: {preview_data.get('support_words', [])}\n"
+                structured = (
+                    f"[FORMAT={fmt}]\n[LEVEL={lvl}]\n\n"
+                    f"APPROVED_PREVIEW_JSON_START\n"
+                    f"{preview_json_str}\n"
+                    f"APPROVED_PREVIEW_JSON_END\n\n"
+                    f"SOURCE TRANSCRIPT (reference only):\n"
+                    f"{transcript}"
                 )
             elif kind == "vocabulary":
                 approved_block = (
@@ -3534,12 +3531,13 @@ class MessageHandlerService:
                     f"WORDS: {preview_data.get('words', [])}\n"
                 )
 
-            structured = (
-                f"[FORMAT={fmt}]\n[LEVEL={lvl}]\n\n"
-                f"{approved_block}\n"
-                f"SOURCE TRANSCRIPT (reference only):\n"
-                f"{transcript}"
-            )
+            if kind != "lesson":
+                structured = (
+                    f"[FORMAT={fmt}]\n[LEVEL={lvl}]\n\n"
+                    f"{approved_block}\n"
+                    f"SOURCE TRANSCRIPT (reference only):\n"
+                    f"{transcript}"
+                )
             proxy = _OnboardingEnrichedMessage(query.message, structured)
             try:
                 prepare = await self._pipeline.prepare(context.bot, proxy, chat_id)
