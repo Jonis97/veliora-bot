@@ -1,237 +1,261 @@
-<!-- lesson_art_v1: injected placeholders — $title $lead_in_items $discussion_items $choice_items $vocab_items $media_block (Python string.Template) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=600, initial-scale=1.0" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson Art V1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    :root {
+      --bg: #f6efe6;
+      --bg-2: #efe4d7;
+      --card: rgba(255,255,255,0.96);
+      --text: #2f231c;
+      --muted: #8d796a;
+      --line: rgba(115, 93, 78, 0.14);
+      --shadow: 0 18px 40px rgba(74, 53, 39, 0.08);
+      --shadow-soft: 0 10px 24px rgba(74, 53, 39, 0.06);
+      --radius-xl: 34px;
+      --radius-lg: 28px;
+      --radius-md: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.7), transparent 30%),
+        radial-gradient(circle at top right, rgba(255,255,255,0.55), transparent 28%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      color: var(--text);
+    }
+
     body {
-      background: #ddcfbf;
-      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-      color: #2a211c;
-      -webkit-font-smoothing: antialiased;
+      font-family: "Plus Jakarta Sans", Arial, sans-serif;
+      padding: 36px;
     }
-    .la-page.page {
-      width: 600px;
-      min-height: 1180px;
+
+    .sheet {
+      width: 920px;
       margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-      background:
-        radial-gradient(ellipse 120% 80% at 50% 0%, rgba(255, 253, 248, 0.98) 0%, transparent 52%),
-        linear-gradient(178deg, #f8f1e6 0%, #efe4d6 42%, #e5d8c8 78%, #dccfbf 100%);
-      padding: 36px 28px 32px;
+      padding: 22px;
+      border-radius: 38px;
+      background: rgba(255,255,255,0.14);
     }
-    .la-page::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background:
-        radial-gradient(ellipse 90% 55% at 12% 18%, rgba(255, 255, 255, 0.55) 0%, transparent 52%),
-        radial-gradient(ellipse 75% 50% at 88% 78%, rgba(200, 175, 150, 0.22) 0%, transparent 48%);
-    }
-    .la-inner {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 20px;
-    }
-    .la-title-card {
+
+    .title-card {
+      background: linear-gradient(180deg, #fbf7f1 0%, #f3ebe0 100%);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 26px 44px 28px;
       text-align: center;
-      padding: 40px 32px 36px;
-      border-radius: 30px;
-      background:
-        linear-gradient(168deg, #ffffff 0%, #fffdfa 42%, #faf6f0 100%);
-      border: 1px solid rgba(120, 95, 75, 0.12);
-      box-shadow:
-        0 2px 0 rgba(255, 255, 255, 1) inset,
-        0 26px 56px rgba(48, 32, 22, 0.1),
-        0 10px 24px rgba(42, 28, 20, 0.06);
+      margin-bottom: 22px;
+      border: 1px solid rgba(255,255,255,0.7);
     }
-    .la-title-eyebrow {
-      margin: 0 0 12px;
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.32em;
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.34em;
       text-transform: uppercase;
-      color: #9c8474;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 500;
     }
-    .la-title {
+
+    .title {
+      margin: 0;
       font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: 44px;
+      font-size: 56px;
+      line-height: 0.98;
       font-weight: 600;
-      line-height: 1.08;
-      margin: 0 auto;
-      max-width: 520px;
-      color: #1c1410;
       letter-spacing: -0.03em;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+      color: #2c1f18;
     }
-    .la-title-line {
-      width: min(260px, 70%);
-      height: 4px;
-      margin: 22px auto 0;
-      border-radius: 4px;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(175, 135, 108, 0.5) 12%,
-        rgba(200, 160, 128, 0.65) 50%,
-        rgba(175, 135, 108, 0.5) 88%,
-        transparent
-      );
-      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
-    }
-    .la-title-deco {
+
+    .title-accent {
+      width: 250px;
+      height: 12px;
       margin: 16px auto 0;
-      width: 56px;
-      height: 5px;
       border-radius: 999px;
-      opacity: 0.4;
-      background: linear-gradient(90deg, transparent, rgba(150, 115, 90, 0.45), transparent);
+      background:
+        radial-gradient(ellipse at center, rgba(191,164,142,0.55) 0%, rgba(191,164,142,0.18) 45%, rgba(191,164,142,0) 75%);
+      filter: blur(0.2px);
     }
-    .la-content-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
     }
-    .la-block {
+
+    .card {
       position: relative;
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
       padding: 22px 24px 24px;
-      border-radius: 22px;
-      background: #ffffff;
-      border: 1px solid rgba(118, 95, 75, 0.09);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 1) inset,
-        0 16px 40px rgba(38, 26, 18, 0.06),
-        0 5px 16px rgba(38, 26, 18, 0.04);
+      overflow: hidden;
+      min-height: 198px;
+      border: 1px solid rgba(255,255,255,0.85);
     }
-    .la-block::before {
+
+    .card::before {
       content: "";
       position: absolute;
-      left: 0;
+      left: 18px;
       top: 18px;
       bottom: 18px;
       width: 3px;
-      border-radius: 0 3px 3px 0;
-      background: linear-gradient(180deg, rgba(200, 165, 135, 0.55), rgba(190, 150, 120, 0.25));
-      opacity: 0.85;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(202,181,164,0.65), rgba(202,181,164,0));
+      opacity: 0.7;
     }
-    .la-h {
-      margin: 0 0 14px 4px;
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.24em;
+
+    .card-inner {
+      margin-left: 6px;
+    }
+
+    .section-title {
+      margin: 0 0 18px;
+      font-size: 12px;
+      letter-spacing: 0.30em;
       text-transform: uppercase;
-      color: #887062;
+      color: var(--muted);
+      font-weight: 600;
     }
-    .la-ul {
+
+    ul.clean-list {
       margin: 0;
-      padding: 0 0 0 22px;
+      padding-left: 22px;
+      list-style: disc;
     }
-    .la-li {
+
+    ul.clean-list li {
       margin: 0 0 12px;
-      font-size: 14.5px;
-      line-height: 1.6;
-      color: #332a24;
-      font-weight: 500;
+      font-size: 19px;
+      line-height: 1.42;
+      color: var(--text);
     }
-    .la-li:last-child { margin-bottom: 0; }
-    .la-li-choice {
-      font-size: 14px;
-      line-height: 1.55;
-      color: #3c312b;
+
+    ul.clean-list li:last-child {
+      margin-bottom: 0;
     }
-    .la-vocab-grid {
+
+    .vocab-wrap {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px 10px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
+      gap: 12px;
+      padding-top: 2px;
     }
-    .la-vocab-pill {
-      display: block;
-      padding: 10px 17px;
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 12px 18px;
       border-radius: 999px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #3a3028;
-      background: linear-gradient(180deg, #faf8f5 0%, #f2ebe3 100%);
-      border: 1px solid rgba(120, 98, 78, 0.12);
-      box-shadow: 0 1px 2px rgba(32, 22, 16, 0.04);
+      background: linear-gradient(180deg, #f8f3ec 0%, #efe5d9 100%);
+      border: 1px solid rgba(144, 117, 98, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+      color: #4c3b30;
+      font-size: 18px;
+      line-height: 1.2;
+      white-space: nowrap;
     }
-    .la-vocab-text {
-      display: inline;
+
+    .media {
+      margin-top: 6px;
+      background: rgba(255,255,255,0.28);
+      border-radius: var(--radius-xl);
+      padding: 14px;
+      box-shadow: var(--shadow-soft);
     }
-    .la-media {
-      flex-shrink: 0;
-      margin-top: 4px;
+
+    .media-frame {
+      height: 360px;
       width: 100%;
-      border-radius: 24px;
+      border-radius: 28px;
       overflow: hidden;
-      border: 1px solid rgba(105, 85, 68, 0.12);
-      box-shadow:
-        0 2px 0 rgba(255, 255, 255, 0.65) inset,
-        0 24px 52px rgba(32, 22, 16, 0.14),
-        0 10px 28px rgba(32, 22, 16, 0.09);
+      background: linear-gradient(180deg, #eadfd2 0%, #d9c9b6 100%);
     }
-    .la-media.la-media-img {
-      position: relative;
-      height: 320px;
-      background: #e5dcd2;
-    }
-    .la-media-img img {
-      display: block;
+
+    .media-frame img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: center;
+      display: block;
     }
-    .la-media-placeholder {
-      height: 320px;
+
+    .media-placeholder {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      color: rgba(76,59,48,0.6);
       background:
-        linear-gradient(152deg, #eee4d8 0%, #e0d4c6 45%, #d4c8ba 100%);
+        radial-gradient(circle at top left, rgba(255,255,255,0.55), transparent 24%),
+        linear-gradient(180deg, #efe5d8 0%, #dbcbb9 100%);
     }
   </style>
 </head>
 <body>
-  <div class="la-page page">
-    <div class="la-inner">
-      <header class="la-title-card" aria-label="Topic">
-        <p class="la-title-eyebrow">Lesson</p>
-        <h1 class="la-title">$title</h1>
-        <div class="la-title-line" aria-hidden="true"></div>
-        <div class="la-title-deco" aria-hidden="true"></div>
-      </header>
-      <div class="la-content-stack">
-        <section class="la-block" aria-labelledby="la-lead">
-          <h2 id="la-lead" class="la-h">Lead-in</h2>
-          <ul class="la-ul">$lead_in_items</ul>
-        </section>
-        <section class="la-block" aria-labelledby="la-disc">
-          <h2 id="la-disc" class="la-h">Discussion</h2>
-          <ul class="la-ul">$discussion_items</ul>
-        </section>
-        <section class="la-block" aria-labelledby="la-tot">
-          <h2 id="la-tot" class="la-h">This or that</h2>
-          <ul class="la-ul">$choice_items</ul>
-        </section>
-        <section class="la-block" aria-labelledby="la-voc">
-          <h2 id="la-voc" class="la-h">Vocabulary</h2>
-          <ul class="la-vocab-grid">$vocab_items</ul>
-        </section>
+  <main class="sheet">
+    <section class="title-card">
+      <div class="eyebrow">Lesson</div>
+      <h1 class="title">$title</h1>
+      <div class="title-accent"></div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-inner">
+          <h2 class="section-title">Lead-in</h2>
+          <ul class="clean-list">
+            $lead_in_items
+          </ul>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-inner">
+          <h2 class="section-title">Discussion</h2>
+          <ul class="clean-list">
+            $discussion_items
+          </ul>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-inner">
+          <h2 class="section-title">This or That</h2>
+          <ul class="clean-list">
+            $choice_items
+          </ul>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-inner">
+          <h2 class="section-title">Vocabulary</h2>
+          <div class="vocab-wrap">
+            $vocab_items
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="media">
+      <div class="media-frame">
+        $media_block
       </div>
-      $media_block
-    </div>
-  </div>
+    </section>
+  </main>
 </body>
 </html>
