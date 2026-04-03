@@ -2122,187 +2122,195 @@ class TemplateService:
     * {{ box-sizing: border-box; }}
     html, body {{ margin: 0; padding: 0; }}
     body {{
-      background: #e4d9cc;
+      background: #ddcfbf;
       font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-      color: #2b221d;
+      color: #2a211c;
       -webkit-font-smoothing: antialiased;
     }}
     .la-page.page {{
       width: 600px;
-      min-height: 1120px;
+      min-height: 1180px;
       margin: 0 auto;
       position: relative;
       overflow: hidden;
       background:
-        radial-gradient(ellipse 140% 90% at 50% -10%, rgba(255, 252, 247, 0.95) 0%, transparent 55%),
-        linear-gradient(175deg, #faf6ef 0%, #f3ebe1 38%, #ebe0d4 72%, #e3d6c8 100%);
-      padding: 40px 30px 36px;
+        radial-gradient(ellipse 120% 80% at 50% 0%, rgba(255, 253, 248, 0.98) 0%, transparent 52%),
+        linear-gradient(178deg, #f8f1e6 0%, #efe4d6 42%, #e5d8c8 78%, #dccfbf 100%);
+      padding: 36px 28px 32px;
     }}
     .la-page::before {{
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
-      opacity: 0.55;
       background:
-        radial-gradient(ellipse 80% 50% at 15% 20%, rgba(255, 255, 255, 0.5) 0%, transparent 50%),
-        radial-gradient(ellipse 70% 45% at 92% 88%, rgba(210, 185, 160, 0.28) 0%, transparent 50%);
-    }}
-    .la-page::after {{
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.035;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        radial-gradient(ellipse 90% 55% at 12% 18%, rgba(255, 255, 255, 0.55) 0%, transparent 52%),
+        radial-gradient(ellipse 75% 50% at 88% 78%, rgba(200, 175, 150, 0.22) 0%, transparent 48%);
     }}
     .la-inner {{
       position: relative;
       z-index: 1;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      align-items: stretch;
+      gap: 20px;
     }}
     .la-title-card {{
       text-align: center;
-      padding: 34px 28px 32px;
-      border-radius: 26px;
+      padding: 40px 32px 36px;
+      border-radius: 30px;
       background:
-        linear-gradient(165deg, rgba(255, 255, 255, 0.92) 0%, #fffdfb 48%, #faf5ee 100%);
-      border: 1px solid rgba(130, 105, 85, 0.14);
+        linear-gradient(168deg, #ffffff 0%, #fffdfa 42%, #faf6f0 100%);
+      border: 1px solid rgba(120, 95, 75, 0.12);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 1) inset,
-        0 2px 0 rgba(255, 250, 245, 0.6) inset,
-        0 22px 50px rgba(55, 38, 28, 0.09),
-        0 8px 20px rgba(45, 32, 24, 0.05);
+        0 2px 0 rgba(255, 255, 255, 1) inset,
+        0 26px 56px rgba(48, 32, 22, 0.1),
+        0 10px 24px rgba(42, 28, 20, 0.06);
     }}
     .la-title-eyebrow {{
-      margin: 0 0 10px;
-      font-size: 9.5px;
+      margin: 0 0 12px;
+      font-size: 9px;
       font-weight: 600;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.32em;
       text-transform: uppercase;
-      color: #9a8274;
+      color: #9c8474;
     }}
     .la-title {{
       font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: 42px;
+      font-size: 44px;
       font-weight: 600;
-      line-height: 1.1;
-      margin: 0;
-      color: #231a15;
+      line-height: 1.08;
+      margin: 0 auto;
+      max-width: 520px;
+      color: #1c1410;
       letter-spacing: -0.03em;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
     }}
     .la-title-line {{
-      width: min(240px, 62%);
-      height: 3px;
-      margin: 20px auto 0;
-      border-radius: 3px;
+      width: min(260px, 70%);
+      height: 4px;
+      margin: 22px auto 0;
+      border-radius: 4px;
       background: linear-gradient(
         90deg,
         transparent,
-        rgba(165, 130, 105, 0.45) 15%,
-        rgba(195, 155, 125, 0.55) 50%,
-        rgba(165, 130, 105, 0.45) 85%,
+        rgba(175, 135, 108, 0.5) 12%,
+        rgba(200, 160, 128, 0.65) 50%,
+        rgba(175, 135, 108, 0.5) 88%,
         transparent
       );
-      box-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
     }}
     .la-title-deco {{
-      margin: 14px auto 0;
-      width: 48px;
-      height: 6px;
-      opacity: 0.45;
-      background: radial-gradient(circle, rgba(160, 125, 100, 0.5) 0%, transparent 70%);
+      margin: 16px auto 0;
+      width: 56px;
+      height: 5px;
+      border-radius: 999px;
+      opacity: 0.4;
+      background: linear-gradient(90deg, transparent, rgba(150, 115, 90, 0.45), transparent);
+    }}
+    .la-content-stack {{
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }}
     .la-block {{
-      padding: 20px 22px 22px;
-      border-radius: 20px;
-      background: #fffefb;
-      border: 1px solid rgba(125, 100, 80, 0.1);
+      position: relative;
+      padding: 22px 24px 24px;
+      border-radius: 22px;
+      background: #ffffff;
+      border: 1px solid rgba(118, 95, 75, 0.09);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.98) inset,
-        0 14px 36px rgba(42, 30, 22, 0.055),
-        0 4px 14px rgba(42, 30, 22, 0.04);
+        0 1px 0 rgba(255, 255, 255, 1) inset,
+        0 16px 40px rgba(38, 26, 18, 0.06),
+        0 5px 16px rgba(38, 26, 18, 0.04);
+    }}
+    .la-block::before {{
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 18px;
+      bottom: 18px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: linear-gradient(180deg, rgba(200, 165, 135, 0.55), rgba(190, 150, 120, 0.25));
+      opacity: 0.85;
     }}
     .la-h {{
-      margin: 0 0 13px;
-      font-size: 9.5px;
+      margin: 0 0 14px 4px;
+      font-size: 9px;
       font-weight: 600;
-      letter-spacing: 0.22em;
+      letter-spacing: 0.24em;
       text-transform: uppercase;
-      color: #8a7264;
+      color: #887062;
     }}
     .la-ul {{
       margin: 0;
-      padding: 0 0 0 20px;
+      padding: 0 0 0 22px;
     }}
     .la-li {{
       margin: 0 0 12px;
       font-size: 14.5px;
-      line-height: 1.58;
-      color: #342a24;
+      line-height: 1.6;
+      color: #332a24;
       font-weight: 500;
     }}
     .la-li:last-child {{ margin-bottom: 0; }}
     .la-li-choice {{
       font-size: 14px;
-      line-height: 1.52;
-      color: #3d322c;
+      line-height: 1.55;
+      color: #3c312b;
     }}
     .la-vocab-grid {{
       display: flex;
       flex-wrap: wrap;
-      gap: 9px 10px;
+      gap: 10px 10px;
       margin: 0;
       padding: 0;
       list-style: none;
     }}
     .la-vocab-pill {{
       display: block;
-      padding: 9px 16px;
+      padding: 10px 17px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 500;
-      color: #3d332c;
-      background: linear-gradient(180deg, #faf7f3 0%, #f0e8df 100%);
-      border: 1px solid rgba(125, 100, 82, 0.13);
-      box-shadow: 0 1px 2px rgba(38, 28, 20, 0.05);
+      color: #3a3028;
+      background: linear-gradient(180deg, #faf8f5 0%, #f2ebe3 100%);
+      border: 1px solid rgba(120, 98, 78, 0.12);
+      box-shadow: 0 1px 2px rgba(32, 22, 16, 0.04);
     }}
     .la-vocab-text {{
       display: inline;
     }}
     .la-media {{
-      margin-top: 6px;
+      flex-shrink: 0;
+      margin-top: 4px;
       width: 100%;
-      border-radius: 22px;
+      border-radius: 24px;
       overflow: hidden;
-      border: 1px solid rgba(110, 88, 70, 0.14);
+      border: 1px solid rgba(105, 85, 68, 0.12);
       box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.75) inset,
-        0 20px 48px rgba(38, 28, 22, 0.12),
-        0 8px 22px rgba(38, 28, 22, 0.08);
+        0 2px 0 rgba(255, 255, 255, 0.65) inset,
+        0 24px 52px rgba(32, 22, 16, 0.14),
+        0 10px 28px rgba(32, 22, 16, 0.09);
     }}
     .la-media.la-media-img {{
       position: relative;
-      min-height: 280px;
-      max-height: 320px;
-      background: #e8dfd6;
+      height: 320px;
+      background: #e5dcd2;
     }}
     .la-media-img img {{
       display: block;
       width: 100%;
       height: 100%;
-      min-height: 280px;
       object-fit: cover;
       object-position: center;
-      vertical-align: middle;
     }}
     .la-media-placeholder {{
-      min-height: 280px;
+      height: 320px;
       background:
-        linear-gradient(145deg, #efe6dc 0%, #e2d5c8 50%, #d8cbc0 100%);
+        linear-gradient(152deg, #eee4d8 0%, #e0d4c6 45%, #d4c8ba 100%);
     }}
   </style>
 </head>
@@ -2315,22 +2323,24 @@ class TemplateService:
         <div class="la-title-line" aria-hidden="true"></div>
         <div class="la-title-deco" aria-hidden="true"></div>
       </header>
-      <section class="la-block" aria-labelledby="la-lead">
-        <h2 id="la-lead" class="la-h">Lead-in</h2>
-        <ul class="la-ul">{lead_items}</ul>
-      </section>
-      <section class="la-block" aria-labelledby="la-disc">
-        <h2 id="la-disc" class="la-h">Discussion</h2>
-        <ul class="la-ul">{disc_items}</ul>
-      </section>
-      <section class="la-block" aria-labelledby="la-tot">
-        <h2 id="la-tot" class="la-h">This or that</h2>
-        <ul class="la-ul">{choice_items}</ul>
-      </section>
-      <section class="la-block la-block-vocab" aria-labelledby="la-voc">
-        <h2 id="la-voc" class="la-h">Vocabulary</h2>
-        <ul class="la-vocab-grid">{vocab_items}</ul>
-      </section>
+      <div class="la-content-stack">
+        <section class="la-block" aria-labelledby="la-lead">
+          <h2 id="la-lead" class="la-h">Lead-in</h2>
+          <ul class="la-ul">{lead_items}</ul>
+        </section>
+        <section class="la-block" aria-labelledby="la-disc">
+          <h2 id="la-disc" class="la-h">Discussion</h2>
+          <ul class="la-ul">{disc_items}</ul>
+        </section>
+        <section class="la-block" aria-labelledby="la-tot">
+          <h2 id="la-tot" class="la-h">This or that</h2>
+          <ul class="la-ul">{choice_items}</ul>
+        </section>
+        <section class="la-block" aria-labelledby="la-voc">
+          <h2 id="la-voc" class="la-h">Vocabulary</h2>
+          <ul class="la-vocab-grid">{vocab_items}</ul>
+        </section>
+      </div>
       {media_html}
     </div>
   </div>
