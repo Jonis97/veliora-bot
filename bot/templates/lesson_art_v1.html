@@ -1,342 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1080, initial-scale=1.0" />
-  <title>lesson_art_v1</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    /* lesson_art_v1 — fixed_mockup contract (template_id: lesson_art_v1) */
-    :root {
-      --canvas-w: 1080px;
-      --canvas-min-h: 1400px;
-      --outer-pad: 48px;
-      --bg: #f6efe6;
-      --bg-2: #efe4d7;
-      --title-card-bg: #f8f1e9;
-      --content-card-bg: #ffffff;
-      --content-card-border: rgba(255, 255, 255, 0.85);
-      --text: #2f231c;
-      --title-color: #2c1f18;
-      --muted: #8d796a;
-      --shadow: 0 18px 40px rgba(74, 53, 39, 0.08);
-      --shadow-soft: 0 10px 24px rgba(74, 53, 39, 0.06);
-      --radius-title: 34px;
-      --radius-card: 28px;
-      --radius-image: 28px;
-      --radius-pill: 999px;
-      --title-size: 54px;
-      --section-label-size: 12px;
-      --body-size: 19px;
-      --grid-gap: 24px;
-      --hero-h: 360px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background:
-        radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.65) 0%, transparent 36%),
-        radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.45) 0%, transparent 32%),
-        radial-gradient(ellipse 120% 80% at 50% 100%, rgba(230, 215, 198, 0.35) 0%, transparent 45%),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    body {
-      font-family: "Plus Jakarta Sans", Arial, sans-serif;
-    }
-
-    .canvas {
-      width: var(--canvas-w);
-      min-height: var(--canvas-min-h);
-      margin: 0 auto;
-      padding: var(--outer-pad);
-      overflow: hidden;
-    }
-
-    .title-card {
-      background: linear-gradient(180deg, var(--title-card-bg) 0%, #f3ebe3 100%);
-      border-radius: var(--radius-title);
-      box-shadow: var(--shadow);
-      padding: 28px 40px 32px;
-      text-align: center;
-      margin-bottom: var(--grid-gap);
-      border: 1px solid var(--content-card-border);
-      max-width: 100%;
-    }
-
-    .eyebrow {
-      font-size: 11px;
-      letter-spacing: 0.34em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
-
-    .title {
-      margin: 0 auto;
-      max-width: 100%;
-      font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: var(--title-size);
-      line-height: 1.05;
-      font-weight: 600;
-      letter-spacing: -0.03em;
-      color: var(--title-color);
-      overflow-wrap: anywhere;
-      word-wrap: break-word;
-    }
-
-    .title-accent {
-      width: min(280px, 72%);
-      height: 12px;
-      margin: 18px auto 0;
-      border-radius: var(--radius-pill);
-      background:
-        radial-gradient(ellipse at center, rgba(191, 164, 142, 0.55) 0%, rgba(191, 164, 142, 0.18) 45%, rgba(191, 164, 142, 0) 75%);
-    }
-
-    .top-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--grid-gap);
-      margin-bottom: var(--grid-gap);
-    }
-
-    .card {
-      position: relative;
-      background: var(--content-card-bg);
-      border-radius: var(--radius-card);
-      box-shadow: var(--shadow-soft);
-      padding: 20px 22px 22px;
-      border: 1px solid var(--content-card-border);
-      min-height: 0;
-      min-width: 0;
-      overflow: auto;
-      max-height: 420px;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      left: 16px;
-      top: 16px;
-      bottom: 16px;
-      width: 3px;
-      border-radius: var(--radius-pill);
-      background: linear-gradient(180deg, rgba(202, 181, 164, 0.65), rgba(202, 181, 164, 0));
-      opacity: 0.75;
-      pointer-events: none;
-    }
-
-    .card-inner {
-      margin-left: 8px;
-      min-width: 0;
-    }
-
-    .section-title {
-      margin: 0 0 14px;
-      font-size: var(--section-label-size);
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    ul.clean-list {
-      margin: 0;
-      padding-left: 20px;
-      list-style: disc;
-    }
-
-    ul.clean-list li {
-      margin: 0 0 10px;
-      font-size: var(--body-size);
-      line-height: 1.45;
-      color: var(--text);
-    }
-
-    ul.clean-list li:last-child {
-      margin-bottom: 0;
-    }
-
-    .vocab-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-content: flex-start;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-
-    .vocab-wrap .la-vocab-pill {
-      display: inline-flex;
-      align-items: center;
-      margin: 0;
-      padding: 10px 16px;
-      border-radius: var(--radius-pill);
-      list-style: none;
-      background: linear-gradient(180deg, #f8f3ec 0%, #efe5d9 100%);
-      border: 1px solid rgba(144, 117, 98, 0.14);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
-      color: #4c3b30;
-      font-size: calc(var(--body-size) - 1px);
-      line-height: 1.2;
-      max-width: 100%;
-      white-space: normal;
-    }
-
-    .vocab-wrap .la-vocab-text {
-      display: inline;
-      overflow-wrap: anywhere;
-    }
-
-    /* bottom_composition: asymmetric_split 68% / 32% */
-    .bottom-row {
-      display: grid;
-      grid-template-columns: minmax(0, 68fr) minmax(0, 32fr);
-      gap: var(--grid-gap);
-      align-items: stretch;
-      min-height: 0;
-    }
-
-    .bottom-hero {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .media-frame {
-      height: var(--hero-h);
-      width: 100%;
-      border-radius: var(--radius-image);
-      overflow: hidden;
-      background: linear-gradient(180deg, #eadfd2 0%, #d9c9b6 100%);
-      box-shadow: var(--shadow-soft);
-      border: 1px solid rgba(115, 93, 78, 0.1);
-      flex-shrink: 0;
-    }
-
-    .media-frame figure.la-media-img {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .media-frame figure.la-media-img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      display: block;
-    }
-
-    .media-frame .la-media-placeholder {
-      width: 100%;
-      height: 100%;
-      min-height: var(--hero-h);
-      display: grid;
-      place-items: center;
-      font-size: 16px;
-      color: rgba(76, 59, 48, 0.55);
-      background:
-        radial-gradient(circle at top left, rgba(255, 255, 255, 0.55), transparent 24%),
-        linear-gradient(180deg, #efe5d8 0%, #dbcbb9 100%);
-    }
-
-    .bottom-echo {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .bottom-echo .card {
-      flex: 1 1 auto;
-      min-height: var(--hero-h);
-      max-height: none;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .bottom-echo .vocab-wrap {
-      max-height: none;
-      flex: 1 1 auto;
-      overflow-y: auto;
-    }
-  </style>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&family=Caveat:wght@600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:600px;font-family:'DM Sans',sans-serif;}
+.page{width:600px;min-height:960px;position:relative;overflow:hidden;padding:28px 24px 32px;}
+ 
+/* BACKGROUND */
+.bg-texture{position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255,255,255,0.6) 0%, transparent 35%),
+    radial-gradient(circle at 85% 20%, rgba(255,255,255,0.4) 0%, transparent 30%),
+    radial-gradient(ellipse 110% 70% at 50% 100%, rgba(225,205,180,0.4) 0%, transparent 50%),
+    linear-gradient(168deg, #f2e8dc 0%, #ebe0d0 50%, #e0d4c4 100%);
+}
+.bg-noise{position:absolute;inset:0;z-index:1;opacity:0.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+}
+.bg-margin{position:absolute;left:50px;top:0;bottom:0;width:1px;z-index:2;background:rgba(200,100,80,0.15);}
+ 
+.page-content{position:relative;z-index:4;}
+ 
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.logo-row{display:flex;align-items:center;gap:8px;}
+.logo-circle{width:32px;height:32px;background:#8b1a1a;border-radius:50%;border:2px solid rgba(200,140,80,0.5);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:10px;color:#e8c48a;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+.brand-name{font-size:12px;font-weight:600;color:#6b4c1e;}
+.level-badge{background:#8b1a1a;color:#fff;font-size:10px;font-weight:600;padding:4px 12px;border-radius:20px;}
+ 
+/* TITLE */
+.title-wrap{text-align:center;margin-bottom:20px;}
+.main-title{font-family:'DM Serif Display',serif;font-size:36px;font-style:italic;color:#3d2b0e;line-height:1.1;word-wrap:break-word;overflow-wrap:anywhere;}
+.title-line{width:min(200px,65%);height:1px;background:linear-gradient(90deg,transparent,rgba(150,110,60,0.4),transparent);margin:10px auto 0;}
+ 
+/* CARDS */
+.card{border-radius:16px;padding:14px 16px;position:relative;box-shadow:0 6px 24px rgba(0,0,0,0.1),0 2px 6px rgba(0,0,0,0.05),inset 0 1px 0 rgba(255,255,255,0.9);}
+.card-cream{background:linear-gradient(145deg,#fdf8f0,#f5edda);border:1px solid rgba(200,170,120,0.3);}
+.card-beige{background:linear-gradient(145deg,#f5e6c8,#ead9b0);border:1px solid rgba(190,155,90,0.35);}
+.card-white{background:linear-gradient(145deg,#ffffff,#faf5ee);border:1px solid rgba(200,180,150,0.25);}
+ 
+/* TORN EDGE */
+.torn::before{
+  content:'';position:absolute;top:-8px;left:-1px;right:-1px;height:10px;
+  background:inherit;border-radius:16px 16px 0 0;
+  clip-path:polygon(0% 100%,1% 20%,2.5% 85%,4% 5%,5.5% 70%,7% 15%,8.5% 80%,10% 0%,11.5% 65%,13% 20%,14.5% 85%,16% 10%,17.5% 75%,19% 25%,20.5% 90%,22% 5%,23.5% 72%,25% 20%,26.5% 88%,28% 2%,29.5% 68%,31% 28%,32.5% 85%,34% 12%,35.5% 78%,37% 22%,38.5% 92%,40% 8%,41.5% 72%,43% 28%,44.5% 88%,46% 2%,47.5% 68%,49% 28%,50.5% 86%,52% 12%,53.5% 78%,55% 22%,56.5% 92%,58% 8%,59.5% 72%,61% 28%,62.5% 88%,64% 2%,65.5% 68%,67% 28%,68.5% 85%,70% 12%,71.5% 78%,73% 22%,74.5% 92%,76% 8%,77.5% 72%,79% 28%,80.5% 88%,82% 2%,83.5% 68%,85% 28%,86.5% 85%,88% 12%,89.5% 78%,91% 22%,92.5% 92%,94% 8%,95.5% 72%,97% 28%,98.5% 82%,100% 35%,100% 100%);
+  z-index:2;
+}
+ 
+/* PIN */
+.pin{width:20px;height:20px;border-radius:50%;position:absolute;z-index:20;
+  box-shadow:0 3px 10px rgba(0,0,0,0.28),inset 0 -2px 3px rgba(0,0,0,0.18),inset 0 2px 3px rgba(255,255,255,0.4);}
+.pin::after{content:'';position:absolute;top:5px;left:5px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.5);}
+.pin-gold{background:radial-gradient(circle at 35% 30%,#ffe57a,#c8880a);}
+.pin-silver{background:radial-gradient(circle at 35% 30%,#f5f5f5,#808080);}
+.pin-red{background:radial-gradient(circle at 35% 30%,#ff9090,#c0392b);}
+ 
+/* CARD TITLE */
+.card-title{font-family:'DM Serif Display',serif;font-size:13px;color:#5c3d1a;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(150,110,50,0.2);letter-spacing:0.05em;}
+ 
+/* LISTS */
+.item-row{font-size:12.5px;line-height:1.75;color:#2a1a08;display:flex;align-items:baseline;gap:6px;}
+.item-bullet{color:#c8900a;font-weight:700;flex-shrink:0;}
+ 
+/* VOCAB */
+.vocab-row{display:flex;align-items:baseline;font-size:12.5px;line-height:1.75;color:#2a1a08;}
+.vocab-term{font-weight:700;color:#1a1208;min-width:80px;}
+.vocab-dash{color:#c8a060;margin:0 5px;flex-shrink:0;}
+.vocab-tr{color:#5a4020;font-style:italic;}
+ 
+/* TOP GRID */
+.top-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+ 
+/* BOTTOM ROW */
+.bottom-row{display:grid;grid-template-columns:1.7fr 1fr;gap:12px;align-items:stretch;}
+ 
+/* PHOTO */
+.photo-frame{border-radius:16px;overflow:hidden;height:200px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border:1px solid rgba(100,80,50,0.12);}
+.photo-frame figure{margin:0;width:100%;height:100%;}
+.photo-frame figure img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
+.photo-frame .la-media-placeholder{width:100%;height:100%;background:linear-gradient(165deg,#e8ddd0 0%,#d5c8b5 100%);display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(80,60,40,0.4);font-style:italic;}
+ 
+/* SPEAK */
+.speak-card{background:linear-gradient(135deg,#e8f4d8,#d0e8b8);border-radius:16px;padding:14px 18px;margin-top:12px;border:1px solid rgba(100,170,70,0.25);box-shadow:0 5px 20px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.7);position:relative;}
+.speak-title{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:#2d5c14;margin-bottom:4px;}
+</style>
 </head>
 <body>
-  <main class="canvas">
-    <section class="title-card">
-      <div class="eyebrow">Lesson</div>
-      <h1 class="title">$title</h1>
-      <div class="title-accent" aria-hidden="true"></div>
-    </section>
-
-    <section class="top-grid" aria-label="Content grid">
-      <article class="card">
-        <div class="card-inner">
-          <h2 class="section-title">LEAD-IN</h2>
-          <ul class="clean-list">
-            $lead_in_items
-          </ul>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="card-inner">
-          <h2 class="section-title">DISCUSSION</h2>
-          <ul class="clean-list">
-            $discussion_items
-          </ul>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="card-inner">
-          <h2 class="section-title">THIS OR THAT</h2>
-          <ul class="clean-list">
-            $choice_items
-          </ul>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="card-inner">
-          <h2 class="section-title">VOCAB</h2>
-          <div class="vocab-wrap">
-            $vocab_items
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <section class="bottom-row" aria-label="Bottom composition">
-      <div class="bottom-hero">
-        <div class="media-frame">
-          $media_block
-        </div>
+<div class="page">
+  <div class="bg-texture"></div>
+  <div class="bg-noise"></div>
+  <div class="bg-margin"></div>
+ 
+  <div class="page-content">
+ 
+    <!-- HEADER -->
+    <div class="header">
+      <div class="logo-row">
+        <div class="logo-circle">V</div>
+        <div class="brand-name">Veliora</div>
       </div>
-      <div class="bottom-echo">
-        <article class="card">
-          <div class="card-inner">
-            <h2 class="section-title">VOCAB</h2>
-            <div class="vocab-wrap">
-              $vocab_items
-            </div>
-          </div>
-        </article>
+      <div class="level-badge">Lesson</div>
+    </div>
+ 
+    <!-- TITLE -->
+    <div class="title-wrap">
+      <div class="main-title">$title</div>
+      <div class="title-line"></div>
+    </div>
+ 
+    <!-- TOP GRID: Lead-in + Discussion -->
+    <div class="top-grid">
+ 
+      <div class="card card-cream torn" style="margin-top:10px;">
+        <div class="pin pin-silver" style="top:-18px;left:14px;"></div>
+        <div class="card-title">Lead-in</div>
+        $lead_in_items
       </div>
-    </section>
-  </main>
+ 
+      <div class="card card-beige torn" style="margin-top:10px;">
+        <div class="pin pin-gold" style="top:-18px;right:14px;"></div>
+        <div class="card-title">Discussion</div>
+        $discussion_items
+      </div>
+ 
+      <div class="card card-white torn" style="margin-top:10px;">
+        <div class="pin pin-gold" style="top:-18px;left:50%;transform:translateX(-50%);"></div>
+        <div class="card-title">This or that</div>
+        $choice_items
+      </div>
+ 
+      <div class="card card-cream torn" style="margin-top:10px;">
+        <div class="pin pin-silver" style="top:-18px;right:14px;"></div>
+        <div class="card-title">Vocab</div>
+        $vocab_items
+      </div>
+ 
+    </div>
+ 
+    <!-- BOTTOM: Photo + Vocab echo -->
+    <div class="bottom-row">
+ 
+      <div class="photo-frame">
+        $media_block
+      </div>
+ 
+      <div class="card card-beige torn" style="margin-top:10px;">
+        <div class="pin pin-red" style="top:-18px;left:50%;transform:translateX(-50%);"></div>
+        <div class="card-title">Vocab</div>
+        $vocab_items
+      </div>
+ 
+    </div>
+ 
+  </div>
+</div>
 </body>
 </html>
+ 
