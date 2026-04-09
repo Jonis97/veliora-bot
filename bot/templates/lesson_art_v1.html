@@ -271,7 +271,7 @@
       width: 246px;
       min-height: 175px;
       transform: rotate(1.2deg);
-      z-index: 5;
+      z-index: 6;
     }
 
     .pin {
@@ -360,29 +360,29 @@
       z-index: 8;
     }
 
-    .media-wrap::after {
-      content: "";
-      position: absolute;
-      top: -12px;
-      right: 34px;
-      width: 66px;
-      height: 22px;
-      border-radius: 4px;
-      background: rgba(244, 232, 204, 0.58);
-      box-shadow: 0 2px 6px rgba(60,42,26,0.07);
-      transform: rotate(5deg);
-      z-index: 8;
-    }
+    .media-wrap {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 600px;
+  height: 280px;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  transform: none;
+  z-index: 1;
+  background: #ddd3c5;
+}
 
-    .media-frame {
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.02)),
-        radial-gradient(circle at 18% 20%, rgba(255,255,255,0.18), transparent 22%);
-      z-index: 2;
-      pointer-events: none;
-    }
+.media-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(239,231,219,0.95) 0%, rgba(239,231,219,0.75) 25%, rgba(239,231,219,0.2) 55%, rgba(239,231,219,0.0) 100%),
+    radial-gradient(circle at 50% 20%, rgba(255,255,255,0.35), transparent 40%);
+}
 
     .media-block {
       position: absolute;
@@ -391,12 +391,13 @@
     }
 
     .media-block img,
-    .media-block video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+.media-block video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(1.05) contrast(0.95) saturate(0.9);
+}
 
     .paper-fragment {
       position: absolute;
@@ -438,8 +439,8 @@
       position: absolute;
       left: 0;
       right: 0;
-      bottom: -40px;
-      height: 180px;
+      bottom: 120px;
+      height: 220px;
       background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.34), transparent 62%);
       pointer-events: none;
       z-index: 0;
