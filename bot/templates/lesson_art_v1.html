@@ -42,34 +42,35 @@
     }
 
     .page {
-      position: relative;
-      width: 600px;
-      height: 920px;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 14% 18%, rgba(255,255,255,0.46) 0 10%, transparent 11%),
-        radial-gradient(circle at 88% 10%, rgba(255,255,255,0.28) 0 7%, transparent 8%),
-        radial-gradient(circle at 82% 76%, rgba(255,255,255,0.20) 0 10%, transparent 11%),
-        linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04)),
-        var(--bg);
-      box-shadow: 0 18px 40px rgba(0,0,0,0.14);
-    }
+  position: relative;
+  width: 600px;
+  height: 920px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255,255,255,0.10), transparent 28%),
+    radial-gradient(circle at 78% 74%, rgba(255,255,255,0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+    #d8cec2;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.14);
+}
 
     /* stronger paper texture */
     .page::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      opacity: 0.26;
-      pointer-events: none;
-      background-image:
-        radial-gradient(rgba(90,70,50,0.08) 0.55px, transparent 0.7px),
-        radial-gradient(rgba(255,255,255,0.18) 0.55px, transparent 0.7px),
-        linear-gradient(115deg, rgba(120,96,72,0.05), transparent 24%, transparent 75%, rgba(120,96,72,0.04));
-      background-size: 18px 18px, 23px 23px, 100% 100%;
-      background-position: 0 0, 10px 12px, 0 0;
-      mix-blend-mode: multiply;
-    }
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background-image:
+    radial-gradient(rgba(72,58,45,0.18) 0.7px, transparent 0.9px),
+    radial-gradient(rgba(255,255,255,0.06) 0.8px, transparent 1px),
+    linear-gradient(135deg, rgba(92,74,58,0.08), transparent 30%, transparent 70%, rgba(92,74,58,0.06)),
+    linear-gradient(25deg, rgba(255,255,255,0.04), transparent 32%);
+  background-size: 10px 10px, 14px 14px, 100% 100%, 100% 100%;
+  background-position: 0 0, 4px 7px, 0 0, 0 0;
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
 
     /* extra cream-paper overlay */
     .page::after {
@@ -146,32 +147,35 @@
     }
 
     .hero {
-      position: absolute;
-      left: 62px;
-      top: 76px;
-      width: 478px;
-      z-index: 4;
-    }
+  position: absolute;
+  left: 60px;
+  top: 78px;
+  width: 480px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-    .title {
-      margin: 0;
-      text-align: left;
-      font-size: 29px;
-      line-height: 1.18;
-      font-style: italic;
-      font-weight: 700;
-      color: #3a281a;
-      letter-spacing: -0.3px;
-      text-wrap: balance;
-      max-width: 470px;
-    }
+.title {
+  margin: 0;
+  text-align: center;
+  font-size: 29px;
+  line-height: 1.18;
+  font-style: italic;
+  font-weight: 700;
+  color: #3a281a;
+  letter-spacing: -0.3px;
+  text-wrap: balance;
+  max-width: 430px;
+}
 
-    .title-rule {
-      width: 265px;
-      height: 1px;
-      margin-top: 14px;
-      background: linear-gradient(90deg, rgba(112,86,64,0.20), rgba(112,86,64,0.06));
-    }
+.title-rule {
+  width: 220px;
+  height: 1px;
+  margin-top: 14px;
+  background: linear-gradient(90deg, rgba(112,86,64,0.05), rgba(112,86,64,0.20), rgba(112,86,64,0.05));
+}
 
     .botanical {
       position: absolute;
@@ -190,26 +194,35 @@
     }
 
     .note {
-      position: absolute;
-      padding: 16px 18px 16px;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card);
-      overflow: visible;
-      z-index: 3;
-      backdrop-filter: blur(0.5px);
-    }
+  position: absolute;
+  padding: 16px 18px 16px;
+  border-radius: var(--radius-lg);
+  overflow: visible;
+  z-index: 3;
+  backdrop-filter: blur(0.4px);
+  border: 1px solid rgba(255,255,255,0.18);
+}
 
-    .note.light {
-      background: linear-gradient(180deg, #fffdf8, #faf5eb);
-    }
+.note.light {
+  background: linear-gradient(180deg, rgba(255,252,247,0.96), rgba(248,242,233,0.96));
+  box-shadow:
+    -8px 10px 20px rgba(68,48,31,0.10),
+    0 3px 10px rgba(68,48,31,0.05);
+}
 
-    .note.warm {
-      background: linear-gradient(180deg, #f5ecd7, #efe1c5);
-    }
+.note.warm {
+  background: linear-gradient(180deg, rgba(243,232,208,0.97), rgba(234,220,191,0.97));
+  box-shadow:
+    10px 12px 24px rgba(72,50,32,0.12),
+    0 4px 10px rgba(72,50,32,0.05);
+}
 
-    .note.soft {
-      background: linear-gradient(180deg, #fcf8ef, #f5ecdd);
-    }
+.note.soft {
+  background: linear-gradient(180deg, rgba(252,247,238,0.96), rgba(244,235,220,0.96));
+  box-shadow:
+    8px 12px 22px rgba(65,46,30,0.11),
+    0 3px 10px rgba(65,46,30,0.05);
+}
 
     .note-title {
       margin: 0 0 12px 0;
@@ -333,18 +346,20 @@
     }
 
     .media-wrap {
-      position: absolute;
-      left: 30px;
-      top: 612px;
-      width: 336px;
-      height: 190px;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: var(--shadow-photo);
-      transform: rotate(-1.05deg);
-      z-index: 2;
-      background: #ddd3c5;
-    }
+  position: absolute;
+  left: 38px;
+  bottom: 0;
+  width: 524px;
+  height: 290px;
+  border-radius: 18px 18px 0 0;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.08),
+    0 -10px 18px rgba(58,40,25,0.06);
+  transform: none;
+  z-index: 1;
+  background: #cfc4b6;
+}
 
     .media-wrap::before {
       content: "";
@@ -380,8 +395,9 @@
   z-index: 2;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(239,231,219,0.72) 0%, rgba(239,231,219,0.38) 20%, rgba(239,231,219,0.10) 42%, rgba(239,231,219,0.0) 70%),
-    radial-gradient(circle at 50% 18%, rgba(255,255,255,0.18), transparent 34%);
+    linear-gradient(180deg, rgba(216,206,194,0.82) 0%, rgba(216,206,194,0.42) 18%, rgba(216,206,194,0.10) 42%, rgba(216,206,194,0.0) 68%),
+    linear-gradient(90deg, rgba(216,206,194,0.24) 0%, rgba(216,206,194,0.00) 16%, rgba(216,206,194,0.00) 84%, rgba(216,206,194,0.24) 100%),
+    radial-gradient(circle at 50% 16%, rgba(255,255,255,0.14), transparent 28%);
 }
 
     .media-block {
@@ -396,7 +412,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: brightness(1.02) contrast(0.98) saturate(0.96);
+  filter: brightness(0.98) contrast(0.94) saturate(0.88);
 }
 
     .paper-fragment {
