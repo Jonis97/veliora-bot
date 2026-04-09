@@ -3,21 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=600, initial-scale=1.0" />
-  <title>Veliora Lesson Art v2.1</title>
+  <title>Veliora Lesson Art</title>
   <style>
     :root {
-      --bg: #efe7db;
-      --paper: #fbf7ef;
-      --paper-2: #f4ead7;
-      --paper-3: #f8f2e7;
+      --bg: #d6cbc0;
       --ink: #33261c;
-      --muted: #7a6756;
+      --muted: #6f5c4b;
       --accent: #8e1f24;
-      --line: rgba(110, 86, 64, 0.14);
-      --shadow-soft: 0 12px 30px rgba(70, 45, 24, 0.12);
-      --shadow-card: 0 14px 28px rgba(59, 39, 23, 0.14), 0 3px 8px rgba(59, 39, 23, 0.06);
-      --shadow-photo: 0 16px 30px rgba(45, 30, 18, 0.18), 0 4px 10px rgba(45, 30, 18, 0.08);
-      --radius-xl: 26px;
+
+      --paper-light-top: rgba(255, 252, 247, 0.96);
+      --paper-light-bottom: rgba(247, 241, 232, 0.96);
+
+      --paper-warm-top: rgba(243, 232, 208, 0.97);
+      --paper-warm-bottom: rgba(233, 219, 191, 0.97);
+
+      --paper-soft-top: rgba(252, 247, 238, 0.96);
+      --paper-soft-bottom: rgba(243, 234, 219, 0.96);
+
       --radius-lg: 22px;
       --radius-md: 18px;
     }
@@ -30,7 +32,7 @@
       margin: 0;
       padding: 0;
       width: 600px;
-      background: #ddd6ca;
+      background: #d8cec2;
       color: var(--ink);
       font-family: Georgia, "Times New Roman", serif;
     }
@@ -42,49 +44,45 @@
     }
 
     .page {
-  position: relative;
-  width: 600px;
-  height: 920px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 20% 18%, rgba(255,255,255,0.10), transparent 28%),
-    radial-gradient(circle at 78% 74%, rgba(255,255,255,0.08), transparent 24%),
-    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
-    #d8cec2;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.14);
-}
+      position: relative;
+      width: 600px;
+      height: 920px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
+        #d6cbc0;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.14);
+    }
 
-    /* stronger paper texture */
     .page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.42;
-  background-image:
-    radial-gradient(rgba(72,58,45,0.18) 0.7px, transparent 0.9px),
-    radial-gradient(rgba(255,255,255,0.06) 0.8px, transparent 1px),
-    linear-gradient(135deg, rgba(92,74,58,0.08), transparent 30%, transparent 70%, rgba(92,74,58,0.06)),
-    linear-gradient(25deg, rgba(255,255,255,0.04), transparent 32%);
-  background-size: 10px 10px, 14px 14px, 100% 100%, 100% 100%;
-  background-position: 0 0, 4px 7px, 0 0, 0 0;
-  mix-blend-mode: multiply;
-  z-index: 0;
-}
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.36;
+      background-image:
+        radial-gradient(rgba(80,64,49,0.10) 0.7px, transparent 1px),
+        radial-gradient(rgba(255,255,255,0.05) 0.9px, transparent 1.2px),
+        linear-gradient(135deg, rgba(92,74,58,0.06), transparent 34%, transparent 68%, rgba(92,74,58,0.05)),
+        radial-gradient(circle at 20% 18%, rgba(255,255,255,0.10), transparent 25%),
+        radial-gradient(circle at 78% 74%, rgba(255,255,255,0.08), transparent 24%);
+      background-size: 11px 11px, 17px 17px, 100% 100%, 100% 100%, 100% 100%;
+      background-position: 0 0, 6px 7px, 0 0, 0 0, 0 0;
+      mix-blend-mode: multiply;
+    }
 
-    /* extra cream-paper overlay */
     .page::after {
       content: "";
       position: absolute;
       inset: 0;
       pointer-events: none;
-      opacity: 0.16;
-      background:
-        linear-gradient(180deg, rgba(255,250,243,0.35), rgba(255,250,243,0.08)),
-        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.24), transparent 32%),
-        radial-gradient(circle at 78% 70%, rgba(255,255,255,0.18), transparent 28%);
-      mix-blend-mode: soft-light;
       z-index: 0;
+      opacity: 0.14;
+      background:
+        linear-gradient(180deg, rgba(255,250,243,0.26), rgba(255,250,243,0.04)),
+        radial-gradient(circle at 50% 12%, rgba(255,255,255,0.16), transparent 28%);
+      mix-blend-mode: soft-light;
     }
 
     .spine {
@@ -95,9 +93,9 @@
       width: 1px;
       background: linear-gradient(
         180deg,
-        rgba(168,125,97,0.12),
-        rgba(168,125,97,0.26),
-        rgba(168,125,97,0.12)
+        rgba(168,125,97,0.10),
+        rgba(168,125,97,0.20),
+        rgba(168,125,97,0.10)
       );
       z-index: 1;
     }
@@ -110,7 +108,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 5;
+      z-index: 6;
     }
 
     .brand {
@@ -144,38 +142,45 @@
       font: 700 12px/1 Arial, Helvetica, sans-serif;
       letter-spacing: 0.2px;
       box-shadow: 0 4px 10px rgba(93,18,22,0.18);
+      white-space: nowrap;
     }
 
     .hero {
-  position: absolute;
-  left: 60px;
-  top: 78px;
-  width: 480px;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+      position: absolute;
+      left: 60px;
+      top: 78px;
+      width: 480px;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-.title {
-  margin: 0;
-  text-align: center;
-  font-size: 29px;
-  line-height: 1.18;
-  font-style: italic;
-  font-weight: 700;
-  color: #3a281a;
-  letter-spacing: -0.3px;
-  text-wrap: balance;
-  max-width: 430px;
-}
+    .title {
+      margin: 0;
+      text-align: center;
+      font-size: 29px;
+      line-height: 1.16;
+      font-style: italic;
+      font-weight: 700;
+      color: #3a281a;
+      letter-spacing: -0.3px;
+      text-wrap: balance;
+      max-width: 430px;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.18);
+    }
 
-.title-rule {
-  width: 220px;
-  height: 1px;
-  margin-top: 14px;
-  background: linear-gradient(90deg, rgba(112,86,64,0.05), rgba(112,86,64,0.20), rgba(112,86,64,0.05));
-}
+    .title-rule {
+      width: 220px;
+      height: 1px;
+      margin-top: 14px;
+      background: linear-gradient(
+        90deg,
+        rgba(112,86,64,0.04),
+        rgba(112,86,64,0.20),
+        rgba(112,86,64,0.04)
+      );
+    }
 
     .botanical {
       position: absolute;
@@ -183,7 +188,7 @@
       width: 360px;
       height: 430px;
       z-index: 0;
-      opacity: 0.24;
+      opacity: 0.14;
       pointer-events: none;
       filter: blur(0.1px);
     }
@@ -193,36 +198,72 @@
       height: 100%;
     }
 
+    .paper-fragment {
+      position: absolute;
+      background: rgba(255, 248, 237, 0.38);
+      box-shadow: 0 10px 20px rgba(60,42,26,0.04);
+      filter: blur(0.15px);
+      z-index: 1;
+    }
+
+    .frag-1 {
+      width: 112px;
+      height: 44px;
+      top: 165px;
+      right: 92px;
+      transform: rotate(-7deg);
+      border-radius: 8px 18px 10px 14px;
+    }
+
+    .frag-2 {
+      width: 84px;
+      height: 38px;
+      top: 586px;
+      right: 42px;
+      transform: rotate(11deg);
+      border-radius: 12px 8px 16px 8px;
+    }
+
+    .frag-3 {
+      width: 92px;
+      height: 34px;
+      bottom: 70px;
+      left: 94px;
+      transform: rotate(-6deg);
+      border-radius: 10px 15px 8px 12px;
+      opacity: 0.32;
+    }
+
     .note {
-  position: absolute;
-  padding: 16px 18px 16px;
-  border-radius: var(--radius-lg);
-  overflow: visible;
-  z-index: 3;
-  backdrop-filter: blur(0.4px);
-  border: 1px solid rgba(255,255,255,0.18);
-}
+      position: absolute;
+      padding: 16px 18px 16px;
+      border-radius: var(--radius-lg);
+      overflow: visible;
+      z-index: 3;
+      border: 1px solid rgba(255,255,255,0.18);
+      backdrop-filter: blur(0.4px);
+    }
 
-.note.light {
-  background: linear-gradient(180deg, rgba(255,252,247,0.96), rgba(248,242,233,0.96));
-  box-shadow:
-    -8px 10px 20px rgba(68,48,31,0.10),
-    0 3px 10px rgba(68,48,31,0.05);
-}
+    .note.light {
+      background: linear-gradient(180deg, var(--paper-light-top), var(--paper-light-bottom));
+      box-shadow:
+        -10px 12px 22px rgba(68,48,31,0.10),
+        0 4px 10px rgba(68,48,31,0.05);
+    }
 
-.note.warm {
-  background: linear-gradient(180deg, rgba(243,232,208,0.97), rgba(234,220,191,0.97));
-  box-shadow:
-    10px 12px 24px rgba(72,50,32,0.12),
-    0 4px 10px rgba(72,50,32,0.05);
-}
+    .note.warm {
+      background: linear-gradient(180deg, var(--paper-warm-top), var(--paper-warm-bottom));
+      box-shadow:
+        12px 14px 26px rgba(72,50,32,0.12),
+        0 4px 10px rgba(72,50,32,0.05);
+    }
 
-.note.soft {
-  background: linear-gradient(180deg, rgba(252,247,238,0.96), rgba(244,235,220,0.96));
-  box-shadow:
-    8px 12px 22px rgba(65,46,30,0.11),
-    0 3px 10px rgba(65,46,30,0.05);
-}
+    .note.soft {
+      background: linear-gradient(180deg, var(--paper-soft-top), var(--paper-soft-bottom));
+      box-shadow:
+        8px 12px 22px rgba(65,46,30,0.11),
+        0 4px 10px rgba(65,46,30,0.05);
+    }
 
     .note-title {
       margin: 0 0 12px 0;
@@ -237,7 +278,7 @@
       width: 100%;
       height: 1px;
       margin-bottom: 12px;
-      background: linear-gradient(90deg, rgba(117,93,73,0.28), rgba(117,93,73,0.06));
+      background: linear-gradient(90deg, rgba(117,93,73,0.24), rgba(117,93,73,0.05));
     }
 
     .note ul {
@@ -346,59 +387,19 @@
     }
 
     .media-wrap {
-  position: absolute;
-  left: 38px;
-  bottom: 0;
-  width: 524px;
-  height: 290px;
-  border-radius: 18px 18px 0 0;
-  overflow: hidden;
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.08),
-    0 -10px 18px rgba(58,40,25,0.06);
-  transform: none;
-  z-index: 1;
-  background: #cfc4b6;
-}
-
-    .media-wrap::before {
-      content: "";
       position: absolute;
-      top: -14px;
-      left: 22px;
-      width: 72px;
-      height: 24px;
-      border-radius: 4px;
-      background: rgba(244, 232, 204, 0.72);
-      box-shadow: 0 2px 6px rgba(60,42,26,0.08);
-      transform: rotate(-4deg);
-      z-index: 8;
+      left: 34px;
+      right: 34px;
+      bottom: 0;
+      height: 300px;
+      border-radius: 22px 22px 0 0;
+      overflow: hidden;
+      z-index: 1;
+      background: #cfc4b6;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.10),
+        0 -12px 24px rgba(58,40,25,0.08);
     }
-
-    .media-wrap {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 600px;
-  height: 280px;
-  border-radius: 0;
-  overflow: hidden;
-  box-shadow: none;
-  transform: none;
-  z-index: 1;
-  background: #ddd3c5;
-}
-
-.media-frame {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(216,206,194,0.82) 0%, rgba(216,206,194,0.42) 18%, rgba(216,206,194,0.10) 42%, rgba(216,206,194,0.0) 68%),
-    linear-gradient(90deg, rgba(216,206,194,0.24) 0%, rgba(216,206,194,0.00) 16%, rgba(216,206,194,0.00) 84%, rgba(216,206,194,0.24) 100%),
-    radial-gradient(circle at 50% 16%, rgba(255,255,255,0.14), transparent 28%);
-}
 
     .media-block {
       position: absolute;
@@ -407,48 +408,35 @@
     }
 
     .media-block img,
-.media-block video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  filter: brightness(0.98) contrast(0.94) saturate(0.88);
-}
+    .media-block video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: brightness(0.97) contrast(0.96) saturate(0.86);
+    }
 
-    .paper-fragment {
+    .media-frame {
       position: absolute;
-      background: rgba(255, 248, 237, 0.58);
-      box-shadow: 0 10px 20px rgba(60,42,26,0.06);
-      filter: blur(0.15px);
-      z-index: 1;
-    }
-
-    .frag-1 {
-      width: 112px;
-      height: 44px;
-      top: 165px;
-      right: 92px;
-      transform: rotate(-7deg);
-      border-radius: 8px 18px 10px 14px;
-    }
-
-    .frag-2 {
-      width: 84px;
-      height: 38px;
-      top: 586px;
-      right: 42px;
-      transform: rotate(11deg);
-      border-radius: 12px 8px 16px 8px;
-    }
-
-    .frag-3 {
-      width: 92px;
-      height: 34px;
-      bottom: 70px;
-      left: 94px;
-      transform: rotate(-6deg);
-      border-radius: 10px 15px 8px 12px;
-      opacity: 0.42;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg,
+          rgba(216,206,194,0.78) 0%,
+          rgba(216,206,194,0.42) 16%,
+          rgba(216,206,194,0.12) 38%,
+          rgba(216,206,194,0.00) 70%
+        ),
+        linear-gradient(90deg,
+          rgba(216,206,194,0.28) 0%,
+          rgba(216,206,194,0.06) 12%,
+          rgba(216,206,194,0.00) 22%,
+          rgba(216,206,194,0.00) 78%,
+          rgba(216,206,194,0.06) 88%,
+          rgba(216,206,194,0.28) 100%
+        ),
+        radial-gradient(circle at 50% 14%, rgba(255,255,255,0.12), transparent 30%);
     }
 
     .footer-glow {
@@ -457,7 +445,7 @@
       right: 0;
       bottom: 120px;
       height: 220px;
-      background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.34), transparent 62%);
+      background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.22), transparent 62%);
       pointer-events: none;
       z-index: 0;
     }
@@ -478,7 +466,7 @@
         <div class="brand-badge">V</div>
         <div>Veliora</div>
       </div>
-      <div class="lesson-pill">Lesson</div>
+      <div class="lesson-pill">Lesson • $level</div>
     </div>
 
     <div class="hero">
