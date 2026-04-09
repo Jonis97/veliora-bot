@@ -1,156 +1,513 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600&family=Caveat:wght@600;700&display=swap');
-*{margin:0;padding:0;box-sizing:border-box;}
-body{width:600px;font-family:'DM Sans',sans-serif;}
-.page{width:600px;min-height:960px;position:relative;overflow:hidden;padding:28px 24px 32px;}
- 
-/* BACKGROUND */
-.bg-texture{position:absolute;inset:0;z-index:0;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(255,255,255,0.6) 0%, transparent 35%),
-    radial-gradient(circle at 85% 20%, rgba(255,255,255,0.4) 0%, transparent 30%),
-    radial-gradient(ellipse 110% 70% at 50% 100%, rgba(225,205,180,0.4) 0%, transparent 50%),
-    linear-gradient(168deg, #f2e8dc 0%, #ebe0d0 50%, #e0d4c4 100%);
-}
-.bg-noise{position:absolute;inset:0;z-index:1;opacity:0.04;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-  background-size:200px 200px;
-}
-.bg-margin{position:absolute;left:50px;top:0;bottom:0;width:1px;z-index:2;background:rgba(200,100,80,0.15);}
- 
-.page-content{position:relative;z-index:4;}
- 
-/* HEADER */
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.logo-row{display:flex;align-items:center;gap:8px;}
-.logo-circle{width:32px;height:32px;background:#8b1a1a;border-radius:50%;border:2px solid rgba(200,140,80,0.5);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:10px;color:#e8c48a;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
-.brand-name{font-size:12px;font-weight:600;color:#6b4c1e;}
-.level-badge{background:#8b1a1a;color:#fff;font-size:10px;font-weight:600;padding:4px 12px;border-radius:20px;}
- 
-/* TITLE */
-.title-wrap{text-align:center;margin-bottom:20px;}
-.main-title{font-family:'DM Serif Display',serif;font-size:36px;font-style:italic;color:#3d2b0e;line-height:1.1;word-wrap:break-word;overflow-wrap:anywhere;}
-.title-line{width:min(200px,65%);height:1px;background:linear-gradient(90deg,transparent,rgba(150,110,60,0.4),transparent);margin:10px auto 0;}
- 
-/* CARDS */
-.card{border-radius:16px;padding:14px 16px;position:relative;box-shadow:0 6px 24px rgba(0,0,0,0.1),0 2px 6px rgba(0,0,0,0.05),inset 0 1px 0 rgba(255,255,255,0.9);}
-.card-cream{background:linear-gradient(145deg,#fdf8f0,#f5edda);border:1px solid rgba(200,170,120,0.3);}
-.card-beige{background:linear-gradient(145deg,#f5e6c8,#ead9b0);border:1px solid rgba(190,155,90,0.35);}
-.card-white{background:linear-gradient(145deg,#ffffff,#faf5ee);border:1px solid rgba(200,180,150,0.25);}
- 
-/* TORN EDGE */
-.torn::before{
-  content:'';position:absolute;top:-8px;left:-1px;right:-1px;height:10px;
-  background:inherit;border-radius:16px 16px 0 0;
-  clip-path:polygon(0% 100%,1% 20%,2.5% 85%,4% 5%,5.5% 70%,7% 15%,8.5% 80%,10% 0%,11.5% 65%,13% 20%,14.5% 85%,16% 10%,17.5% 75%,19% 25%,20.5% 90%,22% 5%,23.5% 72%,25% 20%,26.5% 88%,28% 2%,29.5% 68%,31% 28%,32.5% 85%,34% 12%,35.5% 78%,37% 22%,38.5% 92%,40% 8%,41.5% 72%,43% 28%,44.5% 88%,46% 2%,47.5% 68%,49% 28%,50.5% 86%,52% 12%,53.5% 78%,55% 22%,56.5% 92%,58% 8%,59.5% 72%,61% 28%,62.5% 88%,64% 2%,65.5% 68%,67% 28%,68.5% 85%,70% 12%,71.5% 78%,73% 22%,74.5% 92%,76% 8%,77.5% 72%,79% 28%,80.5% 88%,82% 2%,83.5% 68%,85% 28%,86.5% 85%,88% 12%,89.5% 78%,91% 22%,92.5% 92%,94% 8%,95.5% 72%,97% 28%,98.5% 82%,100% 35%,100% 100%);
-  z-index:2;
-}
- 
-/* PIN */
-.pin{width:20px;height:20px;border-radius:50%;position:absolute;z-index:20;
-  box-shadow:0 3px 10px rgba(0,0,0,0.28),inset 0 -2px 3px rgba(0,0,0,0.18),inset 0 2px 3px rgba(255,255,255,0.4);}
-.pin::after{content:'';position:absolute;top:5px;left:5px;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.5);}
-.pin-gold{background:radial-gradient(circle at 35% 30%,#ffe57a,#c8880a);}
-.pin-silver{background:radial-gradient(circle at 35% 30%,#f5f5f5,#808080);}
-.pin-red{background:radial-gradient(circle at 35% 30%,#ff9090,#c0392b);}
- 
-/* CARD TITLE */
-.card-title{font-family:'DM Serif Display',serif;font-size:13px;color:#5c3d1a;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(150,110,50,0.2);letter-spacing:0.05em;}
- 
-/* LISTS */
-.item-row{font-size:12.5px;line-height:1.75;color:#2a1a08;display:flex;align-items:baseline;gap:6px;}
-.item-bullet{color:#c8900a;font-weight:700;flex-shrink:0;}
- 
-/* VOCAB */
-.vocab-row{display:flex;align-items:baseline;font-size:12.5px;line-height:1.75;color:#2a1a08;}
-.vocab-term{font-weight:700;color:#1a1208;min-width:80px;}
-.vocab-dash{color:#c8a060;margin:0 5px;flex-shrink:0;}
-.vocab-tr{color:#5a4020;font-style:italic;}
- 
-/* TOP GRID */
-.top-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
- 
-/* BOTTOM ROW */
-.bottom-row{display:grid;grid-template-columns:1.7fr 1fr;gap:12px;align-items:stretch;}
- 
-/* PHOTO */
-.photo-frame{border-radius:16px;overflow:hidden;height:200px;box-shadow:0 6px 20px rgba(0,0,0,0.12);border:1px solid rgba(100,80,50,0.12);}
-.photo-frame figure{margin:0;width:100%;height:100%;}
-.photo-frame figure img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
-.photo-frame .la-media-placeholder{width:100%;height:100%;background:linear-gradient(165deg,#e8ddd0 0%,#d5c8b5 100%);display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(80,60,40,0.4);font-style:italic;}
- 
-/* SPEAK */
-.speak-card{background:linear-gradient(135deg,#e8f4d8,#d0e8b8);border-radius:16px;padding:14px 18px;margin-top:12px;border:1px solid rgba(100,170,70,0.25);box-shadow:0 5px 20px rgba(0,0,0,0.08),inset 0 1px 0 rgba(255,255,255,0.7);position:relative;}
-.speak-title{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:#2d5c14;margin-bottom:4px;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=600, initial-scale=1.0" />
+  <title>Veliora Lesson Art v2</title>
+  <style>
+    :root {
+      --bg: #efe7db;
+      --paper: #fbf7ef;
+      --paper-2: #f4ead7;
+      --paper-3: #f8f2e7;
+      --ink: #33261c;
+      --muted: #7a6756;
+      --accent: #8e1f24;
+      --line: rgba(110, 86, 64, 0.14);
+      --shadow-soft: 0 10px 28px rgba(70, 45, 24, 0.10);
+      --shadow-card: 0 10px 24px rgba(59, 39, 23, 0.12);
+      --shadow-photo: 0 14px 28px rgba(45, 30, 18, 0.16);
+      --radius-xl: 26px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 600px;
+      background: #ddd6ca;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .page {
+      position: relative;
+      width: 600px;
+      height: 920px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 14% 18%, rgba(255,255,255,0.46) 0 10%, transparent 11%),
+        radial-gradient(circle at 88% 10%, rgba(255,255,255,0.28) 0 7%, transparent 8%),
+        radial-gradient(circle at 82% 76%, rgba(255,255,255,0.20) 0 10%, transparent 11%),
+        linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04)),
+        var(--bg);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.14);
+    }
+
+    /* paper texture */
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.18;
+      pointer-events: none;
+      background-image:
+        radial-gradient(rgba(90,70,50,0.08) 0.55px, transparent 0.7px),
+        radial-gradient(rgba(255,255,255,0.20) 0.55px, transparent 0.7px),
+        linear-gradient(115deg, rgba(120,96,72,0.05), transparent 24%, transparent 75%, rgba(120,96,72,0.04));
+      background-size: 18px 18px, 23px 23px, 100% 100%;
+      background-position: 0 0, 10px 12px, 0 0;
+      mix-blend-mode: multiply;
+    }
+
+    /* faint notebook line */
+    .spine {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 48px;
+      width: 1px;
+      background: linear-gradient(
+        180deg,
+        rgba(168,125,97,0.12),
+        rgba(168,125,97,0.26),
+        rgba(168,125,97,0.12)
+      );
+      z-index: 1;
+    }
+
+    .topbar {
+      position: absolute;
+      top: 20px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #725843;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .brand-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 30%, #b24a3f, #7f1d20 62%, #651417 100%);
+      color: #f7e8dc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.35), 0 3px 8px rgba(70,20,20,0.22);
+    }
+
+    .lesson-pill {
+      padding: 7px 14px 8px;
+      border-radius: 999px;
+      background: #8e1f24;
+      color: #fff8f4;
+      font: 700 12px/1 Arial, Helvetica, sans-serif;
+      letter-spacing: 0.2px;
+      box-shadow: 0 4px 10px rgba(93,18,22,0.18);
+    }
+
+    .hero {
+      position: absolute;
+      left: 62px;
+      top: 76px;
+      width: 478px;
+      z-index: 4;
+    }
+
+    .title {
+      margin: 0;
+      text-align: left;
+      font-size: 29px;
+      line-height: 1.18;
+      font-style: italic;
+      font-weight: 700;
+      color: #3a281a;
+      letter-spacing: -0.3px;
+      text-wrap: balance;
+      max-width: 470px;
+    }
+
+    .title-rule {
+      width: 265px;
+      height: 1px;
+      margin-top: 14px;
+      background: linear-gradient(90deg, rgba(112,86,64,0.20), rgba(112,86,64,0.06));
+    }
+
+    .botanical {
+      position: absolute;
+      inset: auto auto 76px -40px;
+      width: 360px;
+      height: 430px;
+      z-index: 0;
+      opacity: 0.24;
+      pointer-events: none;
+      filter: blur(0.1px);
+    }
+
+    .botanical svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .note {
+      position: absolute;
+      padding: 16px 18px 16px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: visible;
+      z-index: 3;
+    }
+
+    .note.light {
+      background: linear-gradient(180deg, #fffdf8, #faf5eb);
+    }
+
+    .note.warm {
+      background: linear-gradient(180deg, #f5ecd7, #efe1c5);
+    }
+
+    .note.soft {
+      background: linear-gradient(180deg, #fcf8ef, #f5ecdd);
+    }
+
+    .note-title {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      line-height: 1.1;
+      color: #6b5644;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .note-line {
+      width: 100%;
+      height: 1px;
+      margin-bottom: 12px;
+      background: linear-gradient(90deg, rgba(117,93,73,0.28), rgba(117,93,73,0.06));
+    }
+
+    .note ul {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 14px;
+      line-height: 1.42;
+      color: #2f241c;
+    }
+
+    .note li {
+      margin: 0 0 6px 0;
+    }
+
+    .lead {
+      top: 195px;
+      left: 25px;
+      width: 270px;
+      min-height: 180px;
+      transform: rotate(-1.2deg);
+    }
+
+    .discussion {
+      top: 206px;
+      right: 24px;
+      width: 270px;
+      min-height: 192px;
+      transform: rotate(1deg);
+      z-index: 4;
+    }
+
+    .choice {
+      top: 413px;
+      left: 23px;
+      width: 278px;
+      min-height: 185px;
+      transform: rotate(-0.7deg);
+      z-index: 3;
+    }
+
+    .vocab {
+      top: 430px;
+      right: 28px;
+      width: 246px;
+      min-height: 175px;
+      transform: rotate(0.9deg);
+      z-index: 5;
+    }
+
+    .pin {
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      border-radius: 999px;
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.45),
+        0 2px 5px rgba(55,38,24,0.20);
+    }
+
+    .pin.red {
+      background: radial-gradient(circle at 35% 30%, #d35649, #a82324 68%, #7f181a 100%);
+    }
+
+    .pin.yellow {
+      background: radial-gradient(circle at 35% 30%, #f4d468, #d2a92a 68%, #b98d15 100%);
+    }
+
+    .pin.silver {
+      background: radial-gradient(circle at 35% 30%, #f0f0f0, #b6bac0 68%, #8d939b 100%);
+    }
+
+    .lead .pin {
+      top: -9px;
+      left: 14px;
+    }
+
+    .discussion .pin {
+      top: -9px;
+      right: 16px;
+    }
+
+    .choice .pin {
+      top: -9px;
+      left: 126px;
+    }
+
+    .vocab .pin {
+      top: -9px;
+      right: 18px;
+    }
+
+    /* torn tape edge */
+    .note::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: -8px;
+      height: 12px;
+      opacity: 0.85;
+      background:
+        linear-gradient(-45deg, transparent 7px, rgba(255,255,255,0.88) 0) left,
+        linear-gradient(45deg, transparent 7px, rgba(255,255,255,0.88) 0) right;
+      background-size: 12px 12px;
+      background-repeat: repeat-x;
+      filter: drop-shadow(0 1px 0 rgba(135,110,85,0.08));
+    }
+
+    .media-wrap {
+      position: absolute;
+      left: 30px;
+      top: 612px;
+      width: 336px;
+      height: 190px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow-photo);
+      transform: rotate(-0.8deg);
+      z-index: 2;
+      background: #ddd3c5;
+    }
+
+    .media-wrap::before {
+      content: "";
+      position: absolute;
+      top: -14px;
+      left: 22px;
+      width: 72px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(244, 232, 204, 0.72);
+      box-shadow: 0 2px 6px rgba(60,42,26,0.08);
+      transform: rotate(-4deg);
+      z-index: 8;
+    }
+
+    .media-wrap::after {
+      content: "";
+      position: absolute;
+      top: -12px;
+      right: 34px;
+      width: 66px;
+      height: 22px;
+      border-radius: 4px;
+      background: rgba(244, 232, 204, 0.58);
+      box-shadow: 0 2px 6px rgba(60,42,26,0.07);
+      transform: rotate(5deg);
+      z-index: 8;
+    }
+
+    .media-frame {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0));
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .media-block {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .media-block img,
+    .media-block video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* little floating paper for premium feel */
+    .paper-fragment {
+      position: absolute;
+      background: rgba(255, 248, 237, 0.58);
+      box-shadow: 0 10px 20px rgba(60,42,26,0.06);
+      filter: blur(0.15px);
+      z-index: 1;
+    }
+
+    .frag-1 {
+      width: 112px;
+      height: 44px;
+      top: 165px;
+      right: 92px;
+      transform: rotate(-7deg);
+      border-radius: 8px 18px 10px 14px;
+    }
+
+    .frag-2 {
+      width: 84px;
+      height: 38px;
+      top: 586px;
+      right: 42px;
+      transform: rotate(11deg);
+      border-radius: 12px 8px 16px 8px;
+    }
+
+    .frag-3 {
+      width: 92px;
+      height: 34px;
+      bottom: 70px;
+      left: 94px;
+      transform: rotate(-6deg);
+      border-radius: 10px 15px 8px 12px;
+      opacity: 0.42;
+    }
+
+    .footer-glow {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -40px;
+      height: 180px;
+      background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.34), transparent 62%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* content safety */
+    .note ul,
+    .title {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+  </style>
 </head>
 <body>
-<div class="page">
-  <div class="bg-texture"></div>
-  <div class="bg-noise"></div>
-  <div class="bg-margin"></div>
- 
-  <div class="page-content">
- 
-    <!-- HEADER -->
-    <div class="header">
-      <div class="logo-row">
-        <div class="logo-circle">V</div>
-        <div class="brand-name">Veliora</div>
+  <div class="page">
+    <div class="spine"></div>
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-badge">V</div>
+        <div>Veliora</div>
       </div>
-      <div class="level-badge">Lesson</div>
+      <div class="lesson-pill">Lesson</div>
     </div>
- 
-    <!-- TITLE -->
-    <div class="title-wrap">
-      <div class="main-title">$title</div>
-      <div class="title-line"></div>
+
+    <div class="hero">
+      <h1 class="title">$title</h1>
+      <div class="title-rule"></div>
     </div>
- 
-    <!-- TOP GRID: Lead-in + Discussion -->
-    <div class="top-grid">
- 
-      <div class="card card-cream torn" style="margin-top:10px;">
-        <div class="pin pin-silver" style="top:-18px;left:14px;"></div>
-        <div class="card-title">Lead-in</div>
-        $lead_in_items
-      </div>
- 
-      <div class="card card-beige torn" style="margin-top:10px;">
-        <div class="pin pin-gold" style="top:-18px;right:14px;"></div>
-        <div class="card-title">Discussion</div>
-        $discussion_items
-      </div>
- 
-      <div class="card card-white torn" style="margin-top:10px;">
-        <div class="pin pin-gold" style="top:-18px;left:50%;transform:translateX(-50%);"></div>
-        <div class="card-title">This or that</div>
-        $choice_items
-      </div>
- 
-      <div class="card card-cream torn" style="margin-top:10px;">
-        <div class="pin pin-silver" style="top:-18px;right:14px;"></div>
-        <div class="card-title">Vocab</div>
-        $vocab_items
-      </div>
- 
+
+    <div class="paper-fragment frag-1"></div>
+    <div class="paper-fragment frag-2"></div>
+    <div class="paper-fragment frag-3"></div>
+
+    <div class="botanical" aria-hidden="true">
+      <svg viewBox="0 0 300 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M142 404C145 345 151 299 160 255C169 211 184 171 210 129" stroke="#a98066" stroke-width="4" stroke-linecap="round"/>
+        <path d="M158 273C130 255 104 252 72 258" stroke="#b79277" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M165 244C197 235 224 218 244 193" stroke="#b79277" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M179 205C154 182 132 171 101 166" stroke="#b79277" stroke-width="2.8" stroke-linecap="round"/>
+        <path d="M188 178C215 170 236 154 251 131" stroke="#b79277" stroke-width="2.8" stroke-linecap="round"/>
+
+        <ellipse cx="84" cy="259" rx="34" ry="20" transform="rotate(-9 84 259)" fill="#d7b9a3"/>
+        <ellipse cx="235" cy="192" rx="35" ry="18" transform="rotate(-14 235 192)" fill="#d7b9a3"/>
+        <ellipse cx="107" cy="167" rx="29" ry="16" transform="rotate(18 107 167)" fill="#d7b9a3"/>
+        <ellipse cx="250" cy="130" rx="28" ry="15" transform="rotate(-20 250 130)" fill="#d7b9a3"/>
+      </svg>
     </div>
- 
-    <!-- BOTTOM: Photo + Vocab echo -->
-    <div class="bottom-row">
- 
-      <div class="photo-frame">
-        $media_block
-      </div>
- 
+
+    <section class="note light lead">
+      <div class="pin silver"></div>
+      <div class="note-title">Lead-in</div>
+      <div class="note-line"></div>
+      <ul>$lead_in_items</ul>
+    </section>
+
+    <section class="note warm discussion">
+      <div class="pin yellow"></div>
+      <div class="note-title">Discussion</div>
+      <div class="note-line"></div>
+      <ul>$discussion_items</ul>
+    </section>
+
+    <section class="note light choice">
+      <div class="pin yellow"></div>
+      <div class="note-title">This or that</div>
+      <div class="note-line"></div>
+      <ul>$choice_items</ul>
+    </section>
+
+    <section class="note soft vocab">
+      <div class="pin silver"></div>
+      <div class="note-title">Vocab</div>
+      <div class="note-line"></div>
+      <ul>$vocab_items</ul>
+    </section>
+
+    <div class="media-wrap">
+      <div class="media-block">$media_block</div>
+      <div class="media-frame"></div>
     </div>
- 
+
+    <div class="footer-glow"></div>
   </div>
-</div>
 </body>
 </html>
- 
