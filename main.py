@@ -71,7 +71,7 @@ def main() -> None:
     full_webhook_url = webhook_url.rstrip("/") + normalized_path
     LOGGER.info("Starting bot + API on port %s", port)
 
-    n():
+    async def run():
         await app.initialize()
         await app.bot.set_webhook(
             url=full_webhook_url,
