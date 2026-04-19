@@ -3453,11 +3453,13 @@ class MessageHandlerService:
         chat_id = update.message.chat_id
         user_state.pop(chat_id, None)
         preview_state.pop(chat_id, None)
+        from telegram imp[[InlineKeyboardButton(
+            "📚 Відкрити Veliora",
+            web_app=WebAppInfo(url="https://jonis97.github.io/veliora-bot/miniapp.html")
+        )]]
         await update.message.reply_text(
-            "👋 Привіт! Я Veliora 🎓\n\n"
-            "Допоможу швидко підготувати матеріал для уроку англійської.\n\n"
-            "Що хочеш отримати?",
-            reply_markup=_ONB_FMT_STEP1_KB,
+            "👋 Привіт! Я Veliora 🎓\n\nНатисни кнопку щоб відкрити додаток.",
+            reply_markup=InlineKeyboardMarkup(keyboard),
         )
 
     async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
