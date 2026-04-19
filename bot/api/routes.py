@@ -1,0 +1,245 @@
+"""
+Veliora Mini App API bridge.
+Reuses existing bot services via init_api().
+Grammar-only first live test.
+"""
+import io
+import json
+import logging
+import os
+import time
+from string import Template
+from typing import Any, Optional
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from bot.utils.intent import OutputIntent
+
+LOGGER = logging.getLogger(__name__)
+
+# ── Shared instances ──────────────────────────────────────────────────────────
+_ai_service         = None   # AIContentService
+_screenshot_service = None   # ScreenshotService
+_bot                = None   # telegram.Bot
+
+def init_api(pipeline, bot):
+    """Call from main.py after build_application()."""
+    global _ai_service, _screenshot_service, _bot
+    _ai_service         = pipeline._ai_service
+    _screenshot_service = pipeline._screenshot_service
+    _bot                = bot
+
+# ── FastAPI app ───────────────────────────────────────────────────────────────
+api = FastAPI(title="Veliora Mini App API")
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["POST", "GET", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# ── Preset loader ─────────────────────────────────────────────────────────────
+# presets/ lives in project root (same level as main.py)
+# __file__ is bot/api/routes.py → go up 2 levels
+PRESET_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'presets')
+
+def load_preset_html(base_preset: str) -> str:
+    path = os.path.abspath(os.path.join(PRESET_DIR, f"{base_preset}.html"))
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Preset HTML missing: {path}\n"
+            f"Copy {base_preset}.html to the presets/ folder."
+        )
+    with open(path, encoding='utf-8') as f:
+        return f.read()
+
+# ── Scene overrides ───────────────────────────────────────────────────────────
+BG_COLORS = {'warm': '#f0ebe3', 'light': '#f8f8f6', 'dark': '#0f1923'}
+
+def apply_scene_overrides(html: str, overrides: dict) -> str:
+    bg  = BG_COLORS.get(overrides.get('bg_tone', 'light'), '#f8f8f6')
+    d   = overrides.get('density_padding_mult', 1.0)
+    op  = overrides.get('decoration_opacity', 0.0)
+    css = (
+        f"<style>:root{{--scene-bg:{bg};--density-mult:{d};--deco-opacity:{op}}}"
+        f"body,.page{{background:{bg}!important}}</style>"
+    )
+    return html.replace('</head>', css + '\n</head>', 1)
+
+# ── Content → $placeholder bindings ──────────────────────────────────────────
+def build_bindings(content: dict) -> dict:
+    def li(items):
+        if not isinstance(items, list):
+            return str(items)
+        return ''.join(f'<li>{i}</li>' for i in items if str(i).strip())
+
+    b = {
+        'title':            content.get('title', ''),
+        'level':            content.get('level', ''),
+        'lead_in_items':    li(content.get('lead_in_items', [])),
+        'discussion_items': li(content.get('discussion_items', [])),
+        'choice_items':     li(content.get('choice_items', [])),
+        'vocab_items':      li(content.get('vocab_items', [])),
+        'media_block':      content.get('media_block', ''),
+    }
+    for i in range(1, 13):
+        b[f'vocab_item_{i}']      = content.get(f'vocab_item_{i}', '')
+        b[f'discussion_item_{i}'] = content.get(f'discussion_item_{i}', '')
+        b[f'lead_in_item_{i}']    = content.get(f'lead_in_item_{i}', '')
+    return b
+
+# ── Material persistence ──────────────────────────────────────────────────────
+DATA_FILE = os.path.join(
+    os.path.dirname(__file__), '..', '..', 'data', 'materials.json'
+)
+
+def save_material(record: dict) -> str:
+    os.makedirs(os.path.dirname(os.path.abspath(DATA_FILE)), exist_ok=True)
+    items = []
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, encoding='utf-8') as f:
+                items = json.load(f)
+        except Exception:
+            items = []
+    mid = f"mat_{int(time.time() * 1000)}"
+    record['material_id'] = mid
+    record['created_at']  = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    items.append(record)
+    with open(DATA_FILE, 'w', encoding='utf-8') as f:
+        json.dump(items, f, ensure_ascii=False, indent=2)
+    return mid
+
+# ── Pydantic models ───────────────────────────────────────────────────────────
+class GenerateRequest(BaseModel):
+    teacher_id:   str
+    mode:         str           # "grammar" | "lesson" | "speaking" | "vocabulary"
+    level:        str           # "A1" | "A2" | "B1" | "B2"
+    structure:    list[str]     # section labels (for context only, not used by AI yet)
+    source_type:  str           # "custom" | "youtube" | "text"
+    source_value: str           # text or YouTube URL
+
+class SceneOverrides(BaseModel):
+    bg_tone:              str   = 'light'
+    density_padding_mult: float = 1.0
+    decoration_opacity:   float = 0.0
+
+class RenderSendRequest(BaseModel):
+    teacher_id:      str
+    base_preset:     str                    = 'grammar_clean_v1'
+    scene_overrides: SceneOverrides         = SceneOverrides()
+    content:         dict[str, Any]
+    mode:            Optional[str]          = None
+    level:           Optional[str]          = None
+    variant_id:      str                    = 'v1_grammar_balanced'
+    block_order:     list[dict]             = []
+
+# ── POST /api/generate ────────────────────────────────────────────────────────
+@api.post('/api/generate')
+async def api_generate(req: GenerateRequest):
+    try:
+        # Map mode → template name (same logic as existing bot)
+        mode_to_template = {
+            'lesson':     'lesson_card_v1',
+            'speaking':   'speaking_card_v2',
+            'vocabulary': 'vocab_card',
+            'grammar':    'lesson_card_v1',   # grammar reuses lesson template
+        }
+        template = mode_to_template.get(req.mode, 'lesson_card_v1')
+
+        # Build enriched source text with level hint (same as existing bot flow)
+        source_text = f"[FORMAT={req.mode}]\n[LEVEL={req.level}]\n\n{req.source_value}"
+
+        # Call existing AIContentService — exact confirmed signature
+        card_json = await _ai_service.generate_card_content(
+            source_text,
+            template,
+            output_intent=OutputIntent.CARD,
+            is_followup=False,
+            intent=req.mode,
+        )
+
+        # Map AI output → Mini App content format
+        # ai_service returns: topic, lead_in_questions, choices, vocab, discussion_questions, etc.
+        content = {
+            'title':            str(card_json.get('topic') or card_json.get('title', '')).strip(),
+            'lead_in_items':    card_json.get('lead_in_questions', []),
+            'discussion_items': card_json.get('discussion_questions', card_json.get('bullets', [])),
+            'choice_items':     card_json.get('choices', []),
+            'vocab_items':      card_json.get('vocab', []),
+        }
+
+        preset_map = {
+            'lesson':     'lesson_warm_v1',
+            'speaking':   'speaking_collage_v1',
+            'vocabulary': 'vocab_dark_v1',
+            'grammar':    'grammar_clean_v1',
+        }
+
+        return {
+            'status':           'ok',
+            'preset_id':        preset_map.get(req.mode, 'grammar_clean_v1'),
+            'edit_rounds_used': 0,
+            'content':          content,
+        }
+
+    except Exception as e:
+        LOGGER.exception('/api/generate failed')
+        raise HTTPException(
+            status_code=500,
+            detail={'status': 'error', 'error': 'generation_failed', 'message': str(e)}
+        )
+
+# ── POST /api/render_and_send ─────────────────────────────────────────────────
+@api.post('/api/render_and_send')
+async def api_render_and_send(req: RenderSendRequest):
+    try:
+        # 1. Load preset HTML from presets/ folder
+        prod_html = load_preset_html(req.base_preset)
+
+        # 2. Substitute content bindings
+        bindings = build_bindings(req.content)
+        rendered = Template(prod_html).safe_substitute(bindings)
+
+        # 3. Apply scene overrides (CSS vars)
+        rendered = apply_scene_overrides(rendered, req.scene_overrides.dict())
+
+        # 4. Render PNG — exact confirmed signature: html_to_image(html: str) → bytes
+        image_bytes = await _screenshot_service.html_to_image(rendered)
+
+        # 5. Send directly to Telegram — no CDN needed
+        tg_user_id = int(req.teacher_id.replace('tg_', ''))
+        msg = await _bot.send_photo(
+            chat_id=tg_user_id,
+            photo=io.BytesIO(image_bytes),
+            caption="Ваша картка готова 🎓",
+        )
+        file_id = msg.photo[-1].file_id
+
+        # 6. Persist material record
+        material_id = save_material({
+            'teacher_id':       req.teacher_id,
+            'mode':             req.mode,
+            'level':            req.level,
+            'variant_id':       req.variant_id,
+            'base_preset':      req.base_preset,
+            'png_url':          f'tg://{file_id}',
+            'content_snapshot': req.content,
+        })
+
+        return {'status': 'ok', 'file_id': file_id, 'material_id': material_id}
+
+    except FileNotFoundError as e:
+        LOGGER.error(f'/api/render_and_send preset missing: {e}')
+        raise HTTPException(
+            status_code=500,
+            detail={'status': 'error', 'error': 'preset_missing', 'message': str(e)}
+        )
+    except Exception as e:
+        LOGGER.exception('/api/render_and_send failed')
+        raise HTTPException(
+            status_code=500,
+            detail={'status': 'error', 'error': 'failed', 'message': str(e)}
+        )

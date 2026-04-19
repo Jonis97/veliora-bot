@@ -1,9 +1,12 @@
+import asyncio
 import logging
 
+import uvicorn
 from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
+from bot.api.routes import api, init_api
 from bot.handlers.message_handler import MessageHandlerService
 from bot.services.ai_service import AIContentService
 from bot.services.pipeline_service import ContentPipelineService
@@ -14,7 +17,6 @@ from bot.services.transcription_service import VoiceTranscriptionService
 from bot.services.youtube_service import YouTubeTranscriptService
 from bot.utils.config import load_settings
 from bot.utils.dedup import MessageDeduplicator
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +29,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     LOGGER.exception("Unhandled Telegram error", exc_info=context.error)
 
 
-def build_application() -> tuple[Application, str, int, str, str]:
+def build_application():
     settings = load_settings()
     openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
     anthropic_client = AsyncAnthropic(api_key=settings.anthropic_api_key)
@@ -57,27 +59,47 @@ def build_application() -> tuple[Application, str, int, str, str]:
     app.add_handler(MessageHandler(accepted_inputs, message_handler.handle_message))
     app.add_error_handler(error_handler)
 
-    return (
-        app,
-        settings.webhook_url,
-        settings.port,
-        settings.webhook_path,
-        settings.webhook_secret_token,
-    )
+    return app, settings.webhook_url, settings.port, settings.webhook_path, settings.webhook_secret_token, pipeline
 
 
 def main() -> None:
-    app, webhook_url, port, webhook_path, secret_token = build_application()
-    full_webhook_url = webhook_url.rstrip("/") + webhook_path
-    LOGGER.info("Starting bot with webhook: %s", full_webhook_url)
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=port,
-        url_path=webhook_path.lstrip("/"),
-        webhook_url=full_webhook_url,
-        secret_token=secret_token,
-        drop_pending_updates=True,
-    )
+    app, webhook_url, port, webhook_path, secret_token, pipeline = build_application()
+    init_api(pipeline, app.bot)
+
+    # Нормалізація webhook_path
+    normalized_path = "/" + webhook_path.strip("/")
+    full_webhook_url = webhook_url.rstrip("/") + normalized_path
+    LOGGER.info("Starting bot + API on port %s", port)
+
+    n():
+        await app.initialize()
+        await app.bot.set_webhook(
+            url=full_webhook_url,
+            secret_token=secret_token if secret_token else None,
+            drop_pending_updates=True,
+        )
+        await app.start()
+
+        from fastapi import Request, Response
+        from telegram import Update
+        import json as _json
+
+        @api.post(normalized_path)
+        async def telegram_webhook(request: Request):
+            data = await request.body()
+            update = Update.de_json(_json.loads(data), app.bot)
+            await app.process_update(update)
+            return Response(status_code=200)
+
+        config = uvicorn.Config(api, host="0.0.0.0", port=port, log_level="info")
+        server = uvicorn.Server(config)
+        try:
+            await server.serve()
+        finally:
+            await app.stop()
+            await app.shutdown()
+
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
