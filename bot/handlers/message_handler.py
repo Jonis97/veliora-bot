@@ -3453,7 +3453,8 @@ class MessageHandlerService:
         chat_id = update.message.chat_id
         user_state.pop(chat_id, None)
         preview_state.pop(chat_id, None)
-        from telegram imp[[InlineKeyboardButton(
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+        keyboard = [[InlineKeyboardButton(
             "📚 Відкрити Veliora",
             web_app=WebAppInfo(url="https://jonis97.github.io/veliora-bot/miniapp.html")
         )]]
