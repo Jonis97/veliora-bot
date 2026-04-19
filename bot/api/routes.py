@@ -20,15 +20,17 @@ from bot.utils.intent import OutputIntent
 LOGGER = logging.getLogger(__name__)
 
 # ── Shared instances ──────────────────────────────────────────────────────────
-_ai_service         = None   # AIContentService
-_screenshot_service = None   # ScreenshotService
-_bot                = None   # telegram.Bot
+_ai_service         = None
+_screenshot_service = None
+_youtube_service    = None
+_bot                = None
 
 def init_api(pipeline, bot):
     """Call from main.py after build_application()."""
-    global _ai_service, _screenshot_service, _bot
+    global _ai_service, _screenshot_service, _youtube_service, _bot
     _ai_service         = pipeline._ai_service
     _screenshot_service = pipeline._screenshot_service
+    _youtube_service    = pipeline._youtube_service
     _bot                = bot
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
