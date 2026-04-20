@@ -249,8 +249,9 @@ When intent is lesson:
 - All content must come from the source only. Do not invent facts, examples, or situations not supported by the material.
 - topic: the main theme / title as it follows from the source (video topic).
 - lead_in_questions: 2–3 short, engaging questions that activate curiosity and start discussion — not quizzes or knowledge tests.
+- discussion_questions: 3–4 deeper discussion or opinion questions grounded in source ideas. Mix experience-based and reflection prompts appropriate for the level.
 - choices: 4–6 situational "this or that" prompts for speaking practice — fun, relevant, tied to ideas from the source. Each item is one line in the form "Option A or Option B?" (or equivalent clear pair). You may use strings or objects with two options (e.g. a/b or option_a/option_b).
-- No vocabulary lists and no exercises — those belong to other templates (vocab_card, warm_paper_v2, etc.).
+- vocabulary: 4–6 most useful words or phrases from the source. Format each as "English phrase — Ukrainian translation". Choose collocations and phrases over single words. Must be directly traceable to the source.
 - image_url is set by the app for YouTube thumbnails when applicable.
 
 DEPTH RULE:
@@ -268,12 +269,13 @@ JSON schema for lesson_card_v1 only:
   "template": "lesson_card_v1",
   "topic": "Main theme from source.",
   "lead_in_questions": ["2–3 warmup questions; curiosity and discussion, not testing knowledge."],
+  "discussion_questions": ["3–4 deeper discussion questions; opinion and reflection; source-grounded only."],
   "choices": ["4–6 lines: 'X or Y?' style; speaking practice; source-grounded only."],
+  "vocabulary": ["4–6 items as strings: 'English phrase — Ukrainian translation'; source-grounded only."],
   "title": "",
   "subtitle": "",
   "punchline": "",
   "contrast": {{ "wrong": "", "better": "" }},
-  "vocabulary": [],
   "vocabulary_examples": [],
   "mcq_brackets": [],
   "bullets": [],
@@ -281,7 +283,7 @@ JSON schema for lesson_card_v1 only:
   "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
-For lesson: use template lesson_card_v1 and populate topic, lead_in_questions, and choices only (other keys empty or minimal). Include image_query when useful. Do not invent content not grounded in the source.
+For lesson: populate topic, lead_in_questions, discussion_questions, choices, and vocabulary. All other keys empty or minimal. Include image_query when useful. Do not invent content not grounded in the source.
 
 Output valid JSON only.
 """.strip()

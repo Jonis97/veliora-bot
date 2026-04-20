@@ -220,10 +220,10 @@ async def api_generate(req: GenerateRequest):
             for v in raw_vocab if v
         ]
 
-        # discussion_items: lesson AI returns bullets (3 key ideas); grammar/speaking
-        # may return discussion_questions. Use whichever is present.
+        # discussion_items: lesson now returns discussion_questions directly.
+        # grammar/speaking fall back to discussion_questions then bullets.
         if req.mode == 'lesson':
-            discussion_raw = card_json.get('bullets', [])
+            discussion_raw = card_json.get('discussion_questions', [])
         else:
             discussion_raw = card_json.get('discussion_questions', card_json.get('bullets', []))
 
