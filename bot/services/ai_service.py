@@ -249,9 +249,11 @@ When intent is lesson:
 - All content must come from the source only. Do not invent facts, examples, or situations not supported by the material.
 - topic: the main theme / title as it follows from the source (video topic).
 - lead_in_questions: 2–3 short, engaging questions that activate curiosity and start discussion — not quizzes or knowledge tests.
-- discussion_questions: 3–4 deeper discussion or opinion questions grounded in source ideas. Mix experience-based and reflection prompts appropriate for the level.
+- discussion_questions: 3–4 deeper discussion or opinion questions grounded in source ideas. Mix experience-based and reflection prompts appropriate for the level. If STRUCTURE contains "Extra discussion", add 2 more items (total 5–6), still source-grounded.
 - choices: 4–6 situational "this or that" prompts for speaking practice — fun, relevant, tied to ideas from the source. Each item is one line in the form "Option A or Option B?" (or equivalent clear pair). You may use strings or objects with two options (e.g. a/b or option_a/option_b).
 - vocabulary: 4–6 most useful words or phrases from the source. Format each as "English phrase — Ukrainian translation". Choose collocations and phrases over single words. Must be directly traceable to the source.
+- If STRUCTURE contains "Grammar note": add a grammar_note field with one short, specific grammar tip grounded in the source (max 2 sentences). Omit the field entirely if "Grammar note" is not in STRUCTURE.
+- If STRUCTURE contains "Homework": add a homework field with one clear, simple homework task the student can do independently (max 1 sentence). Omit the field entirely if "Homework" is not in STRUCTURE.
 - image_url is set by the app for YouTube thumbnails when applicable.
 
 DEPTH RULE:
@@ -269,9 +271,11 @@ JSON schema for lesson_card_v1 only:
   "template": "lesson_card_v1",
   "topic": "Main theme from source.",
   "lead_in_questions": ["2–3 warmup questions; curiosity and discussion, not testing knowledge."],
-  "discussion_questions": ["3–4 deeper discussion questions; opinion and reflection; source-grounded only."],
+  "discussion_questions": ["3–4 deeper discussion questions (5–6 if STRUCTURE has Extra discussion); opinion and reflection; source-grounded only."],
   "choices": ["4–6 lines: 'X or Y?' style; speaking practice; source-grounded only."],
   "vocabulary": ["4–6 items as strings: 'English phrase — Ukrainian translation'; source-grounded only."],
+  "grammar_note": "One short grammar tip from the source (omit field if STRUCTURE has no Grammar note).",
+  "homework": "One simple homework task (omit field if STRUCTURE has no Homework).",
   "title": "",
   "subtitle": "",
   "punchline": "",
@@ -283,7 +287,7 @@ JSON schema for lesson_card_v1 only:
   "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
-For lesson: populate topic, lead_in_questions, discussion_questions, choices, and vocabulary. All other keys empty or minimal. Include image_query when useful. Do not invent content not grounded in the source.
+For lesson: populate topic, lead_in_questions, discussion_questions, choices, and vocabulary always. Add grammar_note only if STRUCTURE contains "Grammar note". Add homework only if STRUCTURE contains "Homework". All other keys empty or minimal. Do not invent content not grounded in the source.
 
 Output valid JSON only.
 """.strip()

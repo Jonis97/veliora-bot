@@ -233,6 +233,8 @@ async def api_generate(req: GenerateRequest):
             'discussion_items': discussion_raw,
             'choice_items':     card_json.get('choices', []),
             'vocab_items':      vocab_strings,
+            'grammar_note':     str(card_json.get('grammar_note') or '').strip(),
+            'homework':         str(card_json.get('homework') or '').strip(),
         }
 
         # Filter content to only include blocks present in teacher's chosen structure.
