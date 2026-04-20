@@ -23,14 +23,16 @@ LOGGER = logging.getLogger(__name__)
 _ai_service         = None
 _screenshot_service = None
 _youtube_service    = None
+_template_service   = None
 _bot                = None
 
 def init_api(pipeline, bot):
     """Call from main.py after build_application()."""
-    global _ai_service, _screenshot_service, _youtube_service, _bot
+    global _ai_service, _screenshot_service, _youtube_service, _template_service, _bot
     _ai_service         = pipeline._ai_service
     _screenshot_service = pipeline._screenshot_service
     _youtube_service    = pipeline._youtube_service
+    _template_service   = pipeline._template_service
     _bot                = bot
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
@@ -301,18 +303,27 @@ async def api_render_and_send(req: RenderSendRequest):
 @api.post('/api/render')
 async def api_render(req: RenderRequest):
     try:
-        prod_html   = load_preset_html(req.base_preset)
-        bindings    = build_bindings(req.content)
-        rendered    = Template(prod_html).safe_substitute(bindings)
-        rendered    = apply_scene_overrides(rendered, req.scene_overrides.dict())
-        image_bytes = await _screenshot_service.html_to_image(rendered)
+        # Translate Mini App content keys → _normalize_card keys expected by TemplateService.
+        # Mini App uses: title, lead_in_items, discussion_items, choice_items, vocab_items.
+        # _normalize_card reads: topic, lead_in_questions, discussion_questions, choices, vocab.
+        card_for_render = {
+            'topic':                req.content.get('title', ''),
+            'lead_in_questions':    req.content.get('lead_in_items', []),
+            'discussion_questions': req.content.get('discussion_items', []),
+            'choices':              req.content.get('choice_items', []),
+            'vocab':                req.content.get('vocab_items', []),
+            'image_url':            req.content.get('image_url', ''),
+        }
+
+        html        = _template_service.render_html(card_for_render, 'lesson_art_v1')
+        image_bytes = await _screenshot_service.html_to_image(html)
 
         material_id = save_material({
             'teacher_id':       req.teacher_id,
             'mode':             req.mode,
             'level':            req.level,
             'variant_id':       req.variant_id,
-            'base_preset':      req.base_preset,
+            'base_preset':      'lesson_art_v1',
             'content_snapshot': req.content,
         })
         _pending_renders[material_id] = {
@@ -321,12 +332,6 @@ async def api_render(req: RenderRequest):
         }
         return {'status': 'ok', 'png_url': None, 'material_id': material_id}
 
-    except FileNotFoundError as e:
-        LOGGER.error(f'/api/render preset missing: {e}')
-        raise HTTPException(
-            status_code=500,
-            detail={'status': 'error', 'error': 'preset_missing', 'message': str(e)}
-        )
     except Exception as e:
         LOGGER.exception('/api/render failed')
         raise HTTPException(
