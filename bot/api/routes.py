@@ -114,6 +114,9 @@ def save_material(record: dict) -> str:
         json.dump(items, f, ensure_ascii=False, indent=2)
     return mid
 
+# ── In-memory render store: material_id → bytes + metadata ───────────────────
+_pending_renders: dict = {}
+
 # ── Pydantic models ───────────────────────────────────────────────────────────
 class GenerateRequest(BaseModel):
     teacher_id:   str
@@ -127,6 +130,21 @@ class SceneOverrides(BaseModel):
     bg_tone:              str   = 'light'
     density_padding_mult: float = 1.0
     decoration_opacity:   float = 0.0
+
+class RenderRequest(BaseModel):
+    teacher_id:      str
+    mode:            Optional[str]  = None
+    level:           Optional[str]  = None
+    variant_id:      str            = 'v1_grammar_balanced'
+    base_preset:     str            = 'grammar_clean_v1'
+    block_order:     list[dict]     = []
+    scene_overrides: SceneOverrides = SceneOverrides()
+    content:         dict[str, Any] = {}
+
+class SendRequest(BaseModel):
+    teacher_id:  str
+    png_url:     Optional[str] = None
+    material_id: Optional[str] = None
 
 class RenderSendRequest(BaseModel):
     teacher_id:      str
@@ -241,6 +259,70 @@ async def api_render_and_send(req: RenderSendRequest):
         )
     except Exception as e:
         LOGGER.exception('/api/render_and_send failed')
+        raise HTTPException(
+            status_code=500,
+            detail={'status': 'error', 'error': 'failed', 'message': str(e)}
+        )
+
+# ── POST /api/render ──────────────────────────────────────────────────────────
+@api.post('/api/render')
+async def api_render(req: RenderRequest):
+    try:
+        prod_html   = load_preset_html(req.base_preset)
+        bindings    = build_bindings(req.content)
+        rendered    = Template(prod_html).safe_substitute(bindings)
+        rendered    = apply_scene_overrides(rendered, req.scene_overrides.dict())
+        image_bytes = await _screenshot_service.html_to_image(rendered)
+
+        material_id = save_material({
+            'teacher_id':       req.teacher_id,
+            'mode':             req.mode,
+            'level':            req.level,
+            'variant_id':       req.variant_id,
+            'base_preset':      req.base_preset,
+            'content_snapshot': req.content,
+        })
+        _pending_renders[material_id] = {
+            'bytes':      image_bytes,
+            'teacher_id': req.teacher_id,
+        }
+        return {'status': 'ok', 'png_url': None, 'material_id': material_id}
+
+    except FileNotFoundError as e:
+        LOGGER.error(f'/api/render preset missing: {e}')
+        raise HTTPException(
+            status_code=500,
+            detail={'status': 'error', 'error': 'preset_missing', 'message': str(e)}
+        )
+    except Exception as e:
+        LOGGER.exception('/api/render failed')
+        raise HTTPException(
+            status_code=500,
+            detail={'status': 'error', 'error': 'failed', 'message': str(e)}
+        )
+
+# ── POST /api/send ────────────────────────────────────────────────────────────
+@api.post('/api/send')
+async def api_send(req: SendRequest):
+    try:
+        pending = _pending_renders.pop(req.material_id, None)
+        if not pending:
+            raise HTTPException(
+                status_code=404,
+                detail={'status': 'error', 'message': 'Material not found or already sent'}
+            )
+        tg_user_id = int(pending['teacher_id'].replace('tg_', ''))
+        await _bot.send_photo(
+            chat_id=tg_user_id,
+            photo=io.BytesIO(pending['bytes']),
+            caption="Ваша картка готова 🎓",
+        )
+        return {'status': 'ok'}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        LOGGER.exception('/api/send failed')
         raise HTTPException(
             status_code=500,
             detail={'status': 'error', 'error': 'failed', 'message': str(e)}
