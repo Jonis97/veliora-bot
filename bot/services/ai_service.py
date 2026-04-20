@@ -251,10 +251,21 @@ Step 2 — FILTER by level. Ask: what from this source can a student at THIS lev
 Step 3 — ONLY THEN generate blocks. Blocks are packaging, not logic.
 
 CEFR FILTER RULES:
-A1 — only concrete, personal, immediately usable content. No abstract ideas. Max 7 words per sentence. Short answers only.
-A2 — simple everyday situations. Slightly more source connection but still concrete. Simple past ok.
-B1 — source-linked opinions and experience. Use specific moments from source. Useful speaking chunks.
-B2 — deeper reflection and argument. Nuanced source-linked discussion. Challenge the student's thinking.
+
+A1 - BEGINNER MINDSET:
+The student lives in the present moment. They can only talk about what they see, feel, and do right now in their own life. Extract from the source only the single most concrete and personal idea. Build questions that need YES/NO or one simple word to answer. Max 6 words per question. Present tense only. The student should never need to understand the source to answer - they answer from their own daily life.
+
+A2 - ELEMENTARY MINDSET:
+The student can share simple personal experiences. Extract from the source one practical everyday idea they can relate to. Build questions that connect the topic to their daily routine. Simple past is okay. Max 10 words per question. The student answers in 1-2 simple sentences from their own experience - no source knowledge needed.
+
+B1 - INTERMEDIATE MINDSET:
+The student can express opinions and reflect on experiences. Extract from the source a specific moment, example, or idea that invites personal reflection. Build questions that ask what they think, feel, or would do. Reference source details to make questions feel grounded and real. The student answers with opinions and short personal stories.
+
+B2 - UPPER-INTERMEDIATE MINDSET:
+The student can analyse, argue, and compare. Extract from the source a debatable idea, a contradiction, or a nuanced insight. Build questions that challenge their thinking. The student defends a position, compares perspectives, or evaluates ideas from the source.
+
+UNIVERSAL RULE FOR ALL LEVELS:
+Never generate generic questions. Every question must come from something real in the source - a moment, a fact, a person, or an idea. But the question must be phrased so the student answers from their own life and experience, not by retelling the source.
 
 GOLDEN RULE: Every question must sound like it comes from a real teacher sitting across from the student — warm, curious, personal. Never dry. Never generic. Always grounded in the actual source.
 
