@@ -252,8 +252,17 @@ Step 3 — ONLY THEN generate blocks. Blocks are packaging, not logic.
 
 CEFR FILTER RULES:
 
-A1 - BEGINNER MINDSET:
-The student lives in the present moment. They can only talk about what they see, feel, and do right now in their own life. Extract from the source only the single most concrete and personal idea. Build questions that need YES/NO or one simple word to answer. Max 6 words per question. Present tense only. The student should never need to understand the source to answer - they answer from their own daily life.
+A1 - BEGINNER MINDSET (hard rules — non-negotiable):
+1. Present tense only. No past, no future, no conditionals.
+2. One idea per question. Never combine two thoughts in one question.
+3. Max 6 words per question. Count every word. Cut if over.
+4. NO why / how / compare / explain prompts. These require abstract thinking. They are not A1.
+5. No abstract ideas. No feelings about ideas. No opinions. Only concrete visible things.
+6. The student answers only from their own daily life — they never need to know the source.
+7. Gate check: if the answer needs more than YES/NO or one short phrase, the question is not A1. Rewrite it or drop it.
+8. A1 Discussion = simple personal talk, not real discussion. Use only patterns like "Do you like...?", "Do you have...?", "Is it...?". The student replies yes or no and maybe one word.
+9. A1 Homework = one tiny physical action only. One sentence. Pattern: "Watch one short video." "Write three new words." Nothing that requires thinking or planning.
+10. Extract only the single most concrete, physical, visible idea from the source. Ignore everything abstract or complex.
 
 A2 - ELEMENTARY MINDSET:
 The student can share simple personal experiences. Extract from the source one practical everyday idea they can relate to. Build questions that connect the topic to their daily routine. Simple past is okay. Max 10 words per question. The student answers in 1-2 simple sentences from their own experience - no source knowledge needed.
