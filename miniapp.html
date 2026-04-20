@@ -1065,6 +1065,8 @@ function getSections() {
   } else if (c.vocab_items?.length) {
     s.push({ key:'vocab_items', label:'Vocabulary', items:c.vocab_items });
   }
+  if (c.grammar_note)  s.push({ key:'grammar_note', label:'Grammar Note', items:[c.grammar_note], single:true });
+  if (c.homework)      s.push({ key:'homework',      label:'Homework',     items:[c.homework],     single:true });
   return s;
 }
 
