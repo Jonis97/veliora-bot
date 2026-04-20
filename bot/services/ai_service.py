@@ -144,10 +144,25 @@ Avoid isolated basic verbs unless they are part of a useful phrase or collocatio
 Avoid overly academic terms and random low-value nouns.
 Always use format: English phrase — Ukrainian translation.
 
-For vocab_card template:
-- title: must be the specific topic from source, never 'Learning Card'
-- vocabulary: extract 6-8 most useful specific words from source text
-- cta: must be a real speaking question starting with What/How/Why
+When intent is vocabulary:
+THINKING PIPELINE — follow this order every time:
+Step 1 — READ the source. Find words and phrases that are actually useful and appear in the source.
+Step 2 — FILTER by level. What vocabulary can a student at THIS level actually learn and use?
+Step 3 — Generate blocks. Every word must be usable in real conversation.
+
+CEFR VOCABULARY RULES:
+A1 — basic single words only, concrete nouns and simple verbs, translation + one very short example (max 5 words).
+A2 — simple everyday phrases, short examples in present or past tense.
+B1 — useful conversational chunks and collocations, natural example sentences.
+B2 — nuanced vocabulary, phrases with context, examples showing subtle meaning differences.
+
+GOLDEN RULE: Every word or phrase must come from the source. Never add generic vocabulary unrelated to the source topic.
+
+- title: the specific topic from source, never 'Learning Card'.
+- vocabulary: 8–10 most useful words or phrases from the source. Each as an object with term, translation, and example. Source-grounded only. CEFR-filtered.
+- practice_questions: 2–3 questions that use the new vocabulary words in context. Conversational. Always present.
+- homework: one concrete task using the new words (e.g. "Write 3 sentences using today's words"). Omit field entirely if STRUCTURE does not contain "Homework".
+- extra_words: 4–5 additional words from the source at the same level. Same object format: term, translation, example. Omit field entirely if STRUCTURE does not contain "Extra words".
 
 JSON schema (warm_paper_v2 only — do not use this shape for vocab_card):
 {{
@@ -169,19 +184,24 @@ JSON schema for vocab_card only:
   "template": "vocab_card",
   "title": "Specific topic from source (never 'Learning Card').",
   "subtitle": "One short line tied to this source.",
-  "punchline": "",
-  "contrast": {{ "wrong": "", "better": "" }},
   "vocabulary": [
     {{ "term": "English phrase", "translation": "Ukrainian translation", "example": "English example sentence" }}
   ],
+  "practice_questions": ["2–3 questions using the new vocabulary; conversational and source-grounded."],
+  "homework": "One concrete task using the new words (omit field if Homework not in STRUCTURE).",
+  "extra_words": [
+    {{ "term": "additional word", "translation": "Ukrainian translation", "example": "Short example" }}
+  ],
+  "punchline": "",
+  "contrast": {{ "wrong": "", "better": "" }},
   "vocabulary_examples": [],
   "mcq_brackets": [],
   "bullets": [],
-  "cta": "Real speaking question starting with What, How, or Why.",
+  "cta": "",
   "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
-For vocab_card: vocabulary must be an array of 6–8 objects; each object has exactly term, translation, and example (three separate fields). Do not use string lines or vocabulary_examples for vocab_card.
+For vocabulary: populate title, vocabulary (8–10 items), and practice_questions always. Add homework only if STRUCTURE contains "Homework". Add extra_words only if STRUCTURE contains "Extra words". All other keys empty or minimal. Do not invent content not grounded in the source.
 
 When intent is questions:
 - Generate 6–9 questions depending on source richness

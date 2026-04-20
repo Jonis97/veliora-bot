@@ -210,12 +210,22 @@ async def api_generate(req: GenerateRequest):
 
         # Flatten vocabulary: vocab_card returns {term, translation, example} dicts;
         # warm_paper_v2 / lesson_card_v1 return plain strings. Normalise to strings.
+        # vocab_card includes example in the flat string so review screen shows all three parts.
         raw_vocab = card_json.get('vocabulary', [])
         vocab_strings = [
-            f"{v.get('term', '')} — {v.get('translation', '')}".strip(' —')
+            f"{v.get('term', '')} — {v.get('translation', '')} · {v.get('example', '')}".strip(' —·')
             if isinstance(v, dict)
             else str(v)
             for v in raw_vocab if v
+        ]
+
+        # Flatten extra_words (vocab_card only, same {term, translation, example} format).
+        raw_extra = card_json.get('extra_words', [])
+        extra_strings = [
+            f"{v.get('term', '')} — {v.get('translation', '')} · {v.get('example', '')}".strip(' —·')
+            if isinstance(v, dict)
+            else str(v)
+            for v in raw_extra if v
         ]
 
         # discussion_items: lesson now returns discussion_questions directly.
@@ -231,10 +241,12 @@ async def api_generate(req: GenerateRequest):
             'discussion_items': discussion_raw,
             'choice_items':     card_json.get('choices', []),
             'vocab_items':      vocab_strings,
-            'grammar_note':     str(card_json.get('grammar_note') or '').strip(),
-            'homework':         str(card_json.get('homework') or '').strip(),
-            'debate_prompt':    str(card_json.get('debate_prompt') or '').strip(),
-            'role_play':        card_json.get('role_play') or {},
+            'grammar_note':      str(card_json.get('grammar_note') or '').strip(),
+            'homework':          str(card_json.get('homework') or '').strip(),
+            'debate_prompt':     str(card_json.get('debate_prompt') or '').strip(),
+            'role_play':         card_json.get('role_play') or {},
+            'practice_questions':card_json.get('practice_questions', []),
+            'extra_words':       extra_strings,
         }
 
         # Filter content to only include blocks present in teacher's chosen structure.
@@ -256,6 +268,9 @@ async def api_generate(req: GenerateRequest):
             content['homework'] = ''
         if not _has_block(req.structure, 'Role play'):
             content['role_play'] = {}
+        if not _has_block(req.structure, 'Extra words'):
+            content['extra_words'] = []
+        # practice_questions: not filtered — always part of default Vocabulary room.
 
         # vocabulary mode: Mini App getSections() reads vocab_item_1..12, not vocab_items.
         if req.mode == 'vocabulary':

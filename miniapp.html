@@ -694,8 +694,8 @@ const DEFAULT_STRUCTURES = {
     { id:'s3', type:'DISCUSSION', label:'Discussion' },
   ],
   vocabulary: [
-    { id:'s1', type:'VOCAB_LIST', label:'Word list (8 words)' },
-    { id:'s2', type:'DISCUSSION', label:'Discussion' },
+    { id:'s1', type:'VOCAB_LIST', label:'Word list' },
+    { id:'s2', type:'PRACTICE',   label:'Practice questions' },
   ],
   grammar: [
     { id:'s1', type:'LEAD_IN',   label:'Warm-up' },
@@ -717,8 +717,8 @@ const ADD_OPTIONS = {
     { type:'ROLE_PLAY',  label:'Role play' },
   ],
   vocabulary: [
-    { type:'VOCAB_LIST', label:'More vocabulary' },
-    { type:'DISCUSSION', label:'Extra discussion' },
+    { type:'VOCAB_LIST', label:'Extra words' },
+    { type:'HOMEWORK',   label:'Homework' },
   ],
   grammar:    [
     { type:'DISCUSSION', label:'Extra practice' },
@@ -834,7 +834,7 @@ function selectLevel(pill) {
 // ─────────────────────────────────────────
 const TYPE_ICON = {
   LEAD_IN:'💬', DISCUSSION:'🗣️', CHOICE:'⚖️',
-  VOCAB_LIST:'📚', PARAGRAPH:'📝', HOMEWORK:'📋', MEDIA:'🖼️', ROLE_PLAY:'🎭'
+  VOCAB_LIST:'📚', PARAGRAPH:'📝', HOMEWORK:'📋', MEDIA:'🖼️', ROLE_PLAY:'🎭', PRACTICE:'❓'
 };
 
 function buildStructureScreen() {
@@ -1062,7 +1062,9 @@ function getSections() {
   if (c.choice_items?.length) s.push({ key:'choice_items',     label:'This or That',items:c.choice_items });
   if (state.mode === 'vocabulary') {
     const vl=[]; for(let i=1;i<=12;i++){ if(c['vocab_item_'+i]) vl.push(c['vocab_item_'+i]); }
-    if (vl.length) s.push({ key:'vocab_items_vr', label:'Vocabulary', items:vl, vocabMode:true });
+    if (vl.length) s.push({ key:'vocab_items_vr', label:'Word List', items:vl, vocabMode:true });
+    if (c.practice_questions?.length) s.push({ key:'practice_questions', label:'Practice Questions', items:c.practice_questions });
+    if (c.extra_words?.length) s.push({ key:'extra_words', label:'Extra Words', items:c.extra_words });
   } else if (c.vocab_items?.length) {
     s.push({ key:'vocab_items', label:'Vocabulary', items:c.vocab_items });
   }
@@ -1661,11 +1663,19 @@ function getMockResponse(mode) {
     }},
     vocabulary: { status:'ok', preset_id:'vocab_dark_v1', edit_rounds_used:0, content:{
       title:'Legal English — Key Terms',
-      vocab_item_1:'verdict — вирок', vocab_item_2:'defendant — підсудний',
-      vocab_item_3:'plaintiff — позивач', vocab_item_4:'evidence — докази',
-      vocab_item_5:'testimony — свідчення', vocab_item_6:'appeal — апеляція',
-      vocab_item_7:'sentence — вирок суду', vocab_item_8:'acquit — виправдати',
-      discussion_items:['Have you ever watched a courtroom drama?','Do you think the justice system in your country is fair?']
+      vocab_item_1:'verdict — вирок · The jury reached a unanimous verdict.',
+      vocab_item_2:'defendant — підсудний · The defendant pleaded not guilty.',
+      vocab_item_3:'plaintiff — позивач · The plaintiff filed a lawsuit.',
+      vocab_item_4:'evidence — докази · The evidence was presented to the court.',
+      vocab_item_5:'testimony — свідчення · Her testimony lasted two hours.',
+      vocab_item_6:'appeal — апеляція · He filed an appeal against the sentence.',
+      vocab_item_7:'sentence — вирок суду · The judge announced the sentence.',
+      vocab_item_8:'acquit — виправдати · The jury decided to acquit the suspect.',
+      practice_questions:[
+        'What do you call the person accused in a court case?',
+        'Can you use "verdict" in a sentence about a TV show you watched?',
+        'What is the difference between evidence and testimony?'
+      ]
     }},
     grammar: { status:'ok', preset_id:'grammar_clean_v1', edit_rounds_used:0, content:{
       title:'Present Perfect vs Past Simple',
