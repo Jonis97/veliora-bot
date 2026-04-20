@@ -168,11 +168,9 @@ def _has_block(structure: list[str], *keywords: str) -> bool:
 @api.post('/api/generate')
 async def api_generate(req: GenerateRequest):
     try:
-        # speaking must use lesson_card_v1 (produces choices + lead_in_questions).
-        # speaking_card_v2 falls through to warm_paper_v2 schema which has no choices field.
         mode_to_template = {
             'lesson':     'lesson_card_v1',
-            'speaking':   'lesson_card_v1',
+            'speaking':   'speaking_card_v2',
             'vocabulary': 'vocab_card',
             'grammar':    'lesson_card_v1',
         }
@@ -235,18 +233,26 @@ async def api_generate(req: GenerateRequest):
             'vocab_items':      vocab_strings,
             'grammar_note':     str(card_json.get('grammar_note') or '').strip(),
             'homework':         str(card_json.get('homework') or '').strip(),
+            'debate_prompt':    str(card_json.get('debate_prompt') or '').strip(),
         }
 
         # Filter content to only include blocks present in teacher's chosen structure.
+        # 'Extra' catches 'Extra questions' (speaking) and 'Extra discussion' (lesson) add-blocks.
         if not _has_block(req.structure, 'Lead-in', 'Warm-up'):
             content['lead_in_items'] = []
-        if not _has_block(req.structure, 'Discussion', 'Practice'):
+        if not _has_block(req.structure, 'Discussion', 'Practice', 'Extra'):
             content['discussion_items'] = []
-        if not _has_block(req.structure, 'This or That', 'Choice', 'Debate'):
+        if not _has_block(req.structure, 'This or That', 'Choice'):
             content['choice_items'] = []
         if not _has_block(req.structure, 'Vocabulary', 'Word list', 'vocab'):
             content['vocab_items'] = []
             vocab_strings = []
+        if not _has_block(req.structure, 'Debate'):
+            content['debate_prompt'] = ''
+        if not _has_block(req.structure, 'Grammar note', 'Grammar'):
+            content['grammar_note'] = ''
+        if not _has_block(req.structure, 'Homework'):
+            content['homework'] = ''
 
         # vocabulary mode: Mini App getSections() reads vocab_item_1..12, not vocab_items.
         if req.mode == 'vocabulary':

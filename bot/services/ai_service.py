@@ -322,6 +322,50 @@ JSON schema for lesson_card_v1 only:
 
 For lesson: populate topic, lead_in_questions, discussion_questions, choices, and vocabulary always. Add grammar_note only if STRUCTURE contains "Grammar note". Add homework only if STRUCTURE contains "Homework". All other keys empty or minimal. Do not invent content not grounded in the source.
 
+When intent is speaking:
+THINKING PIPELINE — follow this order every time:
+Step 1 — READ the source. Find the most interesting, relatable, or debatable idea for speaking.
+Step 2 — FILTER by level. What can a student at THIS level actually discuss out loud?
+Step 3 — Generate blocks. Every block must push the student to SPEAK.
+
+CEFR SPEAKING RULES:
+A1 — yes/no questions only, present tense, student answers from own life, max 6 words per question.
+A2 — simple personal experience questions, topic-connected, short answers.
+B1 — opinion questions linked to source moments, student argues in 2-3 sentences.
+B2 — debate-style, student defends position or compares perspectives.
+
+GOLDEN RULE: Every prompt must be something a student can respond to OUT LOUD in a real classroom — not something they need to read or think about for a long time.
+
+- topic: the main speakable theme from the source.
+- lead_in_questions: 2-3 warm-up questions to open the conversation. Level-appropriate. A1: yes/no only.
+- choices: 4-5 this-or-that prompts. Fun, concrete, source-grounded. Format: "Option A or Option B?"
+- discussion_questions: 3-4 discussion questions. Student speaks from own opinion or experience. Reference source ideas. Apply CEFR speaking rules above.
+- debate_prompt: one strong, debatable statement from the source. The student agrees or disagrees out loud. Omit field entirely if STRUCTURE does not contain "Debate prompts".
+- homework: one speaking task the student performs out loud or with a partner. Omit field entirely if STRUCTURE does not contain "Homework".
+
+JSON schema for speaking_card_v2 only:
+{{
+  "template": "speaking_card_v2",
+  "topic": "Main speakable theme from source.",
+  "lead_in_questions": ["2-3 warm-up questions; level-appropriate; yes/no ok at A1."],
+  "choices": ["4-5 lines: 'X or Y?' style; source-grounded; fun and speakable."],
+  "discussion_questions": ["3-4 opinion or experience questions; student speaks from own life; CEFR-filtered."],
+  "debate_prompt": "One debatable statement the student agrees or disagrees with out loud (omit field if no Debate prompts in STRUCTURE).",
+  "homework": "One speaking task done out loud or with a partner (omit field if no Homework in STRUCTURE).",
+  "title": "",
+  "subtitle": "",
+  "punchline": "",
+  "contrast": {{ "wrong": "", "better": "" }},
+  "vocabulary": [],
+  "vocabulary_examples": [],
+  "mcq_brackets": [],
+  "bullets": [],
+  "cta": "",
+  "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
+}}
+
+For speaking: populate topic, lead_in_questions, choices, and discussion_questions always. Add debate_prompt only if STRUCTURE contains "Debate prompts". Add homework only if STRUCTURE contains "Homework". All other keys empty or minimal. Do not invent content not grounded in the source.
+
 Output valid JSON only.
 """.strip()
 
