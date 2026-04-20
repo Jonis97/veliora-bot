@@ -158,11 +158,17 @@ class RenderSendRequest(BaseModel):
     variant_id:      str                    = 'v1_grammar_balanced'
     block_order:     list[dict]             = []
 
+# ── Structure helpers ─────────────────────────────────────────────────────────
+def _has_block(structure: list[str], *keywords: str) -> bool:
+    """Return True if any structure label contains at least one keyword (case-insensitive)."""
+    joined = ' '.join(structure).lower()
+    return any(kw.lower() in joined for kw in keywords)
+
 # ── POST /api/generate ────────────────────────────────────────────────────────
 @api.post('/api/generate')
 async def api_generate(req: GenerateRequest):
     try:
-        # Bug fix 5: speaking must use lesson_card_v1 (produces choices + lead_in_questions).
+        # speaking must use lesson_card_v1 (produces choices + lead_in_questions).
         # speaking_card_v2 falls through to warm_paper_v2 schema which has no choices field.
         mode_to_template = {
             'lesson':     'lesson_card_v1',
@@ -172,15 +178,14 @@ async def api_generate(req: GenerateRequest):
         }
         template = mode_to_template.get(req.mode, 'lesson_card_v1')
 
-        # Bug fix 1: fetch YouTube transcript before passing to Claude.
-        # Claude cannot browse URLs — it needs the plain-text transcript.
-        source_text = req.source_value
+        # Fetch YouTube transcript — Claude cannot browse URLs.
+        raw_source = req.source_value
         if req.source_type == 'youtube' and _youtube_service is not None:
             from bot.services.youtube_service import extract_video_id
-            video_id = extract_video_id(source_text)
+            video_id = extract_video_id(raw_source)
             if video_id:
                 try:
-                    source_text = await _youtube_service.fetch_transcript(video_id)
+                    raw_source = await _youtube_service.fetch_transcript(video_id)
                 except Exception as yt_err:
                     LOGGER.warning(f'YouTube transcript fetch failed ({video_id}): {yt_err}')
                     raise HTTPException(
@@ -189,7 +194,13 @@ async def api_generate(req: GenerateRequest):
                                 'message': 'Could not fetch YouTube transcript. Try a different video or use Text source.'}
                     )
 
-        source_text = f"[FORMAT={req.mode}]\n[LEVEL={req.level}]\n\nUSER CONTENT:\n{source_text}"
+        # Explicit level + structure hint so the AI knows exactly what blocks to fill.
+        source_text = (
+            f"[FORMAT={req.mode}]\n"
+            f"[LEVEL={req.level}]\n"
+            f"STRUCTURE: {', '.join(req.structure)}\n\n"
+            f"SOURCE:\n{raw_source}"
+        )
 
         card_json = await _ai_service.generate_card_content(
             source_text,
@@ -199,27 +210,43 @@ async def api_generate(req: GenerateRequest):
             intent=req.mode,
         )
 
-        # Bug fix 2+3: AI always returns 'vocabulary', never 'vocab'.
-        # vocab_card returns objects {term, translation, example}; flatten to strings.
+        # Flatten vocabulary: vocab_card returns {term, translation, example} dicts;
+        # warm_paper_v2 / lesson_card_v1 return plain strings. Normalise to strings.
         raw_vocab = card_json.get('vocabulary', [])
-        if raw_vocab and isinstance(raw_vocab[0], dict):
-            vocab_strings = [
-                f"{v.get('term', '')} — {v.get('translation', '')}"
-                for v in raw_vocab if isinstance(v, dict)
-            ]
+        vocab_strings = [
+            f"{v.get('term', '')} — {v.get('translation', '')}".strip(' —')
+            if isinstance(v, dict)
+            else str(v)
+            for v in raw_vocab if v
+        ]
+
+        # discussion_items: lesson AI returns bullets (3 key ideas); grammar/speaking
+        # may return discussion_questions. Use whichever is present.
+        if req.mode == 'lesson':
+            discussion_raw = card_json.get('bullets', [])
         else:
-            vocab_strings = [str(v) for v in raw_vocab if v]
+            discussion_raw = card_json.get('discussion_questions', card_json.get('bullets', []))
 
         content = {
             'title':            str(card_json.get('topic') or card_json.get('title', '')).strip(),
             'lead_in_items':    card_json.get('lead_in_questions', []),
-            'discussion_items': card_json.get('discussion_questions', card_json.get('bullets', [])),
+            'discussion_items': discussion_raw,
             'choice_items':     card_json.get('choices', []),
             'vocab_items':      vocab_strings,
         }
 
-        # Bug fix 4: vocabulary mode — Mini App getSections() reads vocab_item_1..12,
-        # not vocab_items. Populate both for forward compatibility.
+        # Filter content to only include blocks present in teacher's chosen structure.
+        if not _has_block(req.structure, 'Lead-in', 'Warm-up'):
+            content['lead_in_items'] = []
+        if not _has_block(req.structure, 'Discussion', 'Practice'):
+            content['discussion_items'] = []
+        if not _has_block(req.structure, 'This or That', 'Choice', 'Debate'):
+            content['choice_items'] = []
+        if not _has_block(req.structure, 'Vocabulary', 'Word list', 'vocab'):
+            content['vocab_items'] = []
+            vocab_strings = []
+
+        # vocabulary mode: Mini App getSections() reads vocab_item_1..12, not vocab_items.
         if req.mode == 'vocabulary':
             for i, v in enumerate(vocab_strings[:12], start=1):
                 content[f'vocab_item_{i}'] = v
