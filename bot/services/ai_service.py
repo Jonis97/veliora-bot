@@ -342,6 +342,13 @@ GOLDEN RULE: Every prompt must be something a student can respond to OUT LOUD in
 - discussion_questions: 3-4 discussion questions. Student speaks from own opinion or experience. Reference source ideas. Apply CEFR speaking rules above.
 - debate_prompt: one strong, debatable statement from the source. The student agrees or disagrees out loud. Omit field entirely if STRUCTURE does not contain "Debate prompts".
 - homework: one speaking task the student performs out loud or with a partner. Omit field entirely if STRUCTURE does not contain "Homework".
+- role_play: object generated ONLY when "Role play" is in STRUCTURE. Transform the source idea into a realistic speaking scenario — the student must NOT retell the source; the source idea becomes the dramatic context. Omit field entirely if "Role play" is not in STRUCTURE.
+  CEFR role play rules:
+  A1: one simple everyday situation, max 3 exchanges, present simple only, no why-questions.
+  A2: short source-related situation, 4–5 exchanges, simple past ok.
+  B1: realistic situation with light disagreement, 6–8 exchanges, student gives opinion.
+  B2: complex argumentation situation, open exchanges, student defends position.
+  Required object fields: scenario_title (short title), roles (e.g. "Customer / Shop assistant"), task_goal (one sentence: what both students achieve), dialogue_starter (first line to open the role play).
 
 JSON schema for speaking_card_v2 only:
 {{
@@ -352,6 +359,7 @@ JSON schema for speaking_card_v2 only:
   "discussion_questions": ["3-4 opinion or experience questions; student speaks from own life; CEFR-filtered."],
   "debate_prompt": "One debatable statement the student agrees or disagrees with out loud (omit field if no Debate prompts in STRUCTURE).",
   "homework": "One speaking task done out loud or with a partner (omit field if no Homework in STRUCTURE).",
+  "role_play": {{"scenario_title": "Short title of the scenario", "roles": "Role A / Role B (e.g. 'Customer / Shop assistant')", "task_goal": "One sentence: what both students achieve", "dialogue_starter": "First line to open the role play"}},
   "title": "",
   "subtitle": "",
   "punchline": "",
@@ -364,7 +372,7 @@ JSON schema for speaking_card_v2 only:
   "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
 }}
 
-For speaking: populate topic, lead_in_questions, choices, and discussion_questions always. Add debate_prompt only if STRUCTURE contains "Debate prompts". Add homework only if STRUCTURE contains "Homework". All other keys empty or minimal. Do not invent content not grounded in the source.
+For speaking: populate topic, lead_in_questions, choices, and discussion_questions always. Add debate_prompt only if STRUCTURE contains "Debate prompts". Add homework only if STRUCTURE contains "Homework". Add role_play only if STRUCTURE contains "Role play". All other keys empty or minimal. Do not invent content not grounded in the source.
 
 Output valid JSON only.
 """.strip()

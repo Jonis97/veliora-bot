@@ -714,6 +714,7 @@ const ADD_OPTIONS = {
     { type:'DISCUSSION', label:'Extra questions' },
     { type:'CHOICE',     label:'Debate prompts' },
     { type:'HOMEWORK',   label:'Homework' },
+    { type:'ROLE_PLAY',  label:'Role play' },
   ],
   vocabulary: [
     { type:'VOCAB_LIST', label:'More vocabulary' },
@@ -833,7 +834,7 @@ function selectLevel(pill) {
 // ─────────────────────────────────────────
 const TYPE_ICON = {
   LEAD_IN:'💬', DISCUSSION:'🗣️', CHOICE:'⚖️',
-  VOCAB_LIST:'📚', PARAGRAPH:'📝', HOMEWORK:'📋', MEDIA:'🖼️'
+  VOCAB_LIST:'📚', PARAGRAPH:'📝', HOMEWORK:'📋', MEDIA:'🖼️', ROLE_PLAY:'🎭'
 };
 
 function buildStructureScreen() {
@@ -1068,6 +1069,14 @@ function getSections() {
   if (c.debate_prompt) s.push({ key:'debate_prompt', label:'Debate Prompt', items:[c.debate_prompt], single:true });
   if (c.grammar_note)  s.push({ key:'grammar_note', label:'Grammar Note',  items:[c.grammar_note],  single:true });
   if (c.homework)      s.push({ key:'homework',      label:'Homework',     items:[c.homework],      single:true });
+  if (c.role_play && c.role_play.scenario_title) {
+    const rp = c.role_play;
+    const rpItems = [rp.scenario_title];
+    if (rp.roles)            rpItems.push(rp.roles);
+    if (rp.task_goal)        rpItems.push(rp.task_goal);
+    if (rp.dialogue_starter) rpItems.push(rp.dialogue_starter);
+    s.push({ key:'role_play', label:'Role Play', items: rpItems, rolePlay: true });
+  }
   return s;
 }
 
@@ -1083,7 +1092,9 @@ function buildReviewScreen() {
     card.className = 'content-card'; card.id = 'card-' + idx;
     const itemsHtml = sec.single
       ? `<div class="content-view-title">${esc(sec.items[0])}</div>`
-      : `<ul class="content-view-items">${sec.items.map(it=>`<li><span class="item-dot"></span><span>${esc(it)}</span></li>`).join('')}</ul>`;
+      : sec.rolePlay
+        ? `<div class="content-view-title" style="font-size:15px;margin-bottom:8px">${esc(sec.items[0])}</div><ul class="content-view-items">${sec.items.slice(1).map(it=>`<li><span class="item-dot"></span><span>${esc(it)}</span></li>`).join('')}</ul>`
+        : `<ul class="content-view-items">${sec.items.map(it=>`<li><span class="item-dot"></span><span>${esc(it)}</span></li>`).join('')}</ul>`;
     card.innerHTML = `
       <div class="content-card-header">
         <div class="content-card-label">${sec.label}</div>
@@ -1093,8 +1104,8 @@ function buildReviewScreen() {
         <div id="view-${idx}">${itemsHtml}</div>
         <div class="content-edit-area" id="ea-${idx}">
           <textarea class="edit-textarea" id="ta-${idx}" rows="${Math.min(sec.items.length+2,9)}"
-            placeholder="${sec.single?'Edit title':'One item per line'}">${sec.items.join('\n')}</textarea>
-          <div class="edit-hint">${sec.single?'Edit the title above.':'One item per line.'} Uses 1 edit round.</div>
+            placeholder="${sec.single?'Edit title':sec.rolePlay?'Scenario title / Roles / Goal / Opening line':'One item per line'}">${sec.items.join('\n')}</textarea>
+          <div class="edit-hint">${sec.single?'Edit the title above.':sec.rolePlay?'Line 1: scenario title. Line 2: roles. Line 3: goal. Line 4: opening line.':'One item per line.'} Uses 1 edit round.</div>
           <div class="edit-actions">
             <button class="btn-cancel-edit" onclick="cancelEdit(${idx})">Cancel</button>
             <button class="btn-save-edit"   onclick="saveEdit(${idx})">Save</button>
@@ -1132,6 +1143,16 @@ function saveEdit(idx) {
     if (!items.length) { cancelEdit(idx); return; }
     for(let i=1;i<=12;i++) delete state.content['vocab_item_'+i];
     items.forEach((v,i) => { state.content['vocab_item_'+(i+1)] = v; });
+  } else if (sec.rolePlay) {
+    // role_play mode: reconstruct object from 4 lines
+    const items = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+    if (!items.length) { cancelEdit(idx); return; }
+    state.content.role_play = {
+      scenario_title:   items[0] || '',
+      roles:            items[1] || '',
+      task_goal:        items[2] || '',
+      dialogue_starter: items[3] || '',
+    };
   } else {
     const items = raw.split('\n').map(s=>s.trim()).filter(Boolean);
     if (!items.length) { cancelEdit(idx); return; }

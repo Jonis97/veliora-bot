@@ -234,6 +234,7 @@ async def api_generate(req: GenerateRequest):
             'grammar_note':     str(card_json.get('grammar_note') or '').strip(),
             'homework':         str(card_json.get('homework') or '').strip(),
             'debate_prompt':    str(card_json.get('debate_prompt') or '').strip(),
+            'role_play':        card_json.get('role_play') or {},
         }
 
         # Filter content to only include blocks present in teacher's chosen structure.
@@ -253,6 +254,8 @@ async def api_generate(req: GenerateRequest):
             content['grammar_note'] = ''
         if not _has_block(req.structure, 'Homework'):
             content['homework'] = ''
+        if not _has_block(req.structure, 'Role play'):
+            content['role_play'] = {}
 
         # vocabulary mode: Mini App getSections() reads vocab_item_1..12, not vocab_items.
         if req.mode == 'vocabulary':
