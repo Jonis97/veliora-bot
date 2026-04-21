@@ -701,7 +701,6 @@ const DEFAULT_STRUCTURES = {
     { id:'s1', type:'LEAD_IN',   label:'Warm-up' },
     { id:'s2', type:'PARAGRAPH', label:'Grammar focus' },
     { id:'s3', type:'DISCUSSION',label:'Practice' },
-    { id:'s4', type:'HOMEWORK',  label:'Homework' },
   ]
 };
 const ADD_OPTIONS = {
@@ -721,7 +720,6 @@ const ADD_OPTIONS = {
     { type:'HOMEWORK',   label:'Homework' },
   ],
   grammar:    [
-    { type:'DISCUSSION', label:'Extra practice' },
     { type:'PARAGRAPH',  label:'Common mistakes' },
     { type:'HOMEWORK',   label:'Homework' },
   ]
@@ -1068,6 +1066,14 @@ function getSections() {
   } else if (c.vocab_items?.length) {
     s.push({ key:'vocab_items', label:'Vocabulary', items:c.vocab_items });
   }
+  if (state.mode === 'grammar') {
+    if (c.grammar_focus) {
+      const gfItems = c.grammar_focus.split('\n').map(s=>s.trim()).filter(Boolean);
+      s.push({ key:'grammar_focus', label:'Grammar Focus', items: gfItems.length ? gfItems : [c.grammar_focus] });
+    }
+    if (c.practice_items?.length) s.push({ key:'practice_items', label:'Practice', items:c.practice_items });
+    if (c.common_mistakes?.length) s.push({ key:'common_mistakes', label:'Common Mistakes', items:c.common_mistakes });
+  }
   if (c.debate_prompt) s.push({ key:'debate_prompt', label:'Debate Prompt', items:[c.debate_prompt], single:true });
   if (c.grammar_note)  s.push({ key:'grammar_note', label:'Grammar Note',  items:[c.grammar_note],  single:true });
   if (c.homework)      s.push({ key:'homework',      label:'Homework',     items:[c.homework],      single:true });
@@ -1155,6 +1161,11 @@ function saveEdit(idx) {
       task_goal:        items[2] || '',
       dialogue_starter: items[3] || '',
     };
+  } else if (sec.key === 'grammar_focus') {
+    // grammar_focus is a multi-line string — preserve newlines on save
+    const lines = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+    if (!lines.length) { cancelEdit(idx); return; }
+    state.content.grammar_focus = lines.join('\n');
   } else {
     const items = raw.split('\n').map(s=>s.trim()).filter(Boolean);
     if (!items.length) { cancelEdit(idx); return; }
@@ -1678,10 +1689,14 @@ function getMockResponse(mode) {
       ]
     }},
     grammar: { status:'ok', preset_id:'grammar_clean_v1', edit_rounds_used:0, content:{
-      title:'Present Perfect vs Past Simple',
-      lead_in_items:['Have you ever tried sushi?','When did you last travel somewhere new?'],
-      discussion_items:['We use Present Perfect for experiences without a specific time.','We use Past Simple when the time is known.','Key signal words: just, already, yet, ever, never → Present Perfect.','Key signal words: yesterday, last week, in 2020 → Past Simple.'],
-      vocab_items:['I have visited Paris. (experience)','I visited Paris in 2019. (specific time)','She has just arrived. (very recent)','He arrived an hour ago. (stated time)']
+      title:'Present Perfect for Life Experiences',
+      lead_in_items:['Have you ever tried food from another country?','Have you ever been somewhere you will never forget?'],
+      grammar_focus:'We use Present Perfect for life experiences — things we have or have not done.\nFormula: Subject + have/has + past participle\nExample 1: She has visited five countries.\nExample 2: They have never tried sushi.\nExample 3: Have you ever seen the Northern Lights?',
+      practice_items:[
+        'Complete: I _____ (never / eat) pizza before moving to Italy.',
+        'Complete: She _____ (visit) Paris three times.',
+        'Write one sentence about something you have never done.'
+      ]
     }}
   };
   return mocks[mode] || mocks.lesson;

@@ -172,7 +172,7 @@ async def api_generate(req: GenerateRequest):
             'lesson':     'lesson_card_v1',
             'speaking':   'speaking_card_v2',
             'vocabulary': 'vocab_card',
-            'grammar':    'lesson_card_v1',
+            'grammar':    'grammar_card_v1',
         }
         template = mode_to_template.get(req.mode, 'lesson_card_v1')
 
@@ -232,6 +232,8 @@ async def api_generate(req: GenerateRequest):
         # grammar/speaking fall back to discussion_questions then bullets.
         if req.mode == 'lesson':
             discussion_raw = card_json.get('discussion_questions', [])
+        elif req.mode == 'grammar':
+            discussion_raw = []
         else:
             discussion_raw = card_json.get('discussion_questions', card_json.get('bullets', []))
 
@@ -247,6 +249,9 @@ async def api_generate(req: GenerateRequest):
             'role_play':         card_json.get('role_play') or {},
             'practice_questions':card_json.get('practice_questions', []),
             'extra_words':       extra_strings,
+            'grammar_focus':     str(card_json.get('grammar_focus') or '').strip(),
+            'practice_items':    card_json.get('practice_items', []),
+            'common_mistakes':   card_json.get('common_mistakes', []),
         }
 
         # Filter content to only include blocks present in teacher's chosen structure.
@@ -270,7 +275,11 @@ async def api_generate(req: GenerateRequest):
             content['role_play'] = {}
         if not _has_block(req.structure, 'Extra words'):
             content['extra_words'] = []
+        if not _has_block(req.structure, 'Common mistakes'):
+            content['common_mistakes'] = []
         # practice_questions: not filtered — always part of default Vocabulary room.
+        # practice_items: not filtered — always part of default Grammar room.
+        # grammar_focus: not filtered — always part of default Grammar room.
 
         # vocabulary mode: Mini App getSections() reads vocab_item_1..12, not vocab_items.
         if req.mode == 'vocabulary':

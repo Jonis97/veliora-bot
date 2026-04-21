@@ -394,6 +394,50 @@ JSON schema for speaking_card_v2 only:
 
 For speaking: populate topic, lead_in_questions, choices, and discussion_questions always. Add debate_prompt only if STRUCTURE contains "Debate prompts". Add homework only if STRUCTURE contains "Homework". Add role_play only if STRUCTURE contains "Role play". All other keys empty or minimal. Do not invent content not grounded in the source.
 
+When intent is grammar:
+THINKING PIPELINE — follow this order every time:
+Step 1 — READ the source. Find the grammar structure that actually appears in the source.
+Step 2 — FILTER by level. What grammar point can a student at THIS level actually understand and use?
+Step 3 — Generate blocks. Every example must come from the source or feel natural in its context.
+
+CEFR GRAMMAR RULES:
+A1 — one very basic grammar point, present simple or "to be" only, 2 short examples max, no metalanguage.
+A2 — simple grammar point, present/past simple, 3 short examples, no complex structures.
+B1 — useful grammar structure with real conversational examples, student can apply it immediately.
+B2 — nuanced grammar point, complex structures ok, examples show subtle meaning differences.
+
+GOLDEN RULE: The grammar point must come from the source. Never teach a random grammar rule unrelated to what the student just read or watched.
+
+- topic: the grammar point name (e.g. "Present Perfect for life experiences").
+- lead_in_questions: 2–3 warm-up questions about everyday situations connected to the grammar topic. Level-appropriate.
+- grammar_focus: the full rule block as one string. Include: rule explanation, formula (e.g. "Subject + have/has + past participle"), and 2–3 source-based examples. Format each part on a new line.
+- practice_items: 3–4 practice sentences or fill-in questions using the grammar point. Graded easy → harder. Always present.
+- common_mistakes: 2–3 typical student errors with corrections. Format: "WRONG: ... → CORRECT: ...". Omit field entirely if STRUCTURE does not contain "Common mistakes".
+- homework: one grammar task the student can do independently. Omit field entirely if STRUCTURE does not contain "Homework".
+
+JSON schema for grammar_card_v1 only:
+{{
+  "template": "grammar_card_v1",
+  "topic": "Grammar point name from source.",
+  "lead_in_questions": ["2–3 warm-up questions about everyday situations."],
+  "grammar_focus": "Rule explanation.\nFormula: Subject + ...\nExample 1: ...\nExample 2: ...\nExample 3: ...",
+  "practice_items": ["3–4 practice sentences/questions graded easy → harder."],
+  "common_mistakes": ["WRONG: ... → CORRECT: ... (omit array if Common mistakes not in STRUCTURE)"],
+  "homework": "One grammar task (omit field if Homework not in STRUCTURE).",
+  "title": "",
+  "subtitle": "",
+  "punchline": "",
+  "contrast": {{ "wrong": "", "better": "" }},
+  "vocabulary": [],
+  "vocabulary_examples": [],
+  "mcq_brackets": [],
+  "bullets": [],
+  "cta": "",
+  "image_query": "Optional. 3-4 English words (person + action + context) or empty string."
+}}
+
+For grammar: populate topic, lead_in_questions, grammar_focus, and practice_items always. Add common_mistakes only if STRUCTURE contains "Common mistakes". Add homework only if STRUCTURE contains "Homework". All other keys empty or minimal. Do not invent content not grounded in the source.
+
 Output valid JSON only.
 """.strip()
 
